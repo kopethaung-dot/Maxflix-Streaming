@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maxflix Streaming</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase (compat SDK — no build tools needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --bg:#0a0a0d; --bg-elev:#131318; --bg-card:#1a1a21;
+    --ink:#f2f0ea; --ink-dim:#a8a6ac; --ink-faint:#6b6970;
+    --accent:#e0263f; --accent-dim:#8f1a2a; --gold:#d4a62a; --line:rgba(255,255,255,.08);
+    --font-display:'Bebas Neue','Noto Sans Myanmar',sans-serif;
+    --font-body:'Work Sans','Noto Sans Myanmar',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-body);}
+  a{color:inherit;text-decoration:none;}
+  img{display:block;max-width:100%;}
+  header{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+    padding:16px clamp(16px,4vw,56px);background:linear-gradient(to bottom,rgba(10,10,13,.95),transparent);}
+  .brand{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-size:26px;letter-spacing:2px;color:var(--ink);}
+  .brand-sub{font-family:var(--font-body);font-size:9px;letter-spacing:3px;color:var(--ink-faint);font-weight:600;margin-left:1px;}
+  .brand-mark{width:34px;height:34px;flex-shrink:0;}
+  .hero{position:relative;min-height:70vh;display:flex;align-items:flex-end;
+    padding:0 clamp(16px,4vw,56px) 60px;background-size:cover;background-position:center;background-color:var(--bg-elev);}
+  .hero::before{content:'';position:absolute;inset:0;
+    background:linear-gradient(to top,var(--bg) 5%,transparent 55%),linear-gradient(to right,rgba(10,10,13,.85),transparent 55%);}
+  .hero-content{position:relative;max-width:600px;}
+  .hero-badge{display:inline-flex;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);
+    border:1px solid var(--gold);padding:4px 10px;border-radius:20px;margin-bottom:16px;}
+  .hero-title{font-family:var(--font-display);font-size:clamp(36px,6vw,64px);line-height:1.05;margin-bottom:14px;}
+  .hero-desc{color:var(--ink-dim);font-size:14px;max-width:460px;margin-bottom:22px;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 26px;border-radius:4px;font-weight:600;font-size:14px;border:none;cursor:pointer;font-family:inherit;}
+  .btn-primary{background:var(--ink);color:#111;}
+  .rows{padding:12px clamp(16px,4vw,56px) 60px;display:flex;flex-direction:column;gap:34px;}
+  .row-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;}
+  .row-title{font-family:var(--font-display);font-size:22px;letter-spacing:1px;}
+  .row-count{font-size:12px;color:var(--ink-faint);}
+  .row-track{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px;}
+  .card{position:relative;flex:0 0 auto;width:210px;background:var(--bg-card);border:1px solid var(--line);
+    border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .15s;}
+  .card:hover{transform:translateY(-5px);border-color:var(--accent-dim);}
+  .card-thumb{width:100%;aspect-ratio:2/3;object-fit:cover;background:#222;}
+  .card-duration{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:var(--gold);
+    font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;}
+  .card-body{padding:10px 12px;}
+  .card-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-meta{font-size:11px;color:var(--ink-faint);}
+  .empty-row{color:var(--ink-faint);font-size:13px;padding:26px;border:1px dashed var(--line);border-radius:6px;width:100%;text-align:center;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{width:min(900px,100%);background:var(--bg-elev);border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+  .modal-video-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;}
+  .modal-video-wrap video{width:100%;height:100%;}
+  .modal-info{padding:18px 22px 24px;}
+  .modal-title{font-family:var(--font-display);font-size:24px;letter-spacing:1px;margin-bottom:6px;}
+  .modal-meta{font-size:12px;color:var(--gold);margin-bottom:10px;}
+  .modal-desc{font-size:14px;color:var(--ink-dim);}
+  .modal-close{position:absolute;top:12px;right:12px;z-index:5;width:34px;height:34px;border-radius:50%;
+    background:rgba(0,0,0,.6);color:#fff;border:none;font-size:18px;cursor:pointer;}
+  footer{padding:26px clamp(16px,4vw,56px);border-top:1px solid var(--line);color:var(--ink-faint);font-size:12px;text-align:center;}
+  .loading{padding:60px;text-align:center;color:var(--ink-faint);font-size:13px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f0324a"/>
+          <stop offset="100%" stop-color="#8f1a2a"/>
+        </linearGradient>
+      </defs>
+      <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#mfGrad)"/>
+      <rect x="1" y="1" width="38" height="38" rx="10" fill="none" stroke="rgba(255,255,255,.15)"/>
+      <path d="M15 12 L28 20 L15 28 Z" fill="#f2f0ea"/>
+    </svg>
+    <span>MAXFLIX<span class="brand-sub">STREAMING</span></span>
+  </div>
+</header>
+
+<section class="hero" id="heroSection">
+  <div class="hero-content">
+    <span class="hero-badge" id="heroBadge">ယနေ့ အထူးဇာတ်ကား</span>
+    <h1 class="hero-title" id="heroTitle">Maxflix Streaming မှ ကြိုဆိုပါတယ်</h1>
+    <p class="hero-desc" id="heroDesc">ဇာတ်ကားများ တင်နေဆဲ...</p>
+    <button class="btn btn-primary" id="heroPlayBtn">▶ ကြည့်မည်</button>
+  </div>
+</section>
+
+<div class="rows" id="rowsWrap">
+  <div class="loading">ဇာတ်ကားများ ခေါ်နေသည်...</div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-video-wrap" id="modalVideoWrap">
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="modal-info">
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-meta" id="modalMeta"></div>
+      <div class="modal-desc" id="modalDesc"></div>
+    </div>
+  </div>
+</div>
+
+<footer>Maxflix Streaming — Firebase Firestore + Storage ဖြင့် တည်ဆောက်ထားသည်</footer>
+
+<script>
+/* =========================================================
+   1) FIREBASE CONFIG — Firebase Console > Project Settings ကနေ ကူးထည့်ပါ
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAlhyV1lHqDxgs4Of5zjNUUB5VW0L6nbh8",
+  authDomain: "movies-streamer-fee4e.firebaseapp.com",
+  projectId: "movies-streamer-fee4e",
+  storageBucket: "movies-streamer-fee4e.firebasestorage.app",
+  messagingSenderId: "794583348977",
+  appId: "1:794583348977:web:ad328082797449cd42db50",
+  measurementId: "G-9W99RKQPVQ"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='210' height='315'><rect width='210' height='315' fill='%231a1a21'/><text x='50%' y='50%' fill='%236b6970' font-size='13' font-family='sans-serif' text-anchor='middle'>No Poster</text></svg>`);
+
+function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let movies = [];
+
+function cardHtml(m){
+  const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
+  return `<div class="card" data-id="${m.id}">
+    <img class="card-thumb" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+    ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
+    <div class="card-body">
+      <div class="card-title">${esc(m.title)}</div>
+      <div class="card-meta">${m.category==='drama' ? 'Short Drama' : 'ကိုယ်ပိုင်ဇာတ်ကား'}</div>
+    </div></div>`;
+}
+
+function render(){
+  const originals = movies.filter(m => m.category === 'original');
+  const drama = movies.filter(m => m.category === 'drama');
+  const wrap = document.getElementById('rowsWrap');
+  wrap.innerHTML = `
+    <div class="row">
+      <div class="row-head"><span class="row-title">ကိုယ်ပိုင်ဇာတ်ကားများ</span><span class="row-count">${originals.length} ခု</span></div>
+      <div class="row-track">${originals.length ? originals.map(cardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
+    </div>
+    <div class="row">
+      <div class="row-head"><span class="row-title">Short Drama (ဘာသာပြန်)</span><span class="row-count">${drama.length} ခု</span></div>
+      <div class="row-track">${drama.length ? drama.map(cardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
+    </div>`;
+  document.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => openPlayer(c.dataset.id)));
+
+  const featured = movies.find(m => m.featured) || movies[0];
+  if(featured){
+    document.getElementById('heroSection').style.backgroundImage =
+      featured.thumbUrl ? `linear-gradient(to top, var(--bg), transparent 40%), url('${featured.thumbUrl}')` : '';
+    document.getElementById('heroBadge').textContent = featured.category === 'drama' ? 'Short Drama' : 'ကိုယ်ပိုင်ဇာတ်ကား';
+    document.getElementById('heroTitle').textContent = featured.title;
+    document.getElementById('heroDesc').textContent = featured.desc || '';
+    document.getElementById('heroPlayBtn').onclick = () => openPlayer(featured.id);
+  }
+}
+
+function openPlayer(id){
+  const m = movies.find(x => x.id === id);
+  if(!m) return;
+  document.getElementById('modalVideoWrap').innerHTML =
+    `<button class="modal-close" id="modalClose">✕</button><video src="${esc(m.videoUrl)}" controls autoplay></video>`;
+  document.getElementById('modalClose').onclick = closePlayer;
+  document.getElementById('modalTitle').textContent = m.title;
+  document.getElementById('modalMeta').textContent = (m.category==='drama'?'Short Drama':'ကိုယ်ပိုင်ဇာတ်ကား') + (m.duration?' • '+m.duration:'');
+  document.getElementById('modalDesc').textContent = m.desc || '';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closePlayer(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.getElementById('modalVideoWrap').innerHTML = '';
+}
+document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') closePlayer(); });
+
+/* =========================================================
+   2) LIVE DATA — Firestore "movies" collection ကို နားထောင်နေမယ်
+   ========================================================= */
+db.collection('movies').orderBy('createdAt', 'desc').onSnapshot(snap => {
+  movies = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  render();
+}, err => {
+  document.getElementById('rowsWrap').innerHTML =
+    `<div class="loading">ချိတ်ဆက်မှု အမှား — firebaseConfig ကို စစ်ကြည့်ပါ (${esc(err.message)})</div>`;
+});
+</script>
+</body>
+</html>
