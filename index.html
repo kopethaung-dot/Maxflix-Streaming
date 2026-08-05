@@ -214,7 +214,7 @@
     </div>
   </section>
   <div class="rows" id="rowsWrap">
-    <div class="loading">Load movies...</div>
+    <div class="loading">ဇာတ်ကားများ ခေါ်နေသည်...</div>
   </div>
 </div>
 
@@ -237,7 +237,7 @@
 </div>
 
 <div id="view-series" class="page">
-  <button class="back-link" id="seriesBackBtn">← Back to Short Drama</button>
+  <button class="back-link" id="seriesBackBtn">← Short Drama သို့ ပြန်သွားမည်</button>
   <div class="series-header">
     <img class="series-poster" id="seriesPoster" src="">
     <div class="series-info">
@@ -269,11 +269,11 @@
     <div style="font-size:28px;margin-bottom:8px;">🔒</div>
     <h3>18+ Content</h3>
     <p>ဆက်ကြည့်ရန် PIN နံပါတ် ရိုက်ထည့်ပါ</p>
-    <div class="field"><input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="******"></div>
+    <div class="field"><input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="••••"></div>
     <div class="sm-err" id="pinErr">PIN မှားနေပါတယ်</div>
     <div style="display:flex;gap:8px;">
-      <button class="btn btn-ghost btn-block" id="pinCancelBtn">Cancle</button>
-      <button class="btn btn-accent btn-block" id="pinSubmitBtn">Continue</button>
+      <button class="btn btn-ghost btn-block" id="pinCancelBtn">မလုပ်တော့ပါ</button>
+      <button class="btn btn-accent btn-block" id="pinSubmitBtn">ဆက်သွားမည်</button>
     </div>
   </div>
 </div>
@@ -289,7 +289,7 @@
       <button class="sm-tab" id="tabSignup">Sign up</button>
     </div>
     <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"></div>
-    <div class="field"><label>Password</label><input type="password" id="authPass" placeholder="••••••••"></div>
+    <div class="field"><label>Password</label><input type="password" id="authPass" placeholder="*******"></div>
     <div class="sm-err" id="authErr"></div>
     <button class="btn btn-accent btn-block" id="authSubmitBtn">Login</button>
   </div>
@@ -317,7 +317,7 @@
       <div class="field"><label>ပေးချေမှု နည်းလမ်း</label>
         <select id="fPayMethod"><option value="KBZPay">KBZPay</option><option value="WavePay">WavePay</option></select>
       </div>
-      <div class="field"><label>Transaction ID / ငွေလွှဲအမှတ် *</label><input type="text" id="fTxnId" placeholder="ငွေလွှဲပြီးရင် Transaction ID နောက်ဆုံး ၄ လုံးကူးထည့်ပါ"></div>
+      <div class="field"><label>Transaction ID / ငွေလွှဲအမှတ် *</label><input type="text" id="fTxnId" placeholder="ငွေလွှဲပြီးရင် Transaction ID ကူးထည့်ပါ"></div>
       <div class="sm-err" id="premiumErr"></div>
       <button class="btn btn-accent btn-block" id="premiumSubmitBtn">တင်သွင်းမည်</button>
     </div>
@@ -326,13 +326,13 @@
     <div id="premiumStatePending" style="display:none;">
       <div style="font-size:28px;margin-bottom:8px;">⏳</div>
       <h3>စစ်ဆေးနေဆဲ</h3>
-      <p>သင့်ရဲ့ Premium request ကို admin မှ စစ်ဆေးနေပါတယ်။ အတည်ပြုပြီးပါကကြည့်ရှုနိုင်ပါပြီ။</p>
+      <p>သင့်ရဲ့ Premium request ကို admin မှ စစ်ဆေးနေပါတယ်။ အတည်ပြုပြီးရင် ဒီဇာတ်ကားကို ချက်ချင်း ကြည့်လို့ရပါမယ်။</p>
       <button class="btn btn-ghost btn-block" id="premiumPendingCloseBtn">ပိတ်မည်</button>
     </div>
   </div>
 </div>
 
-<footer>Maxflix Streaming — All right reserved by Maxflix</footer>
+<footer>Maxflix Streaming — All rights reserved by Maxflix</footer>
 
 <script>
 /* =========================================================
@@ -359,7 +359,7 @@ const PAYMENT_CONFIG = {
   kbzpayName: "Hla Kyi Aung",
   wavepayNumber: "09446627892",
   wavepayName: "Hla Kyi Aung",
-  price: "5,000 MMK / ၃လ",
+  price: "3,000 MMK / ၃လ",
   premiumDurationDays: 90 // admin approve လုပ်ရင် ဒီရက်ပေါင်းအတိုင်း premium ရမယ် (admin dashboard ထဲမှာ ချိန်ညှိလို့ရပါတယ်)
 };
 
@@ -395,8 +395,12 @@ function showView(view){
 document.querySelectorAll('[data-view]').forEach(el => {
   el.addEventListener('click', () => {
     const view = el.dataset.view;
-    if(view === 'adult'){ requestAdultUnlock(() => showView('adult')); }
-    else { showView(view); }
+    if(view === 'adult'){
+      if(!isPremiumActive()){ openPremiumGate(); return; }
+      requestAdultUnlock(() => showView('adult'));
+    } else {
+      showView(view);
+    }
   });
 });
 document.getElementById('hamburgerBtn').addEventListener('click', () => {
@@ -524,7 +528,7 @@ auth.onAuthStateChanged(user => {
    6) PREMIUM GATE
    ========================================================= */
 function openPremiumGate(movieId){
-  pendingPlayId = movieId;
+  pendingPlayId = movieId || null;
   ['premiumStateAuth','premiumStatePay','premiumStatePending'].forEach(id => document.getElementById(id).style.display = 'none');
   if(!currentUser){
     document.getElementById('premiumStateAuth').style.display = 'block';
@@ -572,7 +576,7 @@ function movieCardHtml(m){
   return `<div class="card" data-type="movie" data-id="${m.id}">
     <img class="card-thumb" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
     ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
-    ${m.isPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
+    ${(m.isPremium || m.category === 'adult') ? `<div class="card-premium">★ PREMIUM</div>` : ''}
     <div class="card-body">
       <div class="card-title">${esc(m.title)}</div>
       <div class="card-meta">${CATEGORY_LABEL[m.category] || ''}</div>
@@ -694,8 +698,12 @@ document.getElementById('seriesBackBtn').addEventListener('click', () => { curre
 function openPlayer(id){
   const m = movies.find(x => x.id === id);
   if(!m) return;
-  if(m.category === 'adult' && !adultUnlocked){ requestAdultUnlock(() => openPlayer(id)); return; }
-  if(m.isPremium && !isPremiumActive()){ openPremiumGate(id); return; }
+  if(m.category === 'adult'){
+    if(!isPremiumActive()){ openPremiumGate(id); return; }
+    if(!adultUnlocked){ requestAdultUnlock(() => openPlayer(id)); return; }
+  } else if(m.isPremium && !isPremiumActive()){
+    openPremiumGate(id); return;
+  }
 
   document.getElementById('modalVideoWrap').innerHTML =
     `<button class="modal-close" id="modalClose">✕</button><video src="${esc(m.videoUrl)}" controls autoplay></video>`;
