@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maxflix Streaming — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase (compat SDK) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --bg:#0a0a0d; --bg-elev:#131318; --bg-card:#1a1a21;
+    --ink:#f2f0ea; --ink-dim:#a8a6ac; --ink-faint:#6b6970;
+    --accent:#e0263f; --accent-dim:#8f1a2a; --gold:#d4a62a; --line:rgba(255,255,255,.08);
+    --font-display:'Bebas Neue','Noto Sans Myanmar',sans-serif;
+    --font-body:'Work Sans','Noto Sans Myanmar',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-body);min-height:100vh;}
+  input,textarea,select{width:100%;background:var(--bg-card);border:1px solid var(--line);color:var(--ink);
+    padding:10px 12px;border-radius:4px;font-size:14px;font-family:inherit;}
+  input:focus,textarea:focus,select:focus{outline:1px solid var(--accent);}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  .btn{padding:12px 24px;border-radius:4px;font-weight:600;font-size:14px;}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-ghost{background:rgba(255,255,255,.1);color:var(--ink);}
+
+  /* Login */
+  .login-wrap{max-width:360px;margin:100px auto;text-align:center;padding:0 16px;}
+  .login-mark{width:56px;height:56px;margin:0 auto 14px;}
+  .login-wrap h1{font-family:var(--font-display);font-size:26px;color:var(--ink);letter-spacing:2px;margin-bottom:4px;}
+  .login-wrap .brand-sub{display:block;font-family:var(--font-body);font-size:10px;letter-spacing:3px;color:var(--ink-faint);font-weight:600;margin-bottom:20px;}
+  .login-wrap p{color:var(--ink-faint);font-size:13px;margin-bottom:24px;}
+  .field{margin-bottom:14px;text-align:left;}
+  .field label{display:block;font-size:12px;color:var(--ink-dim);margin-bottom:6px;}
+  .err-msg{font-size:12px;color:var(--accent);margin-top:10px;display:none;}
+  .err-msg.show{display:block;}
+
+  /* Dashboard */
+  .dash{display:none;max-width:920px;margin:0 auto;padding:36px 20px 80px;}
+  .dash-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;}
+  .dash-title{font-family:var(--font-display);font-size:30px;letter-spacing:1px;}
+  .dash-sub{color:var(--ink-faint);font-size:12px;}
+  .card-form{background:var(--bg-elev);border:1px solid var(--line);border-radius:8px;padding:24px;margin-bottom:32px;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .status{font-size:12px;padding:9px 12px;border-radius:4px;margin-bottom:14px;display:none;}
+  .status.show{display:block;}
+  .status-ok{background:rgba(46,160,67,.15);color:#4fd371;}
+  .status-err{background:rgba(224,38,63,.15);color:var(--accent);}
+  .progress-wrap{background:var(--bg-card);border-radius:20px;height:8px;overflow:hidden;margin-top:8px;display:none;}
+  .progress-wrap.show{display:block;}
+  .progress-bar{height:100%;background:var(--accent);width:0%;transition:width .2s;}
+  .progress-label{font-size:11px;color:var(--ink-faint);margin-top:4px;}
+  .drop-zone{border:2px dashed var(--line);border-radius:6px;padding:24px;text-align:center;color:var(--ink-faint);font-size:13px;cursor:pointer;}
+  .drop-zone.drag{border-color:var(--accent);color:var(--ink);}
+  .drop-zone input{display:none;}
+  .file-name{font-size:12px;color:var(--gold);margin-top:8px;}
+
+  .list-item{display:flex;gap:14px;align-items:center;padding:12px;border:1px solid var(--line);
+    border-radius:6px;margin-bottom:10px;background:var(--bg-elev);}
+  .list-thumb{width:52px;height:78px;object-fit:cover;border-radius:4px;background:#222;flex-shrink:0;}
+  .list-info{flex:1;min-width:0;}
+  .list-info .t{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .list-info .m{font-size:11px;color:var(--ink-faint);}
+  .del-btn{font-size:12px;color:var(--accent);border:1px solid var(--accent-dim);padding:6px 12px;border-radius:4px;background:none;}
+  .empty{color:var(--ink-faint);font-size:13px;padding:24px;text-align:center;border:1px dashed var(--line);border-radius:6px;}
+  .logout{font-size:12px;color:var(--ink-faint);border:1px solid var(--line);padding:6px 14px;border-radius:20px;background:none;}
+  .helper{font-size:11px;color:var(--ink-faint);}
+
+  .dash-tabs{display:flex;gap:6px;margin-bottom:24px;background:var(--bg-card);border-radius:8px;padding:5px;width:fit-content;}
+  .dash-tab{padding:9px 20px;font-size:13px;font-weight:600;border-radius:6px;color:var(--ink-faint);}
+  .dash-tab.active{background:var(--accent);color:#fff;}
+  .panel{display:none;}
+  .panel.open{display:block;}
+
+  .req-item{display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--line);
+    border-radius:6px;margin-bottom:10px;background:var(--bg-elev);flex-wrap:wrap;}
+  .req-info{flex:1;min-width:200px;}
+  .req-info .t{font-weight:600;font-size:14px;}
+  .req-info .m{font-size:11px;color:var(--ink-faint);margin-top:3px;}
+  .req-info .txn{font-size:12px;color:var(--gold);margin-top:4px;font-family:monospace;}
+  .req-actions{display:flex;gap:8px;}
+  .approve-btn{font-size:12px;color:#4fd371;border:1px solid #2e8843;padding:8px 16px;border-radius:4px;background:none;}
+  .approve-btn:hover{background:rgba(46,160,67,.15);}
+  .reject-btn{font-size:12px;color:var(--accent);border:1px solid var(--accent-dim);padding:8px 16px;border-radius:4px;background:none;}
+  .reject-btn:hover{background:rgba(224,38,63,.15);}
+  .req-status{font-size:11px;padding:3px 10px;border-radius:10px;font-weight:600;}
+  .req-status.pending{background:rgba(212,166,42,.15);color:var(--gold);}
+  .req-status.approved{background:rgba(46,160,67,.15);color:#4fd371;}
+  .req-status.rejected{background:rgba(224,38,63,.15);color:var(--accent);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <svg class="login-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="mfGradLogin" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f0324a"/>
+        <stop offset="100%" stop-color="#8f1a2a"/>
+      </linearGradient>
+    </defs>
+    <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#mfGradLogin)"/>
+    <rect x="1" y="1" width="38" height="38" rx="10" fill="none" stroke="rgba(255,255,255,.15)"/>
+    <path d="M15 12 L28 20 L15 28 Z" fill="#f2f0ea"/>
+  </svg>
+  <h1>MAXFLIX</h1>
+  <span class="brand-sub">STREAMING · ADMIN</span>
+  <p>Content Dashboard သို့ Login ဝင်ပါ</p>
+  <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="admin@example.com"></div>
+  <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+  <button class="btn btn-primary" style="width:100%;" id="loginBtn">Login</button>
+  <div class="err-msg" id="loginErr"></div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dash">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">Content Dashboard</div>
+      <div class="dash-sub" id="whoami"></div>
+    </div>
+    <button class="logout" id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="dash-tabs">
+    <button class="dash-tab active" id="tabContent">Content</button>
+    <button class="dash-tab" id="tabPremium">Premium Requests <span id="pendingBadge"></span></button>
+  </div>
+
+  <div class="panel open" id="panelContent">
+  <div class="status status-ok" id="statusOk">✓ ဇာတ်ကား သိမ်းဆည်းပြီးပါပြီ</div>
+  <div class="status status-err" id="statusErr"></div>
+
+  <div class="card-form">
+    <div class="grid-2">
+      <div class="field"><label>ဇာတ်ကား/Episode အမည် *</label><input type="text" id="fTitle"></div>
+      <div class="field"><label>အမျိုးအစား *</label>
+        <select id="fCategory">
+          <option value="original">Own</option>
+          <option value="drama">Short Drama</option>
+          <option value="adult">18+</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2" id="dramaFields" style="display:none;">
+      <div class="field"><label>Series/Collection အမည် *</label><input type="text" id="fSeriesName" placeholder="ဥပမာ - နွေဦးရောက်ချိန် (drama name)"></div>
+      <div class="field"><label>Episode အမှတ်</label><input type="number" id="fEpisodeNumber" min="1" placeholder="1, 2, 3..."></div>
+    </div>
+    <p class="helper" id="dramaHelper" style="display:none;margin-bottom:14px;">Series အမည်တူတူထည့်ရင် episode တွေအတူတကွ collection အနေနဲ့ အလိုအလျောက် စုပေါင်းသွားပါမယ်</p>
+
+    <div class="field">
+      <label>Video File * (mp4 file ကို တိုက်ရိုက် upload)</label>
+      <div class="drop-zone" id="videoDrop">
+        <input type="file" id="fVideoFile" accept="video/*">
+        <span id="videoDropLabel">Click သို့မဟုတ် drag ဆွဲပြီး video file ချပါ</span>
+        <div class="file-name" id="videoFileName"></div>
+      </div>
+      <div class="progress-wrap" id="videoProgressWrap"><div class="progress-bar" id="videoProgressBar"></div></div>
+      <div class="progress-label" id="videoProgressLabel"></div>
+    </div>
+
+    <div class="field">
+      <label>Thumbnail File (poster ပုံ — optional)</label>
+      <div class="drop-zone" id="thumbDrop">
+        <input type="file" id="fThumbFile" accept="image/*">
+        <span id="thumbDropLabel">Click သို့မဟုတ် drag ဆွဲပြီး ပုံချပါ</span>
+        <div class="file-name" id="thumbFileName"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field"><label>ကြာချိန်</label><input type="text" id="fDuration" placeholder="ဥပမာ - 3 မိနစ်"></div>
+      <div class="field"><label>Featured (hero တွင်ပြမည်)</label>
+        <select id="fFeatured"><option value="no">မပြရန်</option><option value="yes">Hero တွင်ပြရန်</option></select>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field"><label>Premium content (ငွေပေးမှသာ ကြည့်ခွင့်)</label>
+        <select id="fPremium"><option value="no">Free — လူတိုင်း ကြည့်ခွင့်ရ</option><option value="yes">Premium — subscriber သာ ကြည့်ခွင့်ရ</option></select>
+      </div>
+      <div></div>
+    </div>
+
+    <div class="field"><label>အကျဉ်းချုပ်</label><textarea id="fDesc" rows="3"></textarea></div>
+
+    <button class="btn btn-primary" id="addBtn">➕ Upload &amp; ထည့်မည်</button>
+  </div>
+
+  <div class="dash-title" style="font-size:22px;margin-bottom:14px;">ထည့်ထားသော ဇာတ်ကားများ</div>
+  <div id="adminList"></div>
+  </div>
+
+  <div class="panel" id="panelPremium">
+    <div class="dash-title" style="font-size:22px;margin-bottom:6px;">Premium Requests</div>
+    <p class="helper" style="margin-bottom:18px;">User များ တင်သွင်းထားတဲ့ KBZPay/WavePay Transaction ID များကို စစ်ဆေးပြီး Approve/Reject လုပ်ပါ</p>
+    <div id="requestList"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   1) FIREBASE CONFIG — public-site/index.html ထဲက အတူတူ ကူးထည့်ပါ
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAlhyV1lHqDxgs4Of5zjNUUB5VW0L6nbh8",
+  authDomain: "movies-streamer-fee4e.firebaseapp.com",
+  projectId: "movies-streamer-fee4e",
+  storageBucket: "movies-streamer-fee4e.firebasestorage.app",
+  messagingSenderId: "794583348977",
+  appId: "1:794583348977:web:ad328082797449cd42db50",
+  measurementId: "G-9W99RKQPVQ"
+};
+firebase.initializeApp(firebaseConfig, "adminApp");
+const auth = firebase.app("adminApp").auth();
+const db = firebase.app("adminApp").firestore();
+
+/* =========================================================
+   2) BUNNY.NET STORAGE CONFIG — Bunny dashboard > Storage > (your zone) > FTP & API Access ကနေ ကူးထည့်ပါ
+   ========================================================= */
+const BUNNY_STORAGE_HOST = "storage.bunnycdn.com";
+const BUNNY_STORAGE_ZONE = "maxflixstreaming";
+const BUNNY_API_KEY = "595d6131-901a-4ffc-8ad20f125756-77bc-49d6";
+const BUNNY_PULL_ZONE_URL = "https://maxflixstreaminggp.b-cdn.net";
+
+const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8," + encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' width='52' height='78'><rect width='52' height='78' fill='%23222'/></svg>`);
+function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const CATEGORY_LABEL = { original: 'Own', drama: 'Short Drama', adult: '18+' };
+const PREMIUM_DURATION_DAYS = 30; // Approve လုပ်ရင် ဒီရက်ပေါင်းအတိုင်း premium ရမယ် — ချင်ရင် ဒီကို ပြောင်းလို့ရ
+
+/* =========================================================
+   1b) ADMIN ALLOWLIST — Firestore rules ထဲက admin uid အတိုင်းပဲ
+   ========================================================= */
+const ADMIN_UID = "W5AhXhm7TCdOiAP6tvdRwaIfcwn2";
+
+let videoFile = null, thumbFile = null;
+
+/* ---------- Dashboard tab switching ---------- */
+document.getElementById('tabContent').addEventListener('click', () => switchDashTab('content'));
+document.getElementById('tabPremium').addEventListener('click', () => switchDashTab('premium'));
+function switchDashTab(tab){
+  document.getElementById('tabContent').classList.toggle('active', tab==='content');
+  document.getElementById('tabPremium').classList.toggle('active', tab==='premium');
+  document.getElementById('panelContent').classList.toggle('open', tab==='content');
+  document.getElementById('panelPremium').classList.toggle('open', tab==='premium');
+}
+
+/* ---------- Toggle Series/Episode fields for Short Drama ---------- */
+function toggleDramaFields(){
+  const isDrama = document.getElementById('fCategory').value === 'drama';
+  document.getElementById('dramaFields').style.display = isDrama ? 'grid' : 'none';
+  document.getElementById('dramaHelper').style.display = isDrama ? 'block' : 'none';
+}
+document.getElementById('fCategory').addEventListener('change', toggleDramaFields);
+toggleDramaFields();
+
+/* ---------- Auth ---------- */
+document.getElementById('loginBtn').addEventListener('click', () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  document.getElementById('loginErr').classList.remove('show');
+  auth.signInWithEmailAndPassword(email, pass).catch(err => {
+    const el = document.getElementById('loginErr');
+    el.textContent = 'Login မအောင်မြင်ပါ — email/password စစ်ကြည့်ပါ';
+    el.classList.add('show');
+  });
+});
+document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+
+auth.onAuthStateChanged(user => {
+  if(user && user.uid === ADMIN_UID){
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
+    document.getElementById('whoami').textContent = user.email + ' အနေဖြင့် login ဝင်ထားသည်';
+    listenMovies();
+    listenPremiumRequests();
+  } else {
+    document.getElementById('loginWrap').style.display = 'block';
+    document.getElementById('dash').style.display = 'none';
+    if(user){
+      // Public site ကနေ login ဝင်ထားတဲ့ account (admin မဟုတ်) — ချက်ချင်း logout
+      auth.signOut();
+      const el = document.getElementById('loginErr');
+      el.textContent = 'ဒီ account က Admin permission မရှိပါ';
+      el.classList.add('show');
+    }
+  }
+});
+
+/* ---------- File pickers ---------- */
+function wireDrop(dropId, inputId, labelId, nameId, onFile){
+  const drop = document.getElementById(dropId);
+  const input = document.getElementById(inputId);
+  drop.addEventListener('click', () => input.click());
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('drag');
+    if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  input.addEventListener('change', () => { if(input.files[0]) handleFile(input.files[0]); });
+  function handleFile(file){
+    onFile(file);
+    document.getElementById(nameId).textContent = `✓ ${file.name} (${(file.size/1024/1024).toFixed(1)} MB)`;
+  }
+}
+wireDrop('videoDrop','fVideoFile','videoDropLabel','videoFileName', f => videoFile = f);
+wireDrop('thumbDrop','fThumbFile','thumbDropLabel','thumbFileName', f => thumbFile = f);
+
+/* ---------- Upload helper (Bunny.net Storage API) ---------- */
+function uploadFile(file, path, onProgress){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const url = `https://${BUNNY_STORAGE_HOST}/${BUNNY_STORAGE_ZONE}/${path}`;
+    xhr.open('PUT', url, true);
+    xhr.setRequestHeader('AccessKey', BUNNY_API_KEY);
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    xhr.upload.onprogress = e => {
+      if(e.lengthComputable && onProgress) onProgress((e.loaded / e.total) * 100);
+    };
+    xhr.onload = () => {
+      if(xhr.status >= 200 && xhr.status < 300){
+        resolve({ url: `${BUNNY_PULL_ZONE_URL}/${path}`, path });
+      } else {
+        reject(new Error(`Bunny upload failed (${xhr.status}) — API key/zone name စစ်ကြည့်ပါ`));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error — Bunny storage host/CORS ကို စစ်ကြည့်ပါ'));
+    xhr.send(file);
+  });
+}
+
+function deleteFromBunny(path){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const url = `https://${BUNNY_STORAGE_HOST}/${BUNNY_STORAGE_ZONE}/${path}`;
+    xhr.open('DELETE', url, true);
+    xhr.setRequestHeader('AccessKey', BUNNY_API_KEY);
+    xhr.onload = () => resolve();
+    xhr.onerror = () => reject(new Error('Bunny file ဖျက်၍ မရပါ'));
+    xhr.send();
+  });
+}
+
+/* ---------- Add movie ---------- */
+document.getElementById('addBtn').addEventListener('click', async () => {
+  const title = document.getElementById('fTitle').value.trim();
+  const category = document.getElementById('fCategory').value;
+  const seriesName = document.getElementById('fSeriesName').value.trim();
+  const episodeNumber = document.getElementById('fEpisodeNumber').value ? Number(document.getElementById('fEpisodeNumber').value) : null;
+  const duration = document.getElementById('fDuration').value.trim();
+  const featured = document.getElementById('fFeatured').value === 'yes';
+  const isPremium = document.getElementById('fPremium').value === 'yes';
+  const desc = document.getElementById('fDesc').value.trim();
+  const statusErr = document.getElementById('statusErr');
+  const statusOk = document.getElementById('statusOk');
+  statusErr.classList.remove('show'); statusOk.classList.remove('show');
+
+  if(!title || !videoFile){
+    statusErr.textContent = 'အမည်နှင့် Video File ကို ဖြည့်ပါ';
+    statusErr.classList.add('show');
+    return;
+  }
+  if(category === 'drama' && !seriesName){
+    statusErr.textContent = 'Short Drama အတွက် Series/Collection အမည် ဖြည့်ပါ';
+    statusErr.classList.add('show');
+    return;
+  }
+
+  const addBtn = document.getElementById('addBtn');
+  addBtn.disabled = true; addBtn.textContent = 'Upload လုပ်နေသည်...';
+  document.getElementById('videoProgressWrap').classList.add('show');
+
+  try{
+    const id = 'm_' + Date.now();
+    const videoResult = await uploadFile(videoFile, `videos/${id}_${videoFile.name}`, pct => {
+      document.getElementById('videoProgressBar').style.width = pct + '%';
+      document.getElementById('videoProgressLabel').textContent = `Video: ${pct.toFixed(0)}%`;
+    });
+
+    let thumbResult = null;
+    if(thumbFile){
+      document.getElementById('videoProgressLabel').textContent = 'Thumbnail upload လုပ်နေသည်...';
+      thumbResult = await uploadFile(thumbFile, `thumbnails/${id}_${thumbFile.name}`);
+    }
+
+    await db.collection('movies').doc(id).set({
+      title, category, duration, featured, desc, isPremium,
+      seriesName: category === 'drama' ? seriesName : null,
+      episodeNumber: category === 'drama' ? episodeNumber : null,
+      videoUrl: videoResult.url, videoPath: videoResult.path,
+      thumbUrl: thumbResult ? thumbResult.url : null, thumbPath: thumbResult ? thumbResult.path : null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    statusOk.classList.add('show');
+    setTimeout(() => statusOk.classList.remove('show'), 3000);
+
+    // reset form
+    ['fTitle','fDuration','fDesc','fSeriesName','fEpisodeNumber'].forEach(id2 => document.getElementById(id2).value = '');
+    document.getElementById('fFeatured').value = 'no';
+    document.getElementById('fPremium').value = 'no';
+    document.getElementById('videoFileName').textContent = '';
+    document.getElementById('thumbFileName').textContent = '';
+    document.getElementById('videoProgressWrap').classList.remove('show');
+    document.getElementById('videoProgressBar').style.width = '0%';
+    document.getElementById('videoProgressLabel').textContent = '';
+    videoFile = null; thumbFile = null;
+  }catch(err){
+    statusErr.textContent = 'Upload မအောင်မြင်ပါ — ' + err.message;
+    statusErr.classList.add('show');
+  }finally{
+    addBtn.disabled = false; addBtn.textContent = '➕ Upload & ထည့်မည်';
+  }
+});
+
+/* ---------- List + delete ---------- */
+function listenMovies(){
+  db.collection('movies').orderBy('createdAt','desc').onSnapshot(snap => {
+    const list = document.getElementById('adminList');
+    if(snap.empty){ list.innerHTML = `<div class="empty">ဇာတ်ကား မထည့်ရသေးပါ</div>`; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const m = d.data();
+      const seriesTag = m.category === 'drama' && m.seriesName ? ` · ${esc(m.seriesName)}${m.episodeNumber ? ' Ep '+m.episodeNumber : ''}` : '';
+      return `<div class="list-item">
+        <img class="list-thumb" src="${m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+        <div class="list-info">
+          <div class="t">${esc(m.title)}${m.featured ? ' ⭐' : ''}${m.isPremium ? ' <span style="color:var(--gold);">★ Premium</span>' : ''}</div>
+          <div class="m">${CATEGORY_LABEL[m.category] || ''}${seriesTag} ${m.duration ? '• '+esc(m.duration) : ''}</div>
+        </div>
+        <button class="del-btn" data-id="${d.id}" data-video="${esc(m.videoPath||'')}" data-thumb="${esc(m.thumbPath||'')}">ဖျက်မည်</button>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.del-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if(!confirm('ဖျက်မှာ သေချာပါသလား?')) return;
+        const { id, video, thumb } = btn.dataset;
+        try{
+          if(video) await deleteFromBunny(video).catch(()=>{});
+          if(thumb) await deleteFromBunny(thumb).catch(()=>{});
+          await db.collection('movies').doc(id).delete();
+        }catch(err){ alert('ဖျက်၍ မရပါ — ' + err.message); }
+      });
+    });
+  });
+}
+
+/* ---------- Premium Requests ---------- */
+function listenPremiumRequests(){
+  db.collection('premiumRequests').orderBy('createdAt','desc').onSnapshot(snap => {
+    const list = document.getElementById('requestList');
+    const pendingCount = snap.docs.filter(d => d.data().status === 'pending').length;
+    document.getElementById('pendingBadge').textContent = pendingCount ? `(${pendingCount})` : '';
+
+    if(snap.empty){ list.innerHTML = `<div class="empty">Request မရှိသေးပါ</div>`; return; }
+    list.innerHTML = snap.docs.map(d => {
+      const r = d.data();
+      const isPending = r.status === 'pending';
+      return `<div class="req-item">
+        <div class="req-info">
+          <div class="t">${esc(r.email)}</div>
+          <div class="m">${esc(r.paymentMethod)} · <span class="req-status ${r.status}">${r.status}</span></div>
+          <div class="txn">Txn ID: ${esc(r.transactionId)}</div>
+        </div>
+        ${isPending ? `<div class="req-actions">
+          <button class="approve-btn" data-id="${d.id}" data-uid="${esc(r.uid)}">✓ Approve</button>
+          <button class="reject-btn" data-id="${d.id}">✕ Reject</button>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const { id, uid } = btn.dataset;
+        try{
+          const expiresAt = firebase.firestore.Timestamp.fromDate(
+            new Date(Date.now() + PREMIUM_DURATION_DAYS * 24 * 60 * 60 * 1000)
+          );
+          await db.collection('users').doc(uid).set({ isPremium: true, premiumExpiresAt: expiresAt }, { merge: true });
+          await db.collection('premiumRequests').doc(id).update({
+            status: 'approved', reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }catch(err){ alert('Approve မလုပ်နိုင်ပါ — ' + err.message); }
+      });
+    });
+    list.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try{
+          await db.collection('premiumRequests').doc(btn.dataset.id).update({
+            status: 'rejected', reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }catch(err){ alert('Reject မလုပ်နိုင်ပါ — ' + err.message); }
+      });
+    });
+  });
+}
+</script>
+</body>
+</html>
