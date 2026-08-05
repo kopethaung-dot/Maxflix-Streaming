@@ -8,6 +8,7 @@
 
 <!-- Firebase (compat SDK — no build tools needed) -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
 <style>
@@ -22,11 +23,49 @@
   body{background:var(--bg);color:var(--ink);font-family:var(--font-body);}
   a{color:inherit;text-decoration:none;}
   img{display:block;max-width:100%;}
-  header{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
-    padding:16px clamp(16px,4vw,56px);background:linear-gradient(to bottom,rgba(10,10,13,.95),transparent);}
-  .brand{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-size:26px;letter-spacing:2px;color:var(--ink);}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  input,select{width:100%;background:var(--bg-card);border:1px solid var(--line);color:var(--ink);
+    padding:11px 12px;border-radius:5px;font-size:14px;font-family:inherit;}
+  input:focus,select:focus{outline:1px solid var(--accent);}
+  label{display:block;font-size:12px;color:var(--ink-dim);margin-bottom:6px;}
+  .field{margin-bottom:13px;text-align:left;}
+
+  /* ---------- Header / Nav ---------- */
+  header{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;
+    padding:14px clamp(16px,4vw,56px);background:linear-gradient(to bottom,rgba(10,10,13,.97),rgba(10,10,13,.85) 70%,transparent);
+    backdrop-filter:blur(6px);gap:16px;}
+  .brand{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-size:26px;letter-spacing:2px;color:var(--ink);cursor:pointer;flex-shrink:0;}
   .brand-sub{font-family:var(--font-body);font-size:9px;letter-spacing:3px;color:var(--ink-faint);font-weight:600;margin-left:1px;}
   .brand-mark{width:34px;height:34px;flex-shrink:0;}
+
+  .site-nav{display:flex;align-items:center;gap:26px;flex:1;}
+  .nav-tab{font-size:14px;font-weight:600;color:var(--ink-dim);letter-spacing:.3px;
+    padding:6px 2px;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;white-space:nowrap;}
+  .nav-tab:hover{color:var(--ink);}
+  .nav-tab.active{color:var(--ink);border-bottom-color:var(--accent);}
+
+  .account-area{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .account-btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;background:var(--accent);color:#fff;white-space:nowrap;}
+  .account-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim);cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:20px;}
+  .premium-pill{font-size:10px;font-weight:700;letter-spacing:.5px;color:#0a0a0d;background:var(--gold);padding:2px 8px;border-radius:10px;}
+
+  .hamburger{display:none;width:38px;height:38px;align-items:center;justify-content:center;border-radius:6px;flex-shrink:0;}
+  .hamburger:hover{background:rgba(255,255,255,.08);}
+  .hamburger svg{width:20px;height:20px;}
+
+  .mobile-menu{position:fixed;top:64px;left:0;right:0;z-index:55;background:var(--bg-elev);
+    border-bottom:1px solid var(--line);display:none;flex-direction:column;padding:8px 0;
+    box-shadow:0 10px 24px rgba(0,0,0,.4);}
+  .mobile-menu.open{display:flex;}
+  .mobile-menu .nav-tab{padding:14px 24px;border-bottom:1px solid var(--line);border-left:2px solid transparent;}
+  .mobile-menu .nav-tab.active{border-left-color:var(--accent);background:rgba(224,38,63,.08);}
+
+  @media (max-width:820px){
+    .site-nav{display:none;}
+    .hamburger{display:flex;}
+  }
+
+  /* ---------- Hero ---------- */
   .hero{position:relative;min-height:70vh;display:flex;align-items:flex-end;
     padding:0 clamp(16px,4vw,56px) 60px;background-size:cover;background-position:center;background-color:var(--bg-elev);}
   .hero::before{content:'';position:absolute;inset:0;
@@ -36,23 +75,61 @@
     border:1px solid var(--gold);padding:4px 10px;border-radius:20px;margin-bottom:16px;}
   .hero-title{font-family:var(--font-display);font-size:clamp(36px,6vw,64px);line-height:1.05;margin-bottom:14px;}
   .hero-desc{color:var(--ink-dim);font-size:14px;max-width:460px;margin-bottom:22px;}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 26px;border-radius:4px;font-weight:600;font-size:14px;border:none;cursor:pointer;font-family:inherit;}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 26px;border-radius:4px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;}
   .btn-primary{background:var(--ink);color:#111;}
+  .btn-ghost{background:rgba(255,255,255,.12);color:var(--ink);}
+  .btn-accent{background:var(--accent);color:#fff;}
+  .btn-block{width:100%;justify-content:center;}
+
+  /* ---------- Rows / Grids ---------- */
   .rows{padding:12px clamp(16px,4vw,56px) 60px;display:flex;flex-direction:column;gap:34px;}
   .row-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;}
   .row-title{font-family:var(--font-display);font-size:22px;letter-spacing:1px;}
   .row-count{font-size:12px;color:var(--ink-faint);}
   .row-track{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px;}
+
+  .page{display:none;padding:100px clamp(16px,4vw,56px) 60px;}
+  .page.open{display:block;}
+  .page-title{font-family:var(--font-display);font-size:32px;letter-spacing:1px;margin-bottom:4px;}
+  .page-sub{color:var(--ink-faint);font-size:13px;margin-bottom:26px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
+
   .card{position:relative;flex:0 0 auto;width:210px;background:var(--bg-card);border:1px solid var(--line);
     border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .15s;}
+  .grid .card{width:100%;}
   .card:hover{transform:translateY(-5px);border-color:var(--accent-dim);}
   .card-thumb{width:100%;aspect-ratio:2/3;object-fit:cover;background:#222;}
   .card-duration{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:var(--gold);
     font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;}
+  .card-badge{position:absolute;top:8px;left:8px;background:var(--accent);color:#fff;
+    font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;}
+  .card-premium{position:absolute;bottom:52px;left:8px;background:var(--gold);color:#0a0a0d;
+    font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 8px;border-radius:3px;}
   .card-body{padding:10px 12px;}
   .card-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .card-meta{font-size:11px;color:var(--ink-faint);}
-  .empty-row{color:var(--ink-faint);font-size:13px;padding:26px;border:1px dashed var(--line);border-radius:6px;width:100%;text-align:center;}
+  .empty-row,.empty-page{color:var(--ink-faint);font-size:13px;padding:26px;border:1px dashed var(--line);border-radius:6px;width:100%;text-align:center;}
+
+  /* ---------- Series detail (episode list) ---------- */
+  .series-header{display:flex;gap:22px;margin-bottom:30px;flex-wrap:wrap;}
+  .series-poster{width:160px;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:#222;flex-shrink:0;}
+  .series-info h2{font-family:var(--font-display);font-size:30px;letter-spacing:1px;margin-bottom:8px;}
+  .series-info .count{font-size:12px;color:var(--gold);margin-bottom:10px;}
+  .series-info p{color:var(--ink-dim);font-size:14px;max-width:520px;}
+  .back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-faint);margin-bottom:18px;}
+  .back-link:hover{color:var(--ink);}
+  .ep-list{display:flex;flex-direction:column;gap:10px;}
+  .ep-item{display:flex;gap:14px;align-items:center;padding:10px;border:1px solid var(--line);
+    border-radius:6px;cursor:pointer;background:var(--bg-elev);transition:border-color .15s;position:relative;}
+  .ep-item:hover{border-color:var(--accent-dim);}
+  .ep-num{font-family:var(--font-display);font-size:22px;color:var(--ink-faint);width:34px;text-align:center;flex-shrink:0;}
+  .ep-thumb{width:64px;height:96px;object-fit:cover;border-radius:4px;background:#222;flex-shrink:0;}
+  .ep-info{flex:1;min-width:0;}
+  .ep-info .t{font-size:14px;font-weight:600;}
+  .ep-info .m{font-size:11px;color:var(--ink-faint);margin-top:2px;}
+  .ep-play{font-size:18px;color:var(--ink-faint);padding:8px;}
+
+  /* ---------- Player modal ---------- */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
   .modal-overlay.open{display:flex;}
   .modal-box{width:min(900px,100%);background:var(--bg-elev);border-radius:10px;overflow:hidden;border:1px solid var(--line);}
@@ -64,42 +141,115 @@
   .modal-desc{font-size:14px;color:var(--ink-dim);}
   .modal-close{position:absolute;top:12px;right:12px;z-index:5;width:34px;height:34px;border-radius:50%;
     background:rgba(0,0,0,.6);color:#fff;border:none;font-size:18px;cursor:pointer;}
+
+  /* ---------- Generic small modal (auth / pin / premium gate) ---------- */
+  .sm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:110;padding:20px;}
+  .sm-overlay.open{display:flex;}
+  .sm-box{width:min(380px,100%);background:var(--bg-elev);border:1px solid var(--line);border-radius:10px;padding:26px 24px;text-align:center;max-height:88vh;overflow-y:auto;}
+  .sm-box h3{font-family:var(--font-display);font-size:24px;letter-spacing:1px;margin-bottom:6px;}
+  .sm-box p{font-size:12px;color:var(--ink-faint);margin-bottom:16px;}
+  .sm-err{font-size:12px;color:var(--accent);margin:8px 0;display:none;}
+  .sm-err.show{display:block;}
+  .sm-ok{font-size:12px;color:#4fd371;margin:8px 0;display:none;}
+  .sm-ok.show{display:block;}
+  .sm-tabs{display:flex;gap:4px;margin-bottom:18px;background:var(--bg-card);border-radius:6px;padding:4px;}
+  .sm-tab{flex:1;padding:8px;font-size:13px;font-weight:600;border-radius:4px;color:var(--ink-faint);}
+  .sm-tab.active{background:var(--accent);color:#fff;}
+  .sm-close-x{position:absolute;top:14px;right:18px;font-size:18px;color:var(--ink-faint);}
+  .pay-info{background:var(--bg-card);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:16px;text-align:left;}
+  .pay-info .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;}
+  .pay-info .row b{color:var(--gold);}
+  .pin-input{letter-spacing:8px;text-align:center;font-size:20px;}
+
   footer{padding:26px clamp(16px,4vw,56px);border-top:1px solid var(--line);color:var(--ink-faint);font-size:12px;text-align:center;}
   .loading{padding:60px;text-align:center;color:var(--ink-faint);font-size:13px;}
 </style>
 </head>
-<body>
+<body style="position:relative;">
 
 <header>
-  <div class="brand">
+  <div class="brand" data-view="home">
     <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#f0324a"/>
-          <stop offset="100%" stop-color="#8f1a2a"/>
-        </linearGradient>
-      </defs>
+      <defs><linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f0324a"/><stop offset="100%" stop-color="#8f1a2a"/>
+      </linearGradient></defs>
       <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#mfGrad)"/>
       <rect x="1" y="1" width="38" height="38" rx="10" fill="none" stroke="rgba(255,255,255,.15)"/>
       <path d="M15 12 L28 20 L15 28 Z" fill="#f2f0ea"/>
     </svg>
     <span>MAXFLIX<span class="brand-sub">STREAMING</span></span>
   </div>
+
+  <nav class="site-nav">
+    <button class="nav-tab active" data-view="home">ပင်မစာမျက်နှာ</button>
+    <button class="nav-tab" data-view="own">Own</button>
+    <button class="nav-tab" data-view="drama">Short Drama</button>
+    <button class="nav-tab" data-view="adult">18+</button>
+  </nav>
+
+  <div class="account-area" id="accountArea">
+    <button class="account-btn" id="loginNavBtn">Login / Sign up</button>
+  </div>
+
+  <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
 </header>
 
-<section class="hero" id="heroSection">
-  <div class="hero-content">
-    <span class="hero-badge" id="heroBadge">ယနေ့ အထူးဇာတ်ကား</span>
-    <h1 class="hero-title" id="heroTitle">Maxflix Streaming မှ ကြိုဆိုပါတယ်</h1>
-    <p class="hero-desc" id="heroDesc">ဇာတ်ကားများ တင်နေဆဲ...</p>
-    <button class="btn btn-primary" id="heroPlayBtn">▶ ကြည့်မည်</button>
-  </div>
-</section>
-
-<div class="rows" id="rowsWrap">
-  <div class="loading">ဇာတ်ကားများ ခေါ်နေသည်...</div>
+<div class="mobile-menu" id="mobileMenu">
+  <button class="nav-tab active" data-view="home">ပင်မစာမျက်နှာ</button>
+  <button class="nav-tab" data-view="own">Own</button>
+  <button class="nav-tab" data-view="drama">Short Drama</button>
+  <button class="nav-tab" data-view="adult">18+</button>
 </div>
 
+<!-- ================= HOME VIEW ================= -->
+<div id="view-home" class="view-root">
+  <section class="hero" id="heroSection">
+    <div class="hero-content">
+      <span class="hero-badge" id="heroBadge">ယနေ့ အထူးဇာတ်ကား</span>
+      <h1 class="hero-title" id="heroTitle">Maxflix Streaming မှ ကြိုဆိုပါတယ်</h1>
+      <p class="hero-desc" id="heroDesc">ဇာတ်ကားများ တင်နေဆဲ...</p>
+      <button class="btn btn-primary" id="heroPlayBtn">▶ ကြည့်မည်</button>
+    </div>
+  </section>
+  <div class="rows" id="rowsWrap">
+    <div class="loading">Load movies...</div>
+  </div>
+</div>
+
+<div id="view-own" class="page">
+  <div class="page-title">Own</div>
+  <div class="page-sub" id="ownCount"></div>
+  <div class="grid" id="ownGrid"></div>
+</div>
+
+<div id="view-drama" class="page">
+  <div class="page-title">Short Drama</div>
+  <div class="page-sub" id="dramaCount"></div>
+  <div class="grid" id="dramaGrid"></div>
+</div>
+
+<div id="view-adult" class="page">
+  <div class="page-title">18+</div>
+  <div class="page-sub" id="adultCount"></div>
+  <div class="grid" id="adultGrid"></div>
+</div>
+
+<div id="view-series" class="page">
+  <button class="back-link" id="seriesBackBtn">← Back to Short Drama</button>
+  <div class="series-header">
+    <img class="series-poster" id="seriesPoster" src="">
+    <div class="series-info">
+      <h2 id="seriesTitle"></h2>
+      <div class="count" id="seriesCount"></div>
+      <p id="seriesDesc"></p>
+    </div>
+  </div>
+  <div class="ep-list" id="epList"></div>
+</div>
+
+<!-- ================= PLAYER MODAL ================= -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box">
     <div class="modal-video-wrap" id="modalVideoWrap">
@@ -113,11 +263,80 @@
   </div>
 </div>
 
-<footer>Maxflix Streaming — Firebase Firestore + Storage ဖြင့် တည်ဆောက်ထားသည်</footer>
+<!-- ================= 18+ PIN LOCK MODAL ================= -->
+<div class="sm-overlay" id="pinOverlay">
+  <div class="sm-box">
+    <div style="font-size:28px;margin-bottom:8px;">🔒</div>
+    <h3>18+ Content</h3>
+    <p>ဆက်ကြည့်ရန် PIN နံပါတ် ရိုက်ထည့်ပါ</p>
+    <div class="field"><input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="******"></div>
+    <div class="sm-err" id="pinErr">PIN မှားနေပါတယ်</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-block" id="pinCancelBtn">Cancle</button>
+      <button class="btn btn-accent btn-block" id="pinSubmitBtn">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= AUTH MODAL (Login / Sign up) ================= -->
+<div class="sm-overlay" id="authOverlay">
+  <div class="sm-box" style="position:relative;">
+    <button class="sm-close-x" id="authCloseBtn">✕</button>
+    <h3 style="margin-top:6px;">Account</h3>
+    <p>Login သို့မဟုတ် Sign up ဝင်ပါ</p>
+    <div class="sm-tabs">
+      <button class="sm-tab active" id="tabLogin">Login</button>
+      <button class="sm-tab" id="tabSignup">Sign up</button>
+    </div>
+    <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"></div>
+    <div class="field"><label>Password</label><input type="password" id="authPass" placeholder="••••••••"></div>
+    <div class="sm-err" id="authErr"></div>
+    <button class="btn btn-accent btn-block" id="authSubmitBtn">Login</button>
+  </div>
+</div>
+
+<!-- ================= PREMIUM GATE MODAL ================= -->
+<div class="sm-overlay" id="premiumOverlay">
+  <div class="sm-box" style="position:relative;max-width:420px;">
+    <button class="sm-close-x" id="premiumCloseBtn">✕</button>
+
+    <!-- State: not logged in -->
+    <div id="premiumStateAuth" style="display:none;">
+      <div style="font-size:28px;margin-bottom:8px;">⭐</div>
+      <h3>Premium Content</h3>
+      <p>ဒီဇာတ်ကားကို ကြည့်ဖို့ login ဝင်ဖို့လိုပါတယ်</p>
+      <button class="btn btn-accent btn-block" id="premiumGoLoginBtn">Login / Sign up</button>
+    </div>
+
+    <!-- State: logged in, not premium, no pending request -->
+    <div id="premiumStatePay" style="display:none;">
+      <div style="font-size:28px;margin-bottom:8px;">⭐</div>
+      <h3>Premium လိုအပ်ပါတယ်</h3>
+      <p>ဒီဇာတ်ကားကို ကြည့်ဖို့ Premium subscription လိုအပ်ပါတယ်</p>
+      <div class="pay-info" id="payInfoBox"></div>
+      <div class="field"><label>ပေးချေမှု နည်းလမ်း</label>
+        <select id="fPayMethod"><option value="KBZPay">KBZPay</option><option value="WavePay">WavePay</option></select>
+      </div>
+      <div class="field"><label>Transaction ID / ငွေလွှဲအမှတ် *</label><input type="text" id="fTxnId" placeholder="ငွေလွှဲပြီးရင် Transaction ID နောက်ဆုံး ၄ လုံးကူးထည့်ပါ"></div>
+      <div class="sm-err" id="premiumErr"></div>
+      <button class="btn btn-accent btn-block" id="premiumSubmitBtn">တင်သွင်းမည်</button>
+    </div>
+
+    <!-- State: pending review -->
+    <div id="premiumStatePending" style="display:none;">
+      <div style="font-size:28px;margin-bottom:8px;">⏳</div>
+      <h3>စစ်ဆေးနေဆဲ</h3>
+      <p>သင့်ရဲ့ Premium request ကို admin မှ စစ်ဆေးနေပါတယ်။ အတည်ပြုပြီးပါကကြည့်ရှုနိုင်ပါပြီ။</p>
+      <button class="btn btn-ghost btn-block" id="premiumPendingCloseBtn">ပိတ်မည်</button>
+    </div>
+  </div>
+</div>
+
+<footer>Maxflix Streaming — All right reserved by Maxflix</footer>
 
 <script>
 /* =========================================================
-   1) FIREBASE CONFIG — Firebase Console > Project Settings ကနေ ကူးထည့်ပါ
+   1) FIREBASE CONFIG
    ========================================================= */
 const firebaseConfig = {
   apiKey: "AIzaSyAlhyV1lHqDxgs4Of5zjNUUB5VW0L6nbh8",
@@ -128,62 +347,362 @@ const firebaseConfig = {
   appId: "1:794583348977:web:ad328082797449cd42db50",
   measurementId: "G-9W99RKQPVQ"
 };
-
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const db = firebase.firestore();
+
+/* =========================================================
+   2) PREMIUM PAYMENT CONFIG — ကိုယ့် KBZPay/WavePay number & ဈေးနှုန်း ထည့်ပါ
+   ========================================================= */
+const PAYMENT_CONFIG = {
+  kbzpayNumber: "09446627892",
+  kbzpayName: "Hla Kyi Aung",
+  wavepayNumber: "09446627892",
+  wavepayName: "Hla Kyi Aung",
+  price: "5,000 MMK / ၃လ",
+  premiumDurationDays: 90 // admin approve လုပ်ရင် ဒီရက်ပေါင်းအတိုင်း premium ရမယ် (admin dashboard ထဲမှာ ချိန်ညှိလို့ရပါတယ်)
+};
 
 const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8," + encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' width='210' height='315'><rect width='210' height='315' fill='%231a1a21'/><text x='50%' y='50%' fill='%236b6970' font-size='13' font-family='sans-serif' text-anchor='middle'>No Poster</text></svg>`);
 
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const CATEGORY_LABEL = { original: 'Own', drama: 'Short Drama', adult: '18+' };
 
 let movies = [];
+let currentSeries = null;
+let currentUser = null;      // firebase auth user
+let currentUserDoc = null;   // Firestore users/{uid} doc data
+let currentPendingRequest = null; // latest pending premiumRequests doc for this user
+let pendingPlayId = null;    // movie id waiting on gate resolution
 
-function cardHtml(m){
-  const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
-  return `<div class="card" data-id="${m.id}">
-    <img class="card-thumb" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
-    ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
-    <div class="card-body">
-      <div class="card-title">${esc(m.title)}</div>
-      <div class="card-meta">${m.category==='drama' ? 'Short Drama' : 'ကိုယ်ပိုင်ဇာတ်ကား'}</div>
-    </div></div>`;
+/* =========================================================
+   3) NAVIGATION / VIEW ROUTING
+   ========================================================= */
+function showView(view){
+  document.querySelectorAll('.view-root, .page').forEach(el => {
+    el.classList.remove('open');
+    if(el.id === 'view-home') el.style.display = (view === 'home') ? '' : 'none';
+  });
+  if(view !== 'home'){
+    const el = document.getElementById('view-' + view);
+    if(el) el.classList.add('open');
+  }
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+  document.getElementById('mobileMenu').classList.remove('open');
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('[data-view]').forEach(el => {
+  el.addEventListener('click', () => {
+    const view = el.dataset.view;
+    if(view === 'adult'){ requestAdultUnlock(() => showView('adult')); }
+    else { showView(view); }
+  });
+});
+document.getElementById('hamburgerBtn').addEventListener('click', () => {
+  document.getElementById('mobileMenu').classList.toggle('open');
+});
+
+/* =========================================================
+   4) 18+ PIN LOCK
+   ========================================================= */
+const ADULT_PIN = "1234";
+let adultUnlocked = false;
+let pendingUnlockCallback = null;
+function requestAdultUnlock(onSuccess){
+  if(adultUnlocked){ onSuccess(); return; }
+  pendingUnlockCallback = onSuccess;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinErr').classList.remove('show');
+  document.getElementById('pinOverlay').classList.add('open');
+  document.getElementById('pinInput').focus();
+}
+document.getElementById('pinCancelBtn').addEventListener('click', () => {
+  document.getElementById('pinOverlay').classList.remove('open'); pendingUnlockCallback = null;
+});
+document.getElementById('pinSubmitBtn').addEventListener('click', () => {
+  if(document.getElementById('pinInput').value === ADULT_PIN){
+    adultUnlocked = true;
+    document.getElementById('pinOverlay').classList.remove('open');
+    if(pendingUnlockCallback) pendingUnlockCallback();
+    pendingUnlockCallback = null;
+  } else { document.getElementById('pinErr').classList.add('show'); }
+});
+document.getElementById('pinInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('pinSubmitBtn').click(); });
+
+/* =========================================================
+   5) AUTH (Login / Sign up)
+   ========================================================= */
+let authMode = 'login';
+function openAuthModal(){
+  document.getElementById('authErr').classList.remove('show');
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPass').value = '';
+  document.getElementById('authOverlay').classList.add('open');
+}
+document.getElementById('loginNavBtn').addEventListener('click', () => {
+  if(currentUser){ openAuthModal(); } else { openAuthModal(); }
+});
+document.getElementById('authCloseBtn').addEventListener('click', () => document.getElementById('authOverlay').classList.remove('open'));
+document.getElementById('tabLogin').addEventListener('click', () => setAuthMode('login'));
+document.getElementById('tabSignup').addEventListener('click', () => setAuthMode('signup'));
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode==='login');
+  document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
+  document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'Login' : 'Sign up';
+  document.getElementById('authErr').classList.remove('show');
+}
+document.getElementById('authSubmitBtn').addEventListener('click', async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const pass = document.getElementById('authPass').value;
+  const errEl = document.getElementById('authErr');
+  errEl.classList.remove('show');
+  if(!email || !pass){ errEl.textContent = 'Email/Password ဖြည့်ပါ'; errEl.classList.add('show'); return; }
+  try{
+    if(authMode === 'login'){
+      await auth.signInWithEmailAndPassword(email, pass);
+    } else {
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+      await db.collection('users').doc(cred.user.uid).set({
+        email, isPremium: false, premiumExpiresAt: null, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    document.getElementById('authOverlay').classList.remove('open');
+  }catch(err){
+    errEl.textContent = err.message;
+    errEl.classList.add('show');
+  }
+});
+
+function renderAccountArea(){
+  const area = document.getElementById('accountArea');
+  if(currentUser){
+    const isPrem = isPremiumActive();
+    area.innerHTML = `
+      <div class="account-chip" id="accountChip">
+        ${currentUser.email}
+        ${isPrem ? '<span class="premium-pill">PREMIUM</span>' : ''}
+      </div>
+      <button class="account-btn" id="logoutBtn" style="background:rgba(255,255,255,.12);">Logout</button>`;
+    document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+  } else {
+    area.innerHTML = `<button class="account-btn" id="loginNavBtn">Login / Sign up</button>`;
+    document.getElementById('loginNavBtn').addEventListener('click', openAuthModal);
+  }
 }
 
+function isPremiumActive(){
+  if(!currentUserDoc || !currentUserDoc.isPremium) return false;
+  if(!currentUserDoc.premiumExpiresAt) return false;
+  const ms = currentUserDoc.premiumExpiresAt.toMillis ? currentUserDoc.premiumExpiresAt.toMillis() : currentUserDoc.premiumExpiresAt;
+  return ms > Date.now();
+}
+
+let userDocUnsub = null, pendingReqUnsub = null;
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  if(userDocUnsub) userDocUnsub();
+  if(pendingReqUnsub) pendingReqUnsub();
+  if(user){
+    userDocUnsub = db.collection('users').doc(user.uid).onSnapshot(doc => {
+      currentUserDoc = doc.exists ? doc.data() : null;
+      renderAccountArea();
+      render();
+    });
+    pendingReqUnsub = db.collection('premiumRequests')
+      .where('uid', '==', user.uid).where('status', '==', 'pending')
+      .onSnapshot(snap => { currentPendingRequest = snap.empty ? null : snap.docs[0].data(); });
+  } else {
+    currentUserDoc = null; currentPendingRequest = null;
+  }
+  renderAccountArea();
+  render();
+});
+
+/* =========================================================
+   6) PREMIUM GATE
+   ========================================================= */
+function openPremiumGate(movieId){
+  pendingPlayId = movieId;
+  ['premiumStateAuth','premiumStatePay','premiumStatePending'].forEach(id => document.getElementById(id).style.display = 'none');
+  if(!currentUser){
+    document.getElementById('premiumStateAuth').style.display = 'block';
+  } else if(currentPendingRequest){
+    document.getElementById('premiumStatePending').style.display = 'block';
+  } else {
+    document.getElementById('payInfoBox').innerHTML = `
+      <div class="row"><span>KBZPay</span><b>${esc(PAYMENT_CONFIG.kbzpayNumber)} (${esc(PAYMENT_CONFIG.kbzpayName)})</b></div>
+      <div class="row"><span>WavePay</span><b>${esc(PAYMENT_CONFIG.wavepayNumber)} (${esc(PAYMENT_CONFIG.wavepayName)})</b></div>
+      <div class="row"><span>ဈေးနှုန်း</span><b>${esc(PAYMENT_CONFIG.price)}</b></div>`;
+    document.getElementById('fTxnId').value = '';
+    document.getElementById('premiumErr').classList.remove('show');
+    document.getElementById('premiumStatePay').style.display = 'block';
+  }
+  document.getElementById('premiumOverlay').classList.add('open');
+}
+document.getElementById('premiumCloseBtn').addEventListener('click', () => document.getElementById('premiumOverlay').classList.remove('open'));
+document.getElementById('premiumPendingCloseBtn').addEventListener('click', () => document.getElementById('premiumOverlay').classList.remove('open'));
+document.getElementById('premiumGoLoginBtn').addEventListener('click', () => {
+  document.getElementById('premiumOverlay').classList.remove('open');
+  openAuthModal();
+});
+document.getElementById('premiumSubmitBtn').addEventListener('click', async () => {
+  const txnId = document.getElementById('fTxnId').value.trim();
+  const method = document.getElementById('fPayMethod').value;
+  const errEl = document.getElementById('premiumErr');
+  if(!txnId){ errEl.textContent = 'Transaction ID ဖြည့်ပါ'; errEl.classList.add('show'); return; }
+  try{
+    await db.collection('premiumRequests').add({
+      uid: currentUser.uid, email: currentUser.email,
+      paymentMethod: method, transactionId: txnId,
+      status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById('premiumOverlay').classList.remove('open');
+  }catch(err){
+    errEl.textContent = err.message; errEl.classList.add('show');
+  }
+});
+
+/* =========================================================
+   7) CARD RENDERERS
+   ========================================================= */
+function movieCardHtml(m){
+  const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
+  return `<div class="card" data-type="movie" data-id="${m.id}">
+    <img class="card-thumb" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+    ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
+    ${m.isPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
+    <div class="card-body">
+      <div class="card-title">${esc(m.title)}</div>
+      <div class="card-meta">${CATEGORY_LABEL[m.category] || ''}</div>
+    </div></div>`;
+}
+function seriesCardHtml(s){
+  const thumb = s.thumb ? esc(s.thumb) : PLACEHOLDER_THUMB;
+  return `<div class="card" data-type="series" data-name="${esc(s.name)}">
+    <img class="card-thumb" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+    <div class="card-badge">${s.count} Ep</div>
+    ${s.hasPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
+    <div class="card-body">
+      <div class="card-title">${esc(s.name)}</div>
+      <div class="card-meta">Short Drama</div>
+    </div></div>`;
+}
+function wireCards(container){
+  container.querySelectorAll('[data-type="movie"]').forEach(c => c.addEventListener('click', () => openPlayer(c.dataset.id)));
+  container.querySelectorAll('[data-type="series"]').forEach(c => c.addEventListener('click', () => openSeries(c.dataset.name)));
+}
+
+function getDramaSeries(){
+  const dramaMovies = movies.filter(m => m.category === 'drama');
+  const map = {};
+  dramaMovies.forEach(m => {
+    const key = (m.seriesName && m.seriesName.trim()) || m.title;
+    if(!map[key]) map[key] = [];
+    map[key].push(m);
+  });
+  return Object.entries(map).map(([name, eps]) => {
+    eps.sort((a,b) => (Number(a.episodeNumber)||0) - (Number(b.episodeNumber)||0));
+    return { name, episodes: eps, thumb: eps[0].thumbUrl, count: eps.length, desc: eps[0].desc, hasPremium: eps.some(e => e.isPremium) };
+  }).sort((a,b) => (b.episodes[0].createdAtMs||0) - (a.episodes[0].createdAtMs||0));
+}
+
+/* =========================================================
+   8) RENDER
+   ========================================================= */
 function render(){
   const originals = movies.filter(m => m.category === 'original');
-  const drama = movies.filter(m => m.category === 'drama');
+  const adults = movies.filter(m => m.category === 'adult');
+  const series = getDramaSeries();
+
   const wrap = document.getElementById('rowsWrap');
   wrap.innerHTML = `
     <div class="row">
-      <div class="row-head"><span class="row-title">ကိုယ်ပိုင်ဇာတ်ကားများ</span><span class="row-count">${originals.length} ခု</span></div>
-      <div class="row-track">${originals.length ? originals.map(cardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
+      <div class="row-head"><span class="row-title">Own</span><span class="row-count">${originals.length} ခု</span></div>
+      <div class="row-track">${originals.length ? originals.map(movieCardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
     </div>
     <div class="row">
-      <div class="row-head"><span class="row-title">Short Drama (ဘာသာပြန်)</span><span class="row-count">${drama.length} ခု</span></div>
-      <div class="row-track">${drama.length ? drama.map(cardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
-    </div>`;
-  document.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => openPlayer(c.dataset.id)));
+      <div class="row-head"><span class="row-title">Short Drama</span><span class="row-count">${series.length} Series</span></div>
+      <div class="row-track">${series.length ? series.map(seriesCardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
+    </div>
+    ${adults.length ? `<div class="row">
+      <div class="row-head"><span class="row-title">18+</span><span class="row-count">${adults.length} ခု</span></div>
+      <div class="row-track">${adults.map(movieCardHtml).join('')}</div>
+    </div>` : ''}`;
+  wireCards(wrap);
 
-  const featured = movies.find(m => m.featured) || movies[0];
+  document.getElementById('ownCount').textContent = originals.length + ' ခု';
+  const ownGrid = document.getElementById('ownGrid');
+  ownGrid.innerHTML = originals.length ? originals.map(movieCardHtml).join('') : `<div class="empty-page">ဇာတ်ကား မထည့်ရသေးပါ</div>`;
+  wireCards(ownGrid);
+
+  document.getElementById('dramaCount').textContent = series.length + ' Series';
+  const dramaGrid = document.getElementById('dramaGrid');
+  dramaGrid.innerHTML = series.length ? series.map(seriesCardHtml).join('') : `<div class="empty-page">Short Drama မထည့်ရသေးပါ</div>`;
+  wireCards(dramaGrid);
+
+  document.getElementById('adultCount').textContent = adults.length + ' ခု';
+  const adultGrid = document.getElementById('adultGrid');
+  adultGrid.innerHTML = adults.length ? adults.map(movieCardHtml).join('') : `<div class="empty-page">မထည့်ရသေးပါ</div>`;
+  wireCards(adultGrid);
+
+  const featured = movies.find(m => m.featured) || movies.find(m => m.category !== 'adult') || movies[0];
   if(featured){
     document.getElementById('heroSection').style.backgroundImage =
       featured.thumbUrl ? `linear-gradient(to top, var(--bg), transparent 40%), url('${featured.thumbUrl}')` : '';
-    document.getElementById('heroBadge').textContent = featured.category === 'drama' ? 'Short Drama' : 'ကိုယ်ပိုင်ဇာတ်ကား';
+    document.getElementById('heroBadge').textContent = CATEGORY_LABEL[featured.category] || '';
     document.getElementById('heroTitle').textContent = featured.title;
     document.getElementById('heroDesc').textContent = featured.desc || '';
     document.getElementById('heroPlayBtn').onclick = () => openPlayer(featured.id);
   }
+
+  if(currentSeries) openSeries(currentSeries, true);
 }
 
+/* =========================================================
+   9) SERIES DETAIL VIEW
+   ========================================================= */
+function openSeries(name, silentRefresh){
+  const series = getDramaSeries().find(s => s.name === name);
+  if(!series) return;
+  currentSeries = name;
+  document.getElementById('seriesPoster').src = series.thumb ? esc(series.thumb) : PLACEHOLDER_THUMB;
+  document.getElementById('seriesPoster').onerror = function(){ this.src = PLACEHOLDER_THUMB; };
+  document.getElementById('seriesTitle').textContent = series.name;
+  document.getElementById('seriesCount').textContent = series.count + ' Episodes';
+  document.getElementById('seriesDesc').textContent = series.desc || '';
+  const epList = document.getElementById('epList');
+  epList.innerHTML = series.episodes.map((ep, i) => `
+    <div class="ep-item" data-id="${ep.id}">
+      <div class="ep-num">${ep.episodeNumber || (i+1)}</div>
+      <img class="ep-thumb" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+      <div class="ep-info">
+        <div class="t">${esc(ep.title)} ${ep.isPremium ? '<span class="premium-pill">★</span>' : ''}</div>
+        <div class="m">${ep.duration ? esc(ep.duration) : ''}</div>
+      </div>
+      <div class="ep-play">▶</div>
+    </div>`).join('');
+  epList.querySelectorAll('.ep-item').forEach(el => el.addEventListener('click', () => openPlayer(el.dataset.id)));
+  if(!silentRefresh) showView('series');
+}
+document.getElementById('seriesBackBtn').addEventListener('click', () => { currentSeries = null; showView('drama'); });
+
+/* =========================================================
+   10) PLAYER MODAL (with premium + 18+ gating)
+   ========================================================= */
 function openPlayer(id){
   const m = movies.find(x => x.id === id);
   if(!m) return;
+  if(m.category === 'adult' && !adultUnlocked){ requestAdultUnlock(() => openPlayer(id)); return; }
+  if(m.isPremium && !isPremiumActive()){ openPremiumGate(id); return; }
+
   document.getElementById('modalVideoWrap').innerHTML =
     `<button class="modal-close" id="modalClose">✕</button><video src="${esc(m.videoUrl)}" controls autoplay></video>`;
   document.getElementById('modalClose').onclick = closePlayer;
   document.getElementById('modalTitle').textContent = m.title;
-  document.getElementById('modalMeta').textContent = (m.category==='drama'?'Short Drama':'ကိုယ်ပိုင်ဇာတ်ကား') + (m.duration?' • '+m.duration:'');
+  const seriesTag = m.category === 'drama' && m.seriesName ? `${esc(m.seriesName)} · Ep ${m.episodeNumber||''} · ` : '';
+  document.getElementById('modalMeta').innerHTML = seriesTag + (CATEGORY_LABEL[m.category]||'') + (m.duration ? ' • ' + esc(m.duration) : '');
   document.getElementById('modalDesc').textContent = m.desc || '';
   document.getElementById('modalOverlay').classList.add('open');
 }
@@ -194,10 +713,13 @@ function closePlayer(){
 document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') closePlayer(); });
 
 /* =========================================================
-   2) LIVE DATA — Firestore "movies" collection ကို နားထောင်နေမယ်
+   11) LIVE DATA — Firestore "movies" collection
    ========================================================= */
 db.collection('movies').orderBy('createdAt', 'desc').onSnapshot(snap => {
-  movies = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  movies = snap.docs.map(d => {
+    const data = d.data();
+    return { id: d.id, ...data, createdAtMs: data.createdAt ? data.createdAt.toMillis() : 0 };
+  });
   render();
 }, err => {
   document.getElementById('rowsWrap').innerHTML =
