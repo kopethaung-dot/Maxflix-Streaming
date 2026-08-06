@@ -280,7 +280,7 @@
     <button class="nav-tab" data-view="adult">18+</button>
     <div class="search-box" id="searchBox">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off"><input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
+      <input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
     </div>
   </nav>
 
@@ -296,7 +296,7 @@
 <div class="mobile-menu" id="mobileMenu">
   <div class="search-box search-box-mobile" id="searchBoxMobile">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="searchInputMobile" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off"><input type="text" id="searchInputMobile" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
+    <input type="text" id="searchInputMobile" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
   </div>
   <button class="nav-tab active" data-view="home">ပင်မစာမျက်နှာ</button>
   <button class="nav-tab" data-view="own">Own</button>
@@ -559,10 +559,10 @@ document.addEventListener('click', (e) => {
 /* =========================================================
    4) 18+ PIN LOCK
    ========================================================= */
-const ADULT_PIN = "515705";
 let adultUnlocked = false;
 let pendingUnlockCallback = null;
 function requestAdultUnlock(onSuccess){
+  if(!currentUser){ openAuthModal(); return; }
   if(adultUnlocked){ onSuccess(); return; }
   pendingUnlockCallback = onSuccess;
   document.getElementById('pinInput').value = '';
@@ -574,13 +574,23 @@ document.getElementById('pinCancelBtn').addEventListener('click', () => {
   document.getElementById('pinOverlay').classList.remove('open'); pendingUnlockCallback = null;
 });
 document.getElementById('pinSubmitBtn').addEventListener('click', () => {
-  if(document.getElementById('pinInput').value === ADULT_PIN){
+  const errEl = document.getElementById('pinErr');
+  const myPin = currentUserDoc && currentUserDoc.adultPin;
+  const expiresAt = currentUserDoc && currentUserDoc.adultPinExpiresAt;
+  const expiresMs = expiresAt ? (expiresAt.toMillis ? expiresAt.toMillis() : expiresAt) : 0;
+  if(!myPin){
+    errEl.textContent = 'PIN မရှိသေးပါ — Admin ကို ဆက်သွယ်ပါ'; errEl.classList.add('show'); return;
+  }
+  if(Date.now() > expiresMs){
+    errEl.textContent = 'PIN သက်တမ်းကုန်သွားပါပြီ — Admin ကို ဆက်သွယ်ပါ'; errEl.classList.add('show'); return;
+  }
+  if(document.getElementById('pinInput').value === myPin){
     adultUnlocked = true;
     document.getElementById('pinOverlay').classList.remove('open');
     renderAdultSection();
     if(pendingUnlockCallback) pendingUnlockCallback();
     pendingUnlockCallback = null;
-  } else { document.getElementById('pinErr').classList.add('show'); }
+  } else { errEl.textContent = 'PIN မှားနေပါတယ်'; errEl.classList.add('show'); }
 });
 document.getElementById('pinInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('pinSubmitBtn').click(); });
 
@@ -664,6 +674,7 @@ function subscribeContinueWatching(){
 }
 auth.onAuthStateChanged(user => {
   currentUser = user;
+  adultUnlocked = false;
   if(userDocUnsub) userDocUnsub();
   if(pendingReqUnsub) pendingReqUnsub();
   if(user){
@@ -814,7 +825,7 @@ function wireSearchInput(input){
 }
 wireSearchInput(document.getElementById('searchInput'));
 wireSearchInput(document.getElementById('searchInputMobile'));
-  setTimeout(() => {
+setTimeout(() => {
   document.getElementById('searchInput').value = '';
   document.getElementById('searchInputMobile').value = '';
 }, 300);
