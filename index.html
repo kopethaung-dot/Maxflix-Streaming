@@ -230,6 +230,32 @@
     .card{width:104px;}
     .grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));}
   }
+
+  /* ---------- Search ---------- */
+  .search-box{display:flex;align-items:center;gap:8px;background:var(--bg-card);border:1px solid var(--line);
+    border-radius:20px;padding:7px 14px;margin-left:auto;max-width:220px;}
+  .search-box svg{width:15px;height:15px;color:var(--ink-faint);flex-shrink:0;}
+  .search-box input{background:none;border:none;padding:0;font-size:13px;width:100%;}
+  .search-box input:focus{outline:none;}
+  .search-box-mobile{margin:6px 16px 10px;max-width:none;}
+  @media (max-width:820px){ .search-box:not(.search-box-mobile){display:none;} }
+
+  /* ---------- Load more ---------- */
+  .load-more-wrap{display:flex;justify-content:center;padding:6px 20px 50px;}
+
+  /* ---------- Toasts ---------- */
+  .toast-wrap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;
+    display:flex;flex-direction:column;gap:8px;align-items:center;width:100%;max-width:420px;padding:0 16px;}
+  .toast{background:var(--bg-elev);border:1px solid var(--line);border-left:3px solid var(--accent);
+    color:var(--ink);font-size:13px;padding:12px 16px;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.4);
+    width:100%;opacity:0;transform:translateY(10px);transition:opacity .2s,transform .2s;}
+  .toast.show{opacity:1;transform:translateY(0);}
+  .toast.ok{border-left-color:#4fd371;}
+
+  /* ---------- Continue watching ---------- */
+  .continue-bar{position:absolute;left:0;right:0;bottom:52px;height:4px;background:rgba(255,255,255,.2);}
+  .continue-bar-fill{height:100%;background:var(--accent);}
+  @media (max-width:520px){ .continue-bar{bottom:44px;} }
 </style>
 </head>
 <body style="position:relative;">
@@ -252,6 +278,10 @@
     <button class="nav-tab" data-view="own">Own</button>
     <button class="nav-tab" data-view="drama">Short Drama</button>
     <button class="nav-tab" data-view="adult">18+</button>
+    <div class="search-box" id="searchBox">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်...">
+    </div>
   </nav>
 
   <div class="account-area" id="accountArea">
@@ -264,6 +294,10 @@
 </header>
 
 <div class="mobile-menu" id="mobileMenu">
+  <div class="search-box search-box-mobile" id="searchBoxMobile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="searchInputMobile" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်...">
+  </div>
   <button class="nav-tab active" data-view="home">ပင်မစာမျက်နှာ</button>
   <button class="nav-tab" data-view="own">Own</button>
   <button class="nav-tab" data-view="drama">Short Drama</button>
@@ -302,6 +336,19 @@
   <div class="page-sub" id="adultCount"></div>
   <div class="grid" id="adultGrid"></div>
 </div>
+
+<div id="view-search" class="page">
+  <div class="page-title">ရှာဖွေမှုရလဒ်</div>
+  <div class="page-sub" id="searchCount"></div>
+  <div class="grid" id="searchGrid"></div>
+</div>
+
+<div class="load-more-wrap" id="loadMoreWrap" style="display:none;">
+  <button class="btn btn-ghost" id="loadMoreBtn">နောက်ထပ်ကြည့်ရန်</button>
+</div>
+
+<div id="toastWrap" class="toast-wrap"></div>
+
 
 <div id="view-series" class="page">
   <button class="back-link" id="seriesBackBtn">← Short Drama သို့ ပြန်သွားမည်</button>
@@ -436,7 +483,35 @@ const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8," + encodeURIComponent(
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const CATEGORY_LABEL = { original: 'Own', drama: 'Short Drama', adult: '18+' };
 
+function showToast(msg, type){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type === 'ok' ? ' ok' : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 250); }, 3200);
+}
+
+/* Lazy-load hls.js only when an .m3u8 stream actually needs to be played
+   (progressive enhancement — plain mp4 files never touch this). */
+let hlsJsPromise = null;
+function loadHlsJs(){
+  if(window.Hls) return Promise.resolve();
+  if(hlsJsPromise) return hlsJsPromise;
+  hlsJsPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js';
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  return hlsJsPromise;
+}
+let currentHls = null;
+
 let movies = [];
+let continueList = []; // [{movieId, progress, duration}] for the logged-in user
+let currentView = 'home';
 let currentSeries = null;
 let currentUser = null;      // firebase auth user
 let currentUserDoc = null;   // Firestore users/{uid} doc data
@@ -447,6 +522,7 @@ let pendingPlayId = null;    // movie id waiting on gate resolution
    3) NAVIGATION / VIEW ROUTING
    ========================================================= */
 function showView(view){
+  currentView = view;
   document.querySelectorAll('.view-root, .page').forEach(el => {
     el.classList.remove('open');
     if(el.id === 'view-home') el.style.display = (view === 'home') ? '' : 'none';
@@ -457,10 +533,13 @@ function showView(view){
   }
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
   document.getElementById('mobileMenu').classList.remove('open');
+  updateLoadMoreVisibility();
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('[data-view]').forEach(el => {
   el.addEventListener('click', () => {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchInputMobile').value = '';
     const view = el.dataset.view;
     if(view === 'adult'){ requestAdultUnlock(() => { renderAdultSection(); showView('adult'); }); }
     else { showView(view); }
@@ -574,7 +653,15 @@ function isPremiumActive(){
   return ms > Date.now();
 }
 
-let userDocUnsub = null, pendingReqUnsub = null;
+let userDocUnsub = null, pendingReqUnsub = null, continueUnsub = null;
+function subscribeContinueWatching(){
+  if(continueUnsub){ continueUnsub(); continueUnsub = null; }
+  if(!currentUser){ continueList = []; render(); return; }
+  continueUnsub = db.collection('users').doc(currentUser.uid).collection('continueWatching')
+    .orderBy('updatedAt', 'desc').limit(10)
+    .onSnapshot(snap => { continueList = snap.docs.map(d => d.data()); render(); },
+      () => { continueList = []; }); // subcollection may not exist yet — fail quietly
+}
 auth.onAuthStateChanged(user => {
   currentUser = user;
   if(userDocUnsub) userDocUnsub();
@@ -591,6 +678,7 @@ auth.onAuthStateChanged(user => {
   } else {
     currentUserDoc = null; currentPendingRequest = null;
   }
+  subscribeContinueWatching();
   renderAccountArea();
   render();
 });
@@ -634,6 +722,7 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
       status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     document.getElementById('premiumOverlay').classList.remove('open');
+    showToast('Premium request တင်သွင်းပြီးပါပြီ — admin မှ စစ်ဆေးနေပါမည်', 'ok');
   }catch(err){
     errEl.textContent = err.message; errEl.classList.add('show');
   }
@@ -645,7 +734,7 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
 function movieCardHtml(m){
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
   return `<div class="card" data-type="movie" data-id="${m.id}">
-    <img class="card-thumb" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+    <img class="card-thumb" loading="lazy" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
     ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
     ${m.isPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
     <div class="card-body">
@@ -656,7 +745,7 @@ function movieCardHtml(m){
 function seriesCardHtml(s){
   const thumb = s.thumb ? esc(s.thumb) : PLACEHOLDER_THUMB;
   return `<div class="card" data-type="series" data-name="${esc(s.name)}">
-    <img class="card-thumb" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+    <img class="card-thumb" loading="lazy" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
     <div class="card-badge">${s.count} Ep</div>
     ${s.hasPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
     <div class="card-body">
@@ -664,10 +753,67 @@ function seriesCardHtml(s){
       <div class="card-meta">Short Drama</div>
     </div></div>`;
 }
+function continueCardHtml(m, c){
+  const pct = c.duration ? Math.min(100, Math.max(4, (c.progress / c.duration) * 100)) : 0;
+  const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
+  return `<div class="card" data-type="movie" data-id="${m.id}">
+    <img class="card-thumb" loading="lazy" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+    <div class="continue-bar"><div class="continue-bar-fill" style="width:${pct}%;"></div></div>
+    <div class="card-body">
+      <div class="card-title">${esc(m.title)}</div>
+      <div class="card-meta">${CATEGORY_LABEL[m.category] || ''}</div>
+    </div></div>`;
+}
 function wireCards(container){
   container.querySelectorAll('[data-type="movie"]').forEach(c => c.addEventListener('click', () => openPlayer(c.dataset.id)));
   container.querySelectorAll('[data-type="series"]').forEach(c => c.addEventListener('click', () => openSeries(c.dataset.name)));
 }
+
+/* =========================================================
+   SEARCH — client-side over already-loaded movies (18+ always excluded)
+   ========================================================= */
+let hasMoreMovies = false;
+function updateLoadMoreVisibility(){
+  const wrap = document.getElementById('loadMoreWrap');
+  const applicable = ['own','drama','adult'].includes(currentView);
+  wrap.style.display = (applicable && hasMoreMovies) ? 'flex' : 'none';
+}
+
+function performSearch(query){
+  query = query.trim().toLowerCase();
+  if(!query){ showView('home'); return; }
+  const results = [];
+  const seenSeries = new Set();
+  movies.filter(m => m.category !== 'adult').forEach(m => {
+    if(m.category === 'drama'){
+      const key = (m.seriesName && m.seriesName.trim()) || m.title;
+      const nameMatches = key.toLowerCase().includes(query);
+      const titleMatches = m.title.toLowerCase().includes(query);
+      if((nameMatches || titleMatches) && !seenSeries.has(key)) seenSeries.add(key);
+    } else if(m.title && m.title.toLowerCase().includes(query)){
+      results.push({ type: 'movie', data: m });
+    }
+  });
+  getDramaSeries().forEach(s => { if(seenSeries.has(s.name)) results.push({ type: 'series', data: s }); });
+
+  const grid = document.getElementById('searchGrid');
+  document.getElementById('searchCount').textContent = results.length + ' ခု တွေ့ရှိပါသည်';
+  grid.innerHTML = results.length
+    ? results.map(r => r.type === 'movie' ? movieCardHtml(r.data) : seriesCardHtml(r.data)).join('')
+    : `<div class="empty-page">ရလဒ် မတွေ့ပါ</div>`;
+  wireCards(grid);
+  showView('search');
+}
+let searchDebounceTimer = null;
+function wireSearchInput(input){
+  input.addEventListener('input', () => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => performSearch(input.value), 250);
+  });
+  input.addEventListener('keydown', e => { if(e.key === 'Enter'){ clearTimeout(searchDebounceTimer); performSearch(input.value); } });
+}
+wireSearchInput(document.getElementById('searchInput'));
+wireSearchInput(document.getElementById('searchInputMobile'));
 
 /* 18+ content: titles/thumbnails are only written into the DOM after the PIN
    has been entered successfully this session. Locked-out visitors get an
@@ -707,10 +853,18 @@ function render(){
   const originals = movies.filter(m => m.category === 'original');
   const series = getDramaSeries();
 
+  const continueItems = continueList
+    .map(c => ({ c, m: movies.find(x => x.id === c.movieId) }))
+    .filter(x => x.m);
+
   // NOTE: 18+ content is intentionally NEVER included on the main/home interface.
   // It only appears inside the PIN-gated "18+" section — see renderAdultSection().
   const wrap = document.getElementById('rowsWrap');
   wrap.innerHTML = `
+    ${continueItems.length ? `<div class="row">
+      <div class="row-head"><span class="row-title">ဆက်ကြည့်ရန်</span><span class="row-count">${continueItems.length} ခု</span></div>
+      <div class="row-track">${continueItems.map(x => continueCardHtml(x.m, x.c)).join('')}</div>
+    </div>` : ''}
     <div class="row">
       <div class="row-head"><span class="row-title">Own</span><span class="row-count">${originals.length} ခု</span></div>
       <div class="row-track">${originals.length ? originals.map(movieCardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
@@ -763,7 +917,7 @@ function openSeries(name, silentRefresh){
   epList.innerHTML = series.episodes.map((ep, i) => `
     <div class="ep-item" data-id="${ep.id}">
       <div class="ep-num">${ep.episodeNumber || (i+1)}</div>
-      <img class="ep-thumb" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+      <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'">
       <div class="ep-info">
         <div class="t">${esc(ep.title)} ${ep.isPremium ? '<span class="premium-pill">★</span>' : ''}</div>
         <div class="m">${ep.duration ? esc(ep.duration) : ''}</div>
@@ -784,9 +938,30 @@ function openPlayer(id){
   if(m.category === 'adult' && !adultUnlocked){ requestAdultUnlock(() => openPlayer(id)); return; }
   if(m.isPremium && !isPremiumActive()){ openPremiumGate(id); return; }
 
-  document.getElementById('modalVideoWrap').innerHTML =
-    `<button class="modal-close" id="modalClose">✕</button><video src="${esc(m.videoUrl)}" controls autoplay></video>`;
+  const wrap = document.getElementById('modalVideoWrap');
+  wrap.innerHTML = `<button class="modal-close" id="modalClose">✕</button>`;
   document.getElementById('modalClose').onclick = closePlayer;
+
+  const videoEl = document.createElement('video');
+  videoEl.controls = true;
+  videoEl.autoplay = true;
+  wrap.appendChild(videoEl);
+
+  if(/\.m3u8(\?|$)/i.test(m.videoUrl || '')){
+    loadHlsJs().then(() => {
+      if(window.Hls && window.Hls.isSupported()){
+        currentHls = new Hls();
+        currentHls.loadSource(m.videoUrl);
+        currentHls.attachMedia(videoEl);
+      } else {
+        videoEl.src = m.videoUrl; // Safari has native HLS support
+      }
+    }).catch(() => { videoEl.src = m.videoUrl; });
+  } else {
+    videoEl.src = m.videoUrl;
+  }
+  attachProgressTracking(videoEl, m);
+
   document.getElementById('modalTitle').textContent = m.title;
   const seriesTag = m.category === 'drama' && m.seriesName ? `${esc(m.seriesName)} · Ep ${m.episodeNumber||''} · ` : '';
   document.getElementById('modalMeta').innerHTML = seriesTag + (CATEGORY_LABEL[m.category]||'') + (m.duration ? ' • ' + esc(m.duration) : '');
@@ -795,7 +970,37 @@ function openPlayer(id){
 }
 function closePlayer(){
   document.getElementById('modalOverlay').classList.remove('open');
+  if(currentHls){ currentHls.destroy(); currentHls = null; }
   document.getElementById('modalVideoWrap').innerHTML = '';
+}
+
+/* Save/resume watch position for logged-in users so it can show up in
+   the "Continue Watching" row. Adult content is intentionally excluded. */
+function attachProgressTracking(videoEl, m){
+  if(!currentUser || m.category === 'adult') return;
+  const ref = db.collection('users').doc(currentUser.uid).collection('continueWatching').doc(m.id);
+  let lastSaved = 0;
+  const saveProgress = () => {
+    if(!videoEl.duration) return;
+    if(videoEl.currentTime / videoEl.duration > 0.95){ ref.delete().catch(()=>{}); return; }
+    if(videoEl.currentTime > 3){
+      ref.set({
+        movieId: m.id, progress: videoEl.currentTime, duration: videoEl.duration,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(()=>{});
+    }
+  };
+  videoEl.addEventListener('loadedmetadata', () => {
+    const saved = continueList.find(c => c.movieId === m.id);
+    if(saved && saved.progress > 3 && saved.progress < videoEl.duration - 5) videoEl.currentTime = saved.progress;
+  });
+  videoEl.addEventListener('timeupdate', () => {
+    const now = Date.now();
+    if(now - lastSaved < 5000) return;
+    lastSaved = now;
+    saveProgress();
+  });
+  videoEl.addEventListener('pause', saveProgress);
 }
 document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') closePlayer(); });
 document.getElementById('pinOverlay').addEventListener('click', e => {
@@ -809,18 +1014,31 @@ document.getElementById('premiumOverlay').addEventListener('click', e => {
 });
 
 /* =========================================================
-   11) LIVE DATA — Firestore "movies" collection
+   11) LIVE DATA — Firestore "movies" collection (paginated)
    ========================================================= */
-db.collection('movies').orderBy('createdAt', 'desc').onSnapshot(snap => {
-  movies = snap.docs.map(d => {
-    const data = d.data();
-    return { id: d.id, ...data, createdAtMs: data.createdAt ? data.createdAt.toMillis() : 0 };
+const MOVIES_PAGE_SIZE = 30;
+let moviesLimit = MOVIES_PAGE_SIZE;
+let moviesUnsub = null;
+function subscribeMovies(){
+  if(moviesUnsub) moviesUnsub();
+  moviesUnsub = db.collection('movies').orderBy('createdAt', 'desc').limit(moviesLimit).onSnapshot(snap => {
+    movies = snap.docs.map(d => {
+      const data = d.data();
+      return { id: d.id, ...data, createdAtMs: data.createdAt ? data.createdAt.toMillis() : 0 };
+    });
+    hasMoreMovies = snap.docs.length === moviesLimit; // heuristic: a full page suggests more may exist
+    render();
+    updateLoadMoreVisibility();
+  }, err => {
+    document.getElementById('rowsWrap').innerHTML =
+      `<div class="loading">ချိတ်ဆက်မှု အမှား — firebaseConfig ကို စစ်ကြည့်ပါ (${esc(err.message)})</div>`;
   });
-  render();
-}, err => {
-  document.getElementById('rowsWrap').innerHTML =
-    `<div class="loading">ချိတ်ဆက်မှု အမှား — firebaseConfig ကို စစ်ကြည့်ပါ (${esc(err.message)})</div>`;
+}
+document.getElementById('loadMoreBtn').addEventListener('click', () => {
+  moviesLimit += MOVIES_PAGE_SIZE;
+  subscribeMovies();
 });
+subscribeMovies();
 </script>
 </body>
 </html>
