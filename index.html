@@ -825,10 +825,12 @@ function wireSearchInput(input){
 }
 wireSearchInput(document.getElementById('searchInput'));
 wireSearchInput(document.getElementById('searchInputMobile'));
-setTimeout(() => {
+function clearSearchInputs(){
   document.getElementById('searchInput').value = '';
   document.getElementById('searchInputMobile').value = '';
-}, 300);
+}
+setTimeout(clearSearchInputs, 300);
+window.addEventListener('pageshow', clearSearchInputs);
 
 /* 18+ content: titles/thumbnails are only written into the DOM after the PIN
    has been entered successfully this session. Locked-out visitors get an
