@@ -815,13 +815,8 @@ function performSearch(query){
   wireCards(grid);
   showView('search');
 }
-let searchDebounceTimer = null;
 function wireSearchInput(input){
-  input.addEventListener('input', () => {
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(() => performSearch(input.value), 250);
-  });
-  input.addEventListener('keydown', e => { if(e.key === 'Enter'){ clearTimeout(searchDebounceTimer); performSearch(input.value); } });
+  input.addEventListener('keydown', e => { if(e.key === 'Enter'){ performSearch(input.value); } });
 }
 wireSearchInput(document.getElementById('searchInput'));
 wireSearchInput(document.getElementById('searchInputMobile'));
