@@ -20,7 +20,8 @@
     --font-body:'Work Sans','Noto Sans Myanmar',sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--ink);font-family:var(--font-body);}
+  html{overflow-x:hidden;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font-body);overflow-x:hidden;max-width:100vw;}
   a{color:inherit;text-decoration:none;}
   img{display:block;max-width:100%;}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
@@ -44,9 +45,10 @@
   .nav-tab:hover{color:var(--ink);}
   .nav-tab.active{color:var(--ink);border-bottom-color:var(--accent);}
 
-  .account-area{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-  .account-btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;background:var(--accent);color:#fff;white-space:nowrap;}
-  .account-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim);cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:20px;}
+  .account-area{display:flex;align-items:center;gap:10px;flex-shrink:1;min-width:0;}
+  .account-btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;background:var(--accent);color:#fff;white-space:nowrap;flex-shrink:0;}
+  .account-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim);cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:20px;min-width:0;max-width:100%;}
+  .account-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:150px;}
   .premium-pill{font-size:10px;font-weight:700;letter-spacing:.5px;color:#0a0a0d;background:var(--gold);padding:2px 8px;border-radius:10px;}
 
   .hamburger{display:none;width:38px;height:38px;align-items:center;justify-content:center;border-radius:6px;flex-shrink:0;}
@@ -80,6 +82,15 @@
   .btn-ghost{background:rgba(255,255,255,.12);color:var(--ink);}
   .btn-accent{background:var(--accent);color:#fff;}
   .btn-block{width:100%;justify-content:center;}
+
+  /* ---------- Promo banner ---------- */
+  .promo-banner{padding:0 clamp(16px,4vw,56px);margin:18px 0 0;}
+  .promo-banner-link{display:block;border-radius:8px;overflow:hidden;border:1px solid var(--line);cursor:pointer;}
+  .promo-banner-img{width:100%;aspect-ratio:21/6;object-fit:cover;display:block;background:var(--bg-card);}
+  @media (max-width:520px){
+    .promo-banner{padding:0 14px;margin:14px 0 0;}
+    .promo-banner-img{aspect-ratio:16/7;}
+  }
 
   /* ---------- Rows / Grids ---------- */
   .rows{padding:12px clamp(16px,4vw,56px) 60px;display:flex;flex-direction:column;gap:34px;}
@@ -183,6 +194,7 @@
     .brand-sub{font-size:8px;letter-spacing:2px;}
     .account-btn{font-size:12px;padding:7px 12px;}
     .account-chip{font-size:11px;padding:5px 10px;gap:6px;}
+    .account-email{max-width:82px;}
 
     .hero{min-height:46vh;padding:0 14px 32px;align-items:flex-end;}
     .hero-title{font-size:clamp(26px,8vw,40px);margin-bottom:10px;}
@@ -314,6 +326,11 @@
       <button class="btn btn-primary" id="heroPlayBtn">▶ ကြည့်မည်</button>
     </div>
   </section>
+  <div class="promo-banner" id="promoBanner" style="display:none;">
+    <a class="promo-banner-link" id="promoBannerLink" target="_blank" rel="noopener noreferrer">
+      <img class="promo-banner-img" id="promoBannerImg" src="" alt="Promotion" loading="lazy">
+    </a>
+  </div>
   <div class="rows" id="rowsWrap">
     <div class="loading">ဇာတ်ကားများ ခေါ်နေသည်...</div>
   </div>
@@ -645,7 +662,7 @@ function renderAccountArea(){
     const isPrem = isPremiumActive();
     area.innerHTML = `
       <div class="account-chip" id="accountChip">
-        ${currentUser.email}
+        <span class="account-email">${esc(currentUser.email)}</span>
         ${isPrem ? '<span class="premium-pill">PREMIUM</span>' : ''}
       </div>
       <button class="account-btn" id="logoutBtn" style="background:rgba(255,255,255,.12);">Logout</button>`;
@@ -944,6 +961,19 @@ document.getElementById('seriesBackBtn').addEventListener('click', () => { curre
 /* =========================================================
    10) PLAYER MODAL (with premium + 18+ gating)
    ========================================================= */
+/* Picks a lower-bitrate "mobile" video URL when one has been uploaded
+   (movie.videoUrlMobile) and the viewer looks like a small screen or a
+   slow connection. Falls back to the normal video otherwise. This is a
+   stop-gap for adaptive quality until videos are served as real HLS
+   (.m3u8) — any .m3u8 URL already streams through hls.js above with
+   automatic adaptive bitrate, no extra logic needed. */
+function pickVideoUrl(m){
+  if(!m.videoUrlMobile) return m.videoUrl;
+  const isSmallScreen = window.innerWidth <= 820;
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const isSlowConn = !!(conn && (conn.saveData || /2g/.test(conn.effectiveType || '')));
+  return (isSmallScreen || isSlowConn) ? m.videoUrlMobile : m.videoUrl;
+}
 function openPlayer(id){
   const m = movies.find(x => x.id === id);
   if(!m) return;
@@ -957,20 +987,25 @@ function openPlayer(id){
   const videoEl = document.createElement('video');
   videoEl.controls = true;
   videoEl.autoplay = true;
+  videoEl.muted = true; // required by most browsers for reliable autoplay; user can unmute via controls
+  videoEl.playsInline = true; // keeps video inline on iOS instead of forcing fullscreen
+  videoEl.setAttribute('playsinline', '');
+  videoEl.setAttribute('webkit-playsinline', '');
   wrap.appendChild(videoEl);
 
-  if(/\.m3u8(\?|$)/i.test(m.videoUrl || '')){
+  const srcUrl = pickVideoUrl(m);
+  if(/\.m3u8(\?|$)/i.test(srcUrl || '')){
     loadHlsJs().then(() => {
       if(window.Hls && window.Hls.isSupported()){
         currentHls = new Hls();
-        currentHls.loadSource(m.videoUrl);
+        currentHls.loadSource(srcUrl);
         currentHls.attachMedia(videoEl);
       } else {
-        videoEl.src = m.videoUrl; // Safari has native HLS support
+        videoEl.src = srcUrl; // Safari has native HLS support
       }
-    }).catch(() => { videoEl.src = m.videoUrl; });
+    }).catch(() => { videoEl.src = srcUrl; });
   } else {
-    videoEl.src = m.videoUrl;
+    videoEl.src = srcUrl;
   }
   attachProgressTracking(videoEl, m);
 
@@ -1051,6 +1086,28 @@ document.getElementById('loadMoreBtn').addEventListener('click', () => {
   subscribeMovies();
 });
 subscribeMovies();
+
+/* =========================================================
+   12) PROMO BANNER — settings/banner doc, managed from admin panel
+   ========================================================= */
+function subscribeBanner(){
+  db.collection('settings').doc('banner').onSnapshot(doc => {
+    const wrap = document.getElementById('promoBanner');
+    const img = document.getElementById('promoBannerImg');
+    const link = document.getElementById('promoBannerLink');
+    const d = doc.exists ? doc.data() : null;
+    if(d && d.enabled && d.imageUrl){
+      img.onerror = () => { wrap.style.display = 'none'; };
+      img.src = d.imageUrl;
+      if(d.link){ link.href = d.link; link.style.cursor = 'pointer'; }
+      else { link.removeAttribute('href'); link.style.cursor = 'default'; }
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+    }
+  }, () => { document.getElementById('promoBanner').style.display = 'none'; });
+}
+subscribeBanner();
 </script>
 </body>
 </html>
