@@ -593,8 +593,17 @@ document.getElementById('pinCancelBtn').addEventListener('click', () => {
 document.getElementById('pinSubmitBtn').addEventListener('click', () => {
   const errEl = document.getElementById('pinErr');
   const myPin = currentUserDoc && currentUserDoc.adultPin;
-  const expiresAt = currentUserDoc && currentUserDoc.adultPinExpiresAt;
-  const expiresMs = expiresAt ? (expiresAt.toMillis ? expiresAt.toMillis() : expiresAt) : 0;
+  // Premium subscriber ဖြစ်ရင် premium သက်တမ်းနဲ့ auto-sync (+1 ရက် grace) ဖြစ်ပြီး၊
+  // free user ဖြစ်ရင် admin ထုတ်ပေးထားတဲ့ 5-ရက် fixed window ကိုပဲ သုံးမယ် (admin.html ရဲ့
+  // computeAdultAccessExpiryMs() logic အတိအကျ)
+  const PREMIUM_PIN_GRACE_DAYS = 1;
+  const premiumExpMs = currentUserDoc && currentUserDoc.premiumExpiresAt
+    ? (currentUserDoc.premiumExpiresAt.toMillis ? currentUserDoc.premiumExpiresAt.toMillis() : currentUserDoc.premiumExpiresAt) : 0;
+  const isPremiumActive = currentUserDoc && currentUserDoc.isPremium && premiumExpMs > Date.now();
+  const expiresMs = isPremiumActive
+    ? premiumExpMs + PREMIUM_PIN_GRACE_DAYS * 24 * 60 * 60 * 1000
+    : (currentUserDoc && currentUserDoc.adultPinExpiresAt
+        ? (currentUserDoc.adultPinExpiresAt.toMillis ? currentUserDoc.adultPinExpiresAt.toMillis() : currentUserDoc.adultPinExpiresAt) : 0);
   if(!myPin){
     errEl.textContent = 'PIN မရှိသေးပါ — Admin ကို ဆက်သွယ်ပါ'; errEl.classList.add('show'); return;
   }
