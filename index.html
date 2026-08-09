@@ -68,6 +68,21 @@
   }
 
   /* ---------- Hero ---------- */
+  /* ---------- VPN notice bar ---------- */
+  .vpn-notice{display:flex;align-items:center;gap:10px;padding:10px clamp(16px,4vw,56px);
+    background:rgba(224,38,63,.12);border-bottom:1px solid rgba(224,38,63,.3);
+    font-size:13px;color:#f0d9dc;}
+  .vpn-notice .icon{flex-shrink:0;font-size:16px;}
+  .vpn-notice .msg{flex:1;line-height:1.4;}
+  .vpn-notice .close-btn{flex-shrink:0;background:none;border:none;color:inherit;font-size:18px;
+    cursor:pointer;padding:2px 6px;opacity:.7;}
+  .vpn-notice .close-btn:hover{opacity:1;}
+  @media(max-width:700px){ .vpn-notice{padding:8px 14px;font-size:12.5px;} }
+
+  /* ---------- Continue Watching (top strip) ---------- */
+  .row-continue-top{padding:14px clamp(16px,4vw,56px) 4px;}
+  .row-continue-top .row-track{gap:12px;}
+
   .hero{position:relative;min-height:70vh;display:flex;align-items:flex-end;
     padding:0 clamp(16px,4vw,56px) 60px;background-size:cover;background-position:center;background-color:var(--bg-elev);}
   .hero::before{content:'';position:absolute;inset:0;
@@ -110,12 +125,19 @@
   .grid .card{width:100%;}
   .card:hover{transform:translateY(-5px);border-color:var(--accent-dim);}
   .card-thumb{width:100%;aspect-ratio:2/3;object-fit:cover;background:#222;}
+  .card-thumb.img-loading{background:linear-gradient(90deg,#1a1a1d 25%,#28282c 37%,#1a1a1d 63%);
+    background-size:400% 100%;animation:skeleton-shimmer 1.4s ease infinite;}
+  @keyframes skeleton-shimmer{0%{background-position:100% 50%;}100%{background-position:0 50%;}}
   .card-duration{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:var(--gold);
     font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;}
   .card-badge{position:absolute;top:8px;left:8px;background:var(--accent);color:#fff;
     font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;}
+  .card-adult-badge{position:absolute;top:8px;left:8px;background:#c81e35;color:#fff;
+    font-size:11px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:3px;
+    box-shadow:0 0 0 1px rgba(255,255,255,.25),0 2px 6px rgba(200,30,53,.5);}
   .card-premium{position:absolute;bottom:52px;left:8px;background:var(--gold);color:#0a0a0d;
     font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 8px;border-radius:3px;}
+  .card.is-premium{border:1px solid rgba(212,175,55,.5);box-shadow:0 0 14px rgba(212,175,55,.18);}
   .card-body{padding:10px 12px;}
   .card-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .card-meta{font-size:11px;color:var(--ink-faint);}
@@ -152,6 +174,10 @@
   .modal-desc{font-size:14px;color:var(--ink-dim);}
   .modal-close{position:absolute;top:12px;right:12px;z-index:5;width:34px;height:34px;border-radius:50%;
     background:rgba(0,0,0,.6);color:#fff;border:none;font-size:18px;cursor:pointer;}
+  .player-spinner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4;
+    width:44px;height:44px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--accent);
+    border-radius:50%;animation:player-spin .8s linear infinite;pointer-events:none;}
+  @keyframes player-spin{to{transform:translate(-50%,-50%) rotate(360deg);}}
 
   /* ---------- Generic small modal (auth / pin / premium gate) ---------- */
   .sm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:110;padding:20px;}
@@ -305,6 +331,12 @@
   </button>
 </header>
 
+<div class="vpn-notice" id="vpnNotice" style="display:none;">
+  <span class="icon">🔒</span>
+  <span class="msg">မိတ်ဆွေ၏ ကြည့်ရှုမှု အတွေ့အကြုံ ပိုမိုကောင်းမွန်စေရန် VPN ဖွင့်၍ ကြည့်ရှုရန် အကြံပြုပါသည်</span>
+  <button class="close-btn" id="vpnNoticeClose" aria-label="Close">✕</button>
+</div>
+
 <div class="mobile-menu" id="mobileMenu">
   <div class="search-box search-box-mobile" id="searchBoxMobile">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -318,6 +350,7 @@
 
 <!-- ================= HOME VIEW ================= -->
 <div id="view-home" class="view-root">
+  <div class="row row-continue-top" id="continueTopWrap" style="display:none;"></div>
   <section class="hero" id="heroSection">
     <div class="hero-content">
       <span class="hero-badge" id="heroBadge">ယနေ့ အထူးဇာတ်ကား</span>
@@ -396,6 +429,30 @@
 </div>
 
 <!-- ================= 18+ PIN LOCK MODAL ================= -->
+<!-- ================= FIRST-VISIT ONBOARDING ================= -->
+<div class="sm-overlay" id="onboardOverlay">
+  <div class="sm-box" style="max-width:420px;text-align:left;">
+    <div style="font-size:32px;margin-bottom:10px;text-align:center;">🎬</div>
+    <h3 style="text-align:center;">Maxflix Streaming မှ ကြိုဆိုပါတယ်</h3>
+    <p style="text-align:center;margin-bottom:16px;">စတင်ခင် ဒီ ၃ ချက်ကို သိထားပါ —</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px;">
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <span style="font-size:18px;">🎥</span>
+        <span style="font-size:13.5px;color:var(--ink-dim);"><b style="color:var(--ink);">Movies</b> နဲ့ <b style="color:var(--ink);">Short Drama</b> — အားလုံး ကြည့်ရှုနိုင်ပါတယ်၊ ★ PREMIUM tag ပါတဲ့ ဇာတ်ကားများအတွက် subscription လိုအပ်ပါမယ်</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <span style="font-size:18px;">🔒</span>
+        <span style="font-size:13.5px;color:var(--ink-dim);"><b style="color:var(--ink);">18+</b> content ကို PIN နံပါတ်နဲ့ ကာကွယ်ထားပါတယ် — PIN ကို admin ဆီကနေ တောင်းယူရပါမယ်</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:flex-start;">
+        <span style="font-size:18px;">↩️</span>
+        <span style="font-size:13.5px;color:var(--ink-dim);">Video ကြည့်နေရင်း <b style="color:var(--ink);">"← ပြန်သွားမည်"</b> button ဒါမှမဟုတ် phone ရဲ့ back gesture နဲ့ ပြန်ထွက်လို့ရပါတယ်</span>
+      </div>
+    </div>
+    <button class="btn btn-accent btn-block" id="onboardCloseBtn">စတင်ကြည့်ရှုမည်</button>
+  </div>
+</div>
+
 <div class="sm-overlay" id="pinOverlay">
   <div class="sm-box">
     <div style="font-size:28px;margin-bottom:8px;">🔒</div>
@@ -771,8 +828,9 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
    ========================================================= */
 function movieCardHtml(m){
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
-  return `<div class="card" data-type="movie" data-id="${m.id}">
-    <img class="card-thumb" loading="lazy" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+  return `<div class="card${m.isPremium ? ' is-premium' : ''}" data-type="movie" data-id="${m.id}">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    ${m.category === 'adult' ? `<div class="card-adult-badge">18+</div>` : ''}
     ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
     ${m.isPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
     <div class="card-body">
@@ -782,8 +840,8 @@ function movieCardHtml(m){
 }
 function seriesCardHtml(s){
   const thumb = s.thumb ? esc(s.thumb) : PLACEHOLDER_THUMB;
-  return `<div class="card" data-type="series" data-name="${esc(s.name)}">
-    <img class="card-thumb" loading="lazy" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+  return `<div class="card${s.hasPremium ? ' is-premium' : ''}" data-type="series" data-name="${esc(s.name)}">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <div class="card-badge">${s.count} Ep</div>
     ${s.hasPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
     <div class="card-body">
@@ -795,7 +853,7 @@ function continueCardHtml(m, c){
   const pct = c.duration ? Math.min(100, Math.max(4, (c.progress / c.duration) * 100)) : 0;
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
   return `<div class="card" data-type="movie" data-id="${m.id}">
-    <img class="card-thumb" loading="lazy" src="${thumb}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <div class="continue-bar"><div class="continue-bar-fill" style="width:${pct}%;"></div></div>
     <div class="card-body">
       <div class="card-title">${esc(m.title)}</div>
@@ -896,14 +954,24 @@ function render(){
     .map(c => ({ c, m: movies.find(x => x.id === c.movieId) }))
     .filter(x => x.m);
 
+  // Continue Watching ကို hero ရဲ့ အပေါ်ဆုံးမှာ ပြပေးမယ် — returning user
+  // တွေအတွက် hero banner ကို scroll ချရတာ friction လျှော့ချပေးဖို့ပါ
+  const continueTopWrap = document.getElementById('continueTopWrap');
+  if(continueItems.length){
+    continueTopWrap.style.display = '';
+    continueTopWrap.innerHTML = `
+      <div class="row-head"><span class="row-title">ဆက်ကြည့်ရန်</span><span class="row-count">${continueItems.length} ခု</span></div>
+      <div class="row-track">${continueItems.map(x => continueCardHtml(x.m, x.c)).join('')}</div>`;
+    wireCards(continueTopWrap);
+  } else {
+    continueTopWrap.style.display = 'none';
+    continueTopWrap.innerHTML = '';
+  }
+
   // NOTE: 18+ content is intentionally NEVER included on the main/home interface.
   // It only appears inside the PIN-gated "18+" section — see renderAdultSection().
   const wrap = document.getElementById('rowsWrap');
   wrap.innerHTML = `
-    ${continueItems.length ? `<div class="row">
-      <div class="row-head"><span class="row-title">ဆက်ကြည့်ရန်</span><span class="row-count">${continueItems.length} ခု</span></div>
-      <div class="row-track">${continueItems.map(x => continueCardHtml(x.m, x.c)).join('')}</div>
-    </div>` : ''}
     <div class="row">
       <div class="row-head"><span class="row-title">Movies</span><span class="row-count">${originals.length} ခု</span></div>
       <div class="row-track">${originals.length ? originals.map(movieCardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
@@ -1010,7 +1078,7 @@ function openPlayer(id){
   document.getElementById('modalBackBtn').textContent = `← ${VIEW_LABEL[playerReturnView] || 'ပင်မစာမျက်နှာ'} သို့ ပြန်သွားမည်`;
 
   const wrap = document.getElementById('modalVideoWrap');
-  wrap.innerHTML = `<button class="modal-close" id="modalClose">✕</button>`;
+  wrap.innerHTML = `<button class="modal-close" id="modalClose">✕</button><div class="player-spinner" id="playerSpinner"></div>`;
   document.getElementById('modalClose').onclick = () => history.back();
 
   const videoEl = document.createElement('video');
@@ -1036,6 +1104,8 @@ function openPlayer(id){
   } else {
     videoEl.src = srcUrl;
   }
+  videoEl.addEventListener('canplay', () => { const sp = document.getElementById('playerSpinner'); if(sp) sp.remove(); });
+  videoEl.addEventListener('error', () => { const sp = document.getElementById('playerSpinner'); if(sp) sp.remove(); });
   attachProgressTracking(videoEl, m);
 
   document.getElementById('modalTitle').textContent = m.title;
@@ -1139,6 +1209,65 @@ function subscribeBanner(){
   }, () => { document.getElementById('promoBanner').style.display = 'none'; });
 }
 subscribeBanner();
+
+/* ---------- First-visit onboarding modal ---------- */
+(function initOnboarding(){
+  const KEY = 'onboardSeen_v1';
+  try{
+    if(localStorage.getItem(KEY)) return;
+  }catch(e){}
+  const overlay = document.getElementById('onboardOverlay');
+  overlay.classList.add('open');
+  document.getElementById('onboardCloseBtn').addEventListener('click', () => {
+    overlay.classList.remove('open');
+    try{ localStorage.setItem(KEY, '1'); }catch(e){}
+  });
+})();
+
+/* ---------- Swipe gesture: switch between Home/Movies/Short Drama/18+ tabs ----------
+   Row-track (movie card carousels), episode list, and the player modal already use
+   horizontal touch/scroll for their own purpose, so swipes starting inside those are
+   ignored here — only swipes on the general page background trigger a tab change. */
+(function initSwipeNav(){
+  const SWIPE_ORDER = ['home', 'own', 'drama', 'adult'];
+  const IGNORE_SELECTOR = '.row-track, .card, .ep-list, .ep-item, .modal-overlay, .modal-box, input, textarea, button, a';
+  let startX = 0, startY = 0, tracking = false;
+
+  document.body.addEventListener('touchstart', e => {
+    if(e.target.closest(IGNORE_SELECTOR)){ tracking = false; return; }
+    tracking = true;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.body.addEventListener('touchend', e => {
+    if(!tracking) return;
+    tracking = false;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if(Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.5) return; // vertical scroll ဖြစ်ရင် ignore
+    const idx = SWIPE_ORDER.indexOf(currentView);
+    if(idx === -1) return; // search/series view ထဲမှာ swipe-nav မလုပ်ဘူး
+    const nextIdx = dx < 0 ? idx + 1 : idx - 1; // left swipe = next tab, right swipe = previous tab
+    if(nextIdx < 0 || nextIdx >= SWIPE_ORDER.length) return;
+    const nextView = SWIPE_ORDER[nextIdx];
+    if(nextView === 'adult'){ requestAdultUnlock(() => { renderAdultSection(); showView('adult'); }); }
+    else { showView(nextView); }
+  }, { passive: true });
+})();
+
+/* ---------- VPN notice bar — dismiss ပြီးရင် ထပ်မပေါ်စေဖို့ localStorage ထဲ မှတ်ထားမယ် ---------- */
+(function initVpnNotice(){
+  const NOTICE_KEY = 'vpnNoticeDismissed_v1'; // message ပြောင်းရင် _v2 လို ပြောင်းပေးရင် ထပ်ပေါ်လာမယ်
+  const notice = document.getElementById('vpnNotice');
+  try{
+    if(!localStorage.getItem(NOTICE_KEY)) notice.style.display = 'flex';
+  }catch(e){ notice.style.display = 'flex'; } // localStorage မရရင်တောင် notice ကို ပြပေးမယ်
+  document.getElementById('vpnNoticeClose').addEventListener('click', () => {
+    notice.style.display = 'none';
+    try{ localStorage.setItem(NOTICE_KEY, '1'); }catch(e){}
+  });
+})();
 </script>
 </body>
 </html>
