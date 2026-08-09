@@ -387,6 +387,7 @@
       <button class="modal-close" id="modalClose">✕</button>
     </div>
     <div class="modal-info">
+      <button class="back-link" id="modalBackBtn" style="margin-bottom:10px;"></button>
       <div class="modal-title" id="modalTitle"></div>
       <div class="modal-meta" id="modalMeta"></div>
       <div class="modal-desc" id="modalDesc"></div>
@@ -498,7 +499,7 @@ const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8," + encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' width='210' height='315'><rect width='210' height='315' fill='%231a1a21'/><text x='50%' y='50%' fill='%236b6970' font-size='13' font-family='sans-serif' text-anchor='middle'>No Poster</text></svg>`);
 
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-const CATEGORY_LABEL = { original: 'Own', drama: 'Short Drama', adult: '18+' };
+const CATEGORY_LABEL = { original: 'Movies', drama: 'Short Drama', adult: '18+' };
 
 function showToast(msg, type){
   const wrap = document.getElementById('toastWrap');
@@ -904,7 +905,7 @@ function render(){
       <div class="row-track">${continueItems.map(x => continueCardHtml(x.m, x.c)).join('')}</div>
     </div>` : ''}
     <div class="row">
-      <div class="row-head"><span class="row-title">Own</span><span class="row-count">${originals.length} ခု</span></div>
+      <div class="row-head"><span class="row-title">Movies</span><span class="row-count">${originals.length} ခု</span></div>
       <div class="row-track">${originals.length ? originals.map(movieCardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
     </div>
     <div class="row">
@@ -963,9 +964,22 @@ function openSeries(name, silentRefresh){
       <div class="ep-play">▶</div>
     </div>`).join('');
   epList.querySelectorAll('.ep-item').forEach(el => el.addEventListener('click', () => openPlayer(el.dataset.id)));
-  if(!silentRefresh) showView('series');
+  if(!silentRefresh){ showView('series'); history.pushState({ maxflixModal: 'series' }, ''); }
 }
-document.getElementById('seriesBackBtn').addEventListener('click', () => { currentSeries = null; showView('drama'); });
+document.getElementById('seriesBackBtn').addEventListener('click', () => history.back());
+
+/* Hardware/gesture "back" ကို modal/series view ပိတ်ဖို့ပဲ သုံးမယ် — history entry
+   ကနေ pop ဖြစ်တာနဲ့ site တစ်ခုလုံးကနေ ထွက်မသွားဘဲ ပြီးခဲ့တဲ့ view ကိုပဲ ပြန်ပြပေးမယ် */
+window.addEventListener('popstate', () => {
+  if(document.getElementById('modalOverlay').classList.contains('open')){
+    closePlayer();
+    return;
+  }
+  if(currentView === 'series'){
+    currentSeries = null;
+    showView('drama');
+  }
+});
 
 /* =========================================================
    10) PLAYER MODAL (with premium + 18+ gating)
@@ -983,15 +997,21 @@ function pickVideoUrl(m){
   const isSlowConn = !!(conn && (conn.saveData || /2g/.test(conn.effectiveType || '')));
   return (isSmallScreen || isSlowConn) ? m.videoUrlMobile : m.videoUrl;
 }
+const VIEW_LABEL = { home: 'ပင်မစာမျက်နှာ', own: 'Movies', drama: 'Short Drama', series: 'Short Drama', adult: '18+', search: 'ရှာဖွေမှု' };
+let playerReturnView = 'home';
+
 function openPlayer(id){
   const m = movies.find(x => x.id === id);
   if(!m) return;
   if(m.category === 'adult' && !adultUnlocked){ requestAdultUnlock(() => openPlayer(id)); return; }
   if(m.isPremium && !isPremiumActive()){ openPremiumGate(id); return; }
 
+  playerReturnView = currentView; // 18+/Movies/Short Drama/Series — ဘယ် view ကနေ ဖွင့်လိုက်တာလဲ မှတ်ထား
+  document.getElementById('modalBackBtn').textContent = `← ${VIEW_LABEL[playerReturnView] || 'ပင်မစာမျက်နှာ'} သို့ ပြန်သွားမည်`;
+
   const wrap = document.getElementById('modalVideoWrap');
   wrap.innerHTML = `<button class="modal-close" id="modalClose">✕</button>`;
-  document.getElementById('modalClose').onclick = closePlayer;
+  document.getElementById('modalClose').onclick = () => history.back();
 
   const videoEl = document.createElement('video');
   videoEl.controls = true;
@@ -1023,6 +1043,7 @@ function openPlayer(id){
   document.getElementById('modalMeta').innerHTML = seriesTag + (CATEGORY_LABEL[m.category]||'') + (m.duration ? ' • ' + esc(m.duration) : '');
   document.getElementById('modalDesc').textContent = m.desc || '';
   document.getElementById('modalOverlay').classList.add('open');
+  history.pushState({ maxflixModal: 'player' }, '');
 }
 function closePlayer(){
   document.getElementById('modalOverlay').classList.remove('open');
@@ -1058,7 +1079,8 @@ function attachProgressTracking(videoEl, m){
   });
   videoEl.addEventListener('pause', saveProgress);
 }
-document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') closePlayer(); });
+document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') history.back(); });
+document.getElementById('modalBackBtn').addEventListener('click', () => history.back());
 document.getElementById('pinOverlay').addEventListener('click', e => {
   if(e.target.id==='pinOverlay'){ e.currentTarget.classList.remove('open'); pendingUnlockCallback = null; }
 });
