@@ -828,8 +828,9 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
    ========================================================= */
 function movieCardHtml(m){
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
+  const ratioStyle = m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '';
   return `<div class="card${m.isPremium ? ' is-premium' : ''}" data-type="movie" data-id="${m.id}">
-    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     ${m.category === 'adult' ? `<div class="card-adult-badge">18+</div>` : ''}
     ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
     ${m.isPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
@@ -840,8 +841,9 @@ function movieCardHtml(m){
 }
 function seriesCardHtml(s){
   const thumb = s.thumb ? esc(s.thumb) : PLACEHOLDER_THUMB;
+  const ratioStyle = s.thumbAspectRatio ? ` style="aspect-ratio:${esc(s.thumbAspectRatio)};"` : '';
   return `<div class="card${s.hasPremium ? ' is-premium' : ''}" data-type="series" data-name="${esc(s.name)}">
-    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <div class="card-badge">${s.count} Ep</div>
     ${s.hasPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
     <div class="card-body">
@@ -852,8 +854,9 @@ function seriesCardHtml(s){
 function continueCardHtml(m, c){
   const pct = c.duration ? Math.min(100, Math.max(4, (c.progress / c.duration) * 100)) : 0;
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
+  const ratioStyle = m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '';
   return `<div class="card" data-type="movie" data-id="${m.id}">
-    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <div class="continue-bar"><div class="continue-bar-fill" style="width:${pct}%;"></div></div>
     <div class="card-body">
       <div class="card-title">${esc(m.title)}</div>
@@ -939,7 +942,7 @@ function getDramaSeries(){
   });
   return Object.entries(map).map(([name, eps]) => {
     eps.sort((a,b) => (Number(a.episodeNumber)||0) - (Number(b.episodeNumber)||0));
-    return { name, episodes: eps, thumb: eps[0].thumbUrl, count: eps.length, desc: eps[0].desc, hasPremium: eps.some(e => e.isPremium) };
+    return { name, episodes: eps, thumb: eps[0].thumbUrl, thumbAspectRatio: eps[0].thumbAspectRatio, count: eps.length, desc: eps[0].desc, hasPremium: eps.some(e => e.isPremium) };
   }).sort((a,b) => (b.episodes[0].createdAtMs||0) - (a.episodes[0].createdAtMs||0));
 }
 
