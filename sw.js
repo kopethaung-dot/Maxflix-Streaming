@@ -10,7 +10,7 @@
  *   calls or video files, which always go straight to the network.
  */
 
-const CACHE_NAME = 'maxflix-shell-v1';
+const CACHE_NAME = 'maxflix-shell-v2';
 const APP_SHELL = [
   './',
   './index.html',
