@@ -6,6 +6,14 @@
 <title>Maxflix Streaming</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0d">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Maxflix">
+
 <!-- Firebase (compat SDK — no build tools needed) -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -118,6 +126,23 @@
   .page.open{display:block;}
   .page-title{font-family:var(--font-display);font-size:32px;letter-spacing:1px;margin-bottom:4px;}
   .page-sub{color:var(--ink-faint);font-size:13px;margin-bottom:26px;}
+  .genre-filter-row{display:flex;align-items:center;gap:10px;margin:-14px 0 20px;font-size:13.5px;color:var(--ink-dim);}
+  .genre-filter-row select{background:var(--bg-card);color:var(--ink);border:1px solid var(--line);
+    border-radius:6px;padding:6px 10px;font-size:13.5px;}
+  .modal-rating-row{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap;}
+  .rating-btn{background:var(--bg-card);color:var(--ink-dim);border:1px solid var(--line);border-radius:20px;
+    padding:6px 14px;font-size:13px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;}
+  .rating-btn:hover{border-color:var(--ink-dim);color:var(--ink);}
+  .rating-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  /* ---------- Splash screen ---------- */
+  .splash-screen{position:fixed;inset:0;z-index:9999;background:#0a0a0d;
+    display:flex;align-items:center;justify-content:center;
+    animation:splash-fade-out .5s ease .9s forwards;}
+  .splash-mark{font-family:var(--font-display);font-size:clamp(40px,10vw,72px);letter-spacing:6px;
+    color:var(--accent);animation:splash-mark-in .7s cubic-bezier(.2,.9,.3,1.2) both;}
+  @keyframes splash-mark-in{0%{opacity:0;transform:scale(.85);letter-spacing:2px;}100%{opacity:1;transform:scale(1);letter-spacing:6px;}}
+  @keyframes splash-fade-out{0%{opacity:1;pointer-events:auto;}100%{opacity:0;pointer-events:none;visibility:hidden;}}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
 
   .card{position:relative;flex:0 0 auto;width:210px;background:var(--bg-card);border:1px solid var(--line);
@@ -138,6 +163,15 @@
   .card-premium{position:absolute;bottom:52px;left:8px;background:var(--gold);color:#0a0a0d;
     font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 8px;border-radius:3px;}
   .card.is-premium{border:1px solid rgba(212,175,55,.5);box-shadow:0 0 14px rgba(212,175,55,.18);}
+  .card-bookmark{position:absolute;bottom:52px;right:8px;z-index:3;width:28px;height:28px;border-radius:50%;
+    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:13px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,transform .15s;}
+  .card-bookmark:hover{background:rgba(0,0,0,.8);transform:scale(1.08);}
+  .card-bookmark.active{background:var(--accent);border-color:var(--accent);}
+  @media(max-width:520px){ .card-bookmark{bottom:44px;width:24px;height:24px;font-size:11px;} }
+  .card-hover-preview{position:absolute;top:0;left:0;right:0;bottom:52px;width:100%;height:auto;object-fit:cover;z-index:2;
+    background:#000;pointer-events:none;}
+  @media(max-width:520px){ .card-hover-preview{bottom:44px;} }
   .card-body{padding:10px 12px;}
   .card-title{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .card-meta{font-size:11px;color:var(--ink-faint);}
@@ -178,6 +212,12 @@
     width:44px;height:44px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--accent);
     border-radius:50%;animation:player-spin .8s linear infinite;pointer-events:none;}
   @keyframes player-spin{to{transform:translate(-50%,-50%) rotate(360deg);}}
+  .autonext-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);z-index:6;
+    display:flex;align-items:center;justify-content:center;padding:20px;}
+  .autonext-box{max-width:340px;text-align:center;}
+  .autonext-label{color:var(--ink-dim);font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+  .autonext-title{color:var(--ink);font-size:16px;font-weight:600;margin-bottom:18px;}
+  .autonext-actions{display:flex;flex-direction:column;gap:8px;}
 
   /* ---------- Generic small modal (auth / pin / premium gate) ---------- */
   .sm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:110;padding:20px;}
@@ -298,6 +338,10 @@
 </head>
 <body style="position:relative;">
 
+<div id="splashScreen" class="splash-screen">
+  <div class="splash-mark">MAXFLIX</div>
+</div>
+
 <header>
   <div class="brand" data-view="home">
     <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
@@ -316,6 +360,7 @@
     <button class="nav-tab" data-view="own">Movies</button>
     <button class="nav-tab" data-view="drama">Short Drama</button>
     <button class="nav-tab" data-view="adult">18+</button>
+    <button class="nav-tab" data-view="mylist">My List</button>
     <div class="search-box" id="searchBox">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
@@ -346,6 +391,7 @@
   <button class="nav-tab" data-view="own">Movies</button>
   <button class="nav-tab" data-view="drama">Short Drama</button>
   <button class="nav-tab" data-view="adult">18+</button>
+    <button class="nav-tab" data-view="mylist">My List</button>
 </div>
 
 <!-- ================= HOME VIEW ================= -->
@@ -387,9 +433,21 @@
   <div class="grid" id="adultGrid"></div>
 </div>
 
+<div id="view-mylist" class="page">
+  <div class="page-title">My List</div>
+  <div class="page-sub" id="mylistCount"></div>
+  <div class="grid" id="mylistGrid"></div>
+</div>
+
 <div id="view-search" class="page">
   <div class="page-title">ရှာဖွေမှုရလဒ်</div>
   <div class="page-sub" id="searchCount"></div>
+  <div class="genre-filter-row">
+    <label for="searchGenreSelect">Genre:</label>
+    <select id="searchGenreSelect">
+      <option value="">အားလုံး</option>
+    </select>
+  </div>
   <div class="grid" id="searchGrid"></div>
 </div>
 
@@ -423,6 +481,11 @@
       <button class="back-link" id="modalBackBtn" style="margin-bottom:10px;"></button>
       <div class="modal-title" id="modalTitle"></div>
       <div class="modal-meta" id="modalMeta"></div>
+      <div class="modal-rating-row" id="modalRatingRow">
+        <button class="rating-btn" id="modalLikeBtn">👍 <span id="modalLikeCount">0</span></button>
+        <button class="rating-btn" id="modalDislikeBtn">👎 <span id="modalDislikeCount">0</span></button>
+        <button class="rating-btn" id="modalMyListBtn">🏷️ My List</button>
+      </div>
       <div class="modal-desc" id="modalDesc"></div>
     </div>
   </div>
@@ -557,6 +620,12 @@ const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8," + encodeURIComponent(
 
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const CATEGORY_LABEL = { original: 'Movies', drama: 'Short Drama', adult: '18+' };
+function formatViewCount(n){
+  if(!n) return '0';
+  if(n >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'') + 'M';
+  if(n >= 1000) return (n/1000).toFixed(1).replace(/\.0$/,'') + 'K';
+  return String(n);
+}
 
 function showToast(msg, type){
   const wrap = document.getElementById('toastWrap');
@@ -586,12 +655,15 @@ let currentHls = null;
 
 let movies = [];
 let continueList = []; // [{movieId, progress, duration}] for the logged-in user
+let myList = [];        // [movieId,...] — logged-in user ရဲ့ watchlist
+let myListUnsub = null;
 let currentView = 'home';
 let currentSeries = null;
 let currentUser = null;      // firebase auth user
 let currentUserDoc = null;   // Firestore users/{uid} doc data
 let currentPendingRequest = null; // latest pending premiumRequests doc for this user
 let pendingPlayId = null;    // movie id waiting on gate resolution
+let searchGenreFilter = '';  // genre dropdown value in search view
 
 /* =========================================================
    3) NAVIGATION / VIEW ROUTING
@@ -617,6 +689,7 @@ document.querySelectorAll('[data-view]').forEach(el => {
     document.getElementById('searchInputMobile').value = '';
     const view = el.dataset.view;
     if(view === 'adult'){ requestAdultUnlock(() => { renderAdultSection(); showView('adult'); }); }
+    else if(view === 'mylist' && !currentUser){ openAuthModal(); }
     else { showView(view); }
   });
 });
@@ -756,6 +829,49 @@ function subscribeContinueWatching(){
     .onSnapshot(snap => { continueList = snap.docs.map(d => d.data()); render(); },
       () => { continueList = []; }); // subcollection may not exist yet — fail quietly
 }
+function subscribeMyList(){
+  if(myListUnsub){ myListUnsub(); myListUnsub = null; }
+  if(!currentUser){ myList = []; render(); return; }
+  myListUnsub = db.collection('users').doc(currentUser.uid).collection('myList')
+    .orderBy('addedAt', 'desc')
+    .onSnapshot(snap => { myList = snap.docs.map(d => d.id); render(); },
+      () => { myList = []; });
+}
+function toggleMyList(movieId){
+  if(!currentUser){ openAuthModal(); return; }
+  const ref = db.collection('users').doc(currentUser.uid).collection('myList').doc(movieId);
+  if(myList.includes(movieId)){
+    ref.delete().catch(()=>{});
+  } else {
+    ref.set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
+  }
+}
+
+/* ---------- Rating (👍/👎) ---------- */
+function getRatingVoteKey(movieId){ return `rating_${movieId}`; }
+function getMyRatingVote(movieId){
+  try{ return localStorage.getItem(getRatingVoteKey(movieId)); }catch(e){ return null; }
+}
+function setRating(movieId, vote){ // vote: 'like' | 'dislike'
+  const prevVote = getMyRatingVote(movieId);
+  const updates = {};
+  const m = movies.find(x => x.id === movieId);
+  if(prevVote === vote){
+    // ထပ်နှိပ်ရင် vote ကို ပယ်ဖျက် (undo)
+    updates[vote === 'like' ? 'likeCount' : 'dislikeCount'] = firebase.firestore.FieldValue.increment(-1);
+    if(m) m[vote === 'like' ? 'likeCount' : 'dislikeCount'] = Math.max(0, (m[vote === 'like' ? 'likeCount' : 'dislikeCount']||0) - 1);
+    try{ localStorage.removeItem(getRatingVoteKey(movieId)); }catch(e){}
+  } else {
+    updates[vote === 'like' ? 'likeCount' : 'dislikeCount'] = firebase.firestore.FieldValue.increment(1);
+    if(m) m[vote === 'like' ? 'likeCount' : 'dislikeCount'] = (m[vote === 'like' ? 'likeCount' : 'dislikeCount']||0) + 1;
+    if(prevVote){
+      updates[prevVote === 'like' ? 'likeCount' : 'dislikeCount'] = firebase.firestore.FieldValue.increment(-1);
+      if(m) m[prevVote === 'like' ? 'likeCount' : 'dislikeCount'] = Math.max(0, (m[prevVote === 'like' ? 'likeCount' : 'dislikeCount']||0) - 1);
+    }
+    try{ localStorage.setItem(getRatingVoteKey(movieId), vote); }catch(e){}
+  }
+  db.collection('movies').doc(movieId).update(updates).catch(()=>{});
+}
 auth.onAuthStateChanged(user => {
   currentUser = user;
   adultUnlocked = false;
@@ -774,6 +890,7 @@ auth.onAuthStateChanged(user => {
     currentUserDoc = null; currentPendingRequest = null;
   }
   subscribeContinueWatching();
+  subscribeMyList();
   renderAccountArea();
   render();
 });
@@ -829,14 +946,16 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
 function movieCardHtml(m){
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
   const ratioStyle = m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '';
+  const inList = myList.includes(m.id);
   return `<div class="card${m.isPremium ? ' is-premium' : ''}" data-type="movie" data-id="${m.id}">
     <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <button class="card-bookmark${inList ? ' active' : ''}" data-id="${m.id}" aria-label="My List" title="My List">${inList ? '🔖' : '🏷️'}</button>
     ${m.category === 'adult' ? `<div class="card-adult-badge">18+</div>` : ''}
     ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
     ${m.isPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
     <div class="card-body">
       <div class="card-title">${esc(m.title)}</div>
-      <div class="card-meta">${CATEGORY_LABEL[m.category] || ''}</div>
+      <div class="card-meta">${CATEGORY_LABEL[m.category] || ''}${m.viewCount ? ` • ${formatViewCount(m.viewCount)} ကြည့်ရှု` : ''}</div>
     </div></div>`;
 }
 function seriesCardHtml(s){
@@ -866,6 +985,44 @@ function continueCardHtml(m, c){
 function wireCards(container){
   container.querySelectorAll('[data-type="movie"]').forEach(c => c.addEventListener('click', () => openPlayer(c.dataset.id)));
   container.querySelectorAll('[data-type="series"]').forEach(c => c.addEventListener('click', () => openSeries(c.dataset.name)));
+  container.querySelectorAll('.card-bookmark').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleMyList(btn.dataset.id);
+    });
+  });
+  wireHoverPreview(container);
+}
+
+/* ---------- Hover preview (desktop only) ----------
+   Card ပေါ်မှာ mouse ထား ~700ms ကြာရင် video ရဲ့ ပထမ ၆ စက္ကန့်ကို muted/loop
+   auto-play ပြပေးမယ် — touch device (mobile) မှာတော့ hover concept မရှိတာမို့
+   matchMedia(hover:hover) check နဲ့ desktop ကိုပဲ ကန့်သတ်ထားတယ်။ */
+const supportsHoverPreview = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+function wireHoverPreview(container){
+  if(!supportsHoverPreview) return;
+  container.querySelectorAll('.card[data-type="movie"]').forEach(card => {
+    let hoverTimer = null, previewVideo = null;
+    card.addEventListener('mouseenter', () => {
+      const m = movies.find(x => x.id === card.dataset.id);
+      if(!m || !m.videoUrl) return;
+      hoverTimer = setTimeout(() => {
+        const img = card.querySelector('.card-thumb');
+        if(!img) return;
+        previewVideo = document.createElement('video');
+        previewVideo.className = 'card-hover-preview';
+        previewVideo.src = pickVideoUrl(m);
+        previewVideo.muted = true; previewVideo.autoplay = true; previewVideo.loop = false; previewVideo.playsInline = true;
+        previewVideo.addEventListener('timeupdate', () => { if(previewVideo.currentTime > 6) previewVideo.currentTime = 0; });
+        img.insertAdjacentElement('afterend', previewVideo);
+        previewVideo.play().catch(()=>{});
+      }, 700);
+    });
+    card.addEventListener('mouseleave', () => {
+      clearTimeout(hoverTimer);
+      if(previewVideo){ previewVideo.remove(); previewVideo = null; }
+    });
+  });
 }
 
 /* =========================================================
@@ -878,18 +1035,27 @@ function updateLoadMoreVisibility(){
   wrap.style.display = (applicable && hasMoreMovies) ? 'flex' : 'none';
 }
 
+const GENRE_LIST = ['Action','Romance','Comedy','Thriller','Fantasy','Horror','Drama','Crime','Family'];
+document.getElementById('searchGenreSelect').innerHTML =
+  '<option value="">အားလုံး</option>' + GENRE_LIST.map(g => `<option value="${g}">${g}</option>`).join('');
+document.getElementById('searchGenreSelect').addEventListener('change', e => {
+  searchGenreFilter = e.target.value;
+  performSearch(document.getElementById('searchInput').value || document.getElementById('searchInputMobile').value);
+});
+
 function performSearch(query){
   query = query.trim().toLowerCase();
-  if(!query){ showView('home'); return; }
+  if(!query && !searchGenreFilter){ showView('home'); return; }
   const results = [];
   const seenSeries = new Set();
   movies.filter(m => m.category !== 'adult').forEach(m => {
+    if(searchGenreFilter && !(m.genres || []).includes(searchGenreFilter)) return;
     if(m.category === 'drama'){
       const key = (m.seriesName && m.seriesName.trim()) || m.title;
-      const nameMatches = key.toLowerCase().includes(query);
-      const titleMatches = m.title.toLowerCase().includes(query);
+      const nameMatches = !query || key.toLowerCase().includes(query);
+      const titleMatches = !query || m.title.toLowerCase().includes(query);
       if((nameMatches || titleMatches) && !seenSeries.has(key)) seenSeries.add(key);
-    } else if(m.title && m.title.toLowerCase().includes(query)){
+    } else if(!query || (m.title && m.title.toLowerCase().includes(query))){
       results.push({ type: 'movie', data: m });
     }
   });
@@ -903,8 +1069,13 @@ function performSearch(query){
   wireCards(grid);
   showView('search');
 }
+let searchDebounceTimer = null;
 function wireSearchInput(input){
-  input.addEventListener('keydown', e => { if(e.key === 'Enter'){ performSearch(input.value); } });
+  input.addEventListener('keydown', e => { if(e.key === 'Enter'){ clearTimeout(searchDebounceTimer); performSearch(input.value); } });
+  input.addEventListener('input', () => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => performSearch(input.value), 300); // debounced instant search
+  });
 }
 wireSearchInput(document.getElementById('searchInput'));
 wireSearchInput(document.getElementById('searchInputMobile'));
@@ -929,6 +1100,20 @@ function renderAdultSection(){
   const adults = movies.filter(m => m.category === 'adult');
   countEl.textContent = adults.length + ' ခု';
   grid.innerHTML = adults.length ? adults.map(movieCardHtml).join('') : `<div class="empty-page">မထည့်ရသေးပါ</div>`;
+  wireCards(grid);
+}
+
+function renderMyListSection(){
+  const countEl = document.getElementById('mylistCount');
+  const grid = document.getElementById('mylistGrid');
+  if(!currentUser){
+    countEl.textContent = '';
+    grid.innerHTML = `<div class="empty-page">Login ဝင်ပြီး My List ကို သုံးနိုင်ပါတယ်</div>`;
+    return;
+  }
+  const saved = myList.map(id => movies.find(m => m.id === id)).filter(Boolean).filter(m => m.category !== 'adult' || adultUnlocked);
+  countEl.textContent = saved.length + ' ခု';
+  grid.innerHTML = saved.length ? saved.map(movieCardHtml).join('') : `<div class="empty-page">My List ထဲမှာ ဘာမှ မရှိသေးပါ — Card ပေါ်က 🔖 icon ကို နှိပ်ပြီး ထည့်နိုင်ပါတယ်</div>`;
   wireCards(grid);
 }
 
@@ -973,8 +1158,15 @@ function render(){
 
   // NOTE: 18+ content is intentionally NEVER included on the main/home interface.
   // It only appears inside the PIN-gated "18+" section — see renderAdultSection().
+  const trending = movies.filter(m => m.category !== 'adult' && m.viewCount > 0)
+    .sort((a,b) => (b.viewCount||0) - (a.viewCount||0)).slice(0, 12);
+
   const wrap = document.getElementById('rowsWrap');
   wrap.innerHTML = `
+    ${trending.length ? `<div class="row">
+      <div class="row-head"><span class="row-title">🔥 Trending Now</span><span class="row-count">${trending.length} ခု</span></div>
+      <div class="row-track">${trending.map(movieCardHtml).join('')}</div>
+    </div>` : ''}
     <div class="row">
       <div class="row-head"><span class="row-title">Movies</span><span class="row-count">${originals.length} ခု</span></div>
       <div class="row-track">${originals.length ? originals.map(movieCardHtml).join('') : `<div class="empty-row">မရှိသေးပါ</div>`}</div>
@@ -997,6 +1189,7 @@ function render(){
 
   // 18+ grid is only ever filled in when the PIN has been entered this session.
   renderAdultSection();
+  renderMyListSection();
 
   const featured = movies.find(m => m.featured && m.category !== 'adult') || movies.find(m => m.category !== 'adult');
   if(featured){
@@ -1110,18 +1303,82 @@ function openPlayer(id){
   videoEl.addEventListener('canplay', () => { const sp = document.getElementById('playerSpinner'); if(sp) sp.remove(); });
   videoEl.addEventListener('error', () => { const sp = document.getElementById('playerSpinner'); if(sp) sp.remove(); });
   attachProgressTracking(videoEl, m);
+  db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
+  wireAutoPlayNext(videoEl, m, wrap);
 
   document.getElementById('modalTitle').textContent = m.title;
   const seriesTag = m.category === 'drama' && m.seriesName ? `${esc(m.seriesName)} · Ep ${m.episodeNumber||''} · ` : '';
-  document.getElementById('modalMeta').innerHTML = seriesTag + (CATEGORY_LABEL[m.category]||'') + (m.duration ? ' • ' + esc(m.duration) : '');
+  document.getElementById('modalMeta').innerHTML = seriesTag + (CATEGORY_LABEL[m.category]||'') + (m.duration ? ' • ' + esc(m.duration) : '') + (m.viewCount ? ' • ' + formatViewCount(m.viewCount) + ' ကြည့်ရှု' : '') + (m.genres && m.genres.length ? ' • ' + m.genres.map(esc).join(', ') : '');
   document.getElementById('modalDesc').textContent = m.desc || '';
+  wireModalRatingButtons(m);
   document.getElementById('modalOverlay').classList.add('open');
   history.pushState({ maxflixModal: 'player' }, '');
+}
+function wireModalRatingButtons(m){
+  const likeBtn = document.getElementById('modalLikeBtn');
+  const dislikeBtn = document.getElementById('modalDislikeBtn');
+  const myListBtn = document.getElementById('modalMyListBtn');
+  const myVote = getMyRatingVote(m.id);
+  likeBtn.querySelector('span').textContent = formatViewCount(m.likeCount || 0);
+  dislikeBtn.querySelector('span').textContent = formatViewCount(m.dislikeCount || 0);
+  likeBtn.classList.toggle('active', myVote === 'like');
+  dislikeBtn.classList.toggle('active', myVote === 'dislike');
+  myListBtn.textContent = myList.includes(m.id) ? '🔖 My List ထဲမှာရှိပြီ' : '🏷️ My List ထဲထည့်မည်';
+  myListBtn.classList.toggle('active', myList.includes(m.id));
+
+  likeBtn.onclick = () => { setRating(m.id, 'like'); wireModalRatingButtons(m); };
+  dislikeBtn.onclick = () => { setRating(m.id, 'dislike'); wireModalRatingButtons(m); };
+  myListBtn.onclick = () => { toggleMyList(m.id); wireModalRatingButtons(m); };
 }
 function closePlayer(){
   document.getElementById('modalOverlay').classList.remove('open');
   if(currentHls){ currentHls.destroy(); currentHls = null; }
+  if(autoNextTimer){ clearInterval(autoNextTimer); autoNextTimer = null; }
   document.getElementById('modalVideoWrap').innerHTML = '';
+}
+
+/* ---------- Auto-play next episode (Short Drama series) ---------- */
+let autoNextTimer = null;
+function wireAutoPlayNext(videoEl, m, wrap){
+  if(m.category !== 'drama' || !m.seriesName) return;
+  const series = getDramaSeries().find(s => s.name === (m.seriesName.trim() || m.title));
+  if(!series) return;
+  const idx = series.episodes.findIndex(e => e.id === m.id);
+  const next = idx !== -1 ? series.episodes[idx + 1] : null;
+  if(!next) return; // နောက်ဆုံး episode ဆိုရင် auto-play next မလုပ်ဘူး
+
+  videoEl.addEventListener('ended', () => {
+    let secondsLeft = 5;
+    const overlay = document.createElement('div');
+    overlay.className = 'autonext-overlay';
+    overlay.innerHTML = `
+      <div class="autonext-box">
+        <div class="autonext-label">နောက် Episode</div>
+        <div class="autonext-title">Ep ${esc(String(next.episodeNumber||''))} — ${esc(next.title)}</div>
+        <div class="autonext-actions">
+          <button class="btn btn-ghost" id="autonextCancel">ရပ်မည်</button>
+          <button class="btn btn-accent" id="autonextPlay">▶ ယခုပဲ ကြည့်မည် (<span id="autonextCount">${secondsLeft}</span>s)</button>
+        </div>
+      </div>`;
+    wrap.appendChild(overlay);
+    const countEl = overlay.querySelector('#autonextCount');
+    autoNextTimer = setInterval(() => {
+      secondsLeft -= 1;
+      if(countEl) countEl.textContent = secondsLeft;
+      if(secondsLeft <= 0){
+        clearInterval(autoNextTimer); autoNextTimer = null;
+        openPlayer(next.id);
+      }
+    }, 1000);
+    overlay.querySelector('#autonextCancel').addEventListener('click', () => {
+      clearInterval(autoNextTimer); autoNextTimer = null;
+      overlay.remove();
+    });
+    overlay.querySelector('#autonextPlay').addEventListener('click', () => {
+      clearInterval(autoNextTimer); autoNextTimer = null;
+      openPlayer(next.id);
+    });
+  });
 }
 
 /* Save/resume watch position for logged-in users so it can show up in
@@ -1271,6 +1528,13 @@ subscribeBanner();
     try{ localStorage.setItem(NOTICE_KEY, '1'); }catch(e){}
   });
 })();
+
+/* ---------- PWA: service worker registration ---------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
