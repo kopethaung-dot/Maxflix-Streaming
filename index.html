@@ -8,7 +8,7 @@
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0a0a0d">
+<meta name="theme-color" content="#221f22">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,9 +21,10 @@
 
 <style>
   :root{
-    --bg:#0a0a0d; --bg-elev:#131318; --bg-card:#1a1a21;
-    --ink:#f2f0ea; --ink-dim:#a8a6ac; --ink-faint:#6b6970;
-    --accent:#e0263f; --accent-dim:#8f1a2a; --gold:#d4a62a; --line:rgba(255,255,255,.08);
+    --bg:#221f22; --bg-elev:#2b262a; --bg-card:#332e33;
+    --ink:#f5f1ea; --ink-dim:#b9b2b6; --ink-faint:#8a8286;
+    --accent:#f0324a; --accent-dim:#8f1a2a; --gold:#d4a62a; --line:rgba(255,255,255,.10);
+    --accent-grad:linear-gradient(100deg,#f0324a,#c96a2a 65%,#d4a62a);
     --font-display:'Bebas Neue','Noto Sans Myanmar',sans-serif;
     --font-body:'Work Sans','Noto Sans Myanmar',sans-serif;
   }
@@ -54,7 +55,7 @@
   .nav-tab.active{color:var(--ink);border-bottom-color:var(--accent);}
 
   .account-area{display:flex;align-items:center;gap:10px;flex-shrink:1;min-width:0;}
-  .account-btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;background:var(--accent);color:#fff;white-space:nowrap;flex-shrink:0;}
+  .account-btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;background:var(--accent-grad);color:#fff;white-space:nowrap;flex-shrink:0;}
   .account-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim);cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:20px;min-width:0;max-width:100%;}
   .account-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:150px;}
   .premium-pill{font-size:10px;font-weight:700;letter-spacing:.5px;color:#0a0a0d;background:var(--gold);padding:2px 8px;border-radius:10px;}
@@ -136,7 +137,7 @@
   .rating-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 
   /* ---------- Splash screen ---------- */
-  .splash-screen{position:fixed;inset:0;z-index:9999;background:#0a0a0d;
+  .splash-screen{position:fixed;inset:0;z-index:9999;background:#221f22;
     display:flex;align-items:center;justify-content:center;
     animation:splash-fade-out .5s ease .9s forwards;}
   .splash-mark{font-family:var(--font-display);font-size:clamp(40px,10vw,72px);letter-spacing:6px;
@@ -346,11 +347,11 @@
   <div class="brand" data-view="home">
     <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
       <defs><linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#f0324a"/><stop offset="100%" stop-color="#8f1a2a"/>
+        <stop offset="0%" stop-color="#f0324a"/><stop offset="100%" stop-color="#d4a62a"/>
       </linearGradient></defs>
       <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#mfGrad)"/>
       <rect x="1" y="1" width="38" height="38" rx="10" fill="none" stroke="rgba(255,255,255,.15)"/>
-      <path d="M15 12 L28 20 L15 28 Z" fill="#f2f0ea"/>
+      <path d="M15 12 L28 20 L15 28 Z" fill="#f5f1ea"/>
     </svg>
     <span>MAXFLIX<span class="brand-sub">STREAMING</span></span>
   </div>
@@ -841,9 +842,9 @@ function toggleMyList(movieId){
   if(!currentUser){ openAuthModal(); return; }
   const ref = db.collection('users').doc(currentUser.uid).collection('myList').doc(movieId);
   if(myList.includes(movieId)){
-    ref.delete().catch(()=>{});
+    ref.delete().catch(err => console.error('myList delete failed:', err));
   } else {
-    ref.set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{});
+    ref.set({ addedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(err => console.error('myList set failed:', err));
   }
 }
 
@@ -853,6 +854,7 @@ function getMyRatingVote(movieId){
   try{ return localStorage.getItem(getRatingVoteKey(movieId)); }catch(e){ return null; }
 }
 function setRating(movieId, vote){ // vote: 'like' | 'dislike'
+  if(!currentUser){ openAuthModal(); return; }
   const prevVote = getMyRatingVote(movieId);
   const updates = {};
   const m = movies.find(x => x.id === movieId);
@@ -870,7 +872,7 @@ function setRating(movieId, vote){ // vote: 'like' | 'dislike'
     }
     try{ localStorage.setItem(getRatingVoteKey(movieId), vote); }catch(e){}
   }
-  db.collection('movies').doc(movieId).update(updates).catch(()=>{});
+  db.collection('movies').doc(movieId).update(updates).catch(err => console.error('rating write failed:', err));
 }
 auth.onAuthStateChanged(user => {
   currentUser = user;
