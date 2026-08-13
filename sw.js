@@ -1,19 +1,26 @@
 /**
  * Maxflix Streaming — Service Worker
  * =============================================================
- * WHY THIS IS DELIBERATELY MINIMAL
- *   This site's content (Firestore movie data, R2 video files) changes
- *   constantly. Aggressively caching everything would risk showing stale
- *   movie lists or broken video links. So this worker ONLY caches the
- *   static "app shell" (this HTML file + icons) for fast repeat loads
- *   and installability — it deliberately does NOT cache Firestore API
- *   calls or video files, which always go straight to the network.
+ * STRATEGY
+ *   - index.html / navigation requests → NETWORK-FIRST. This is the file
+ *     that changes on every deploy (new features, bug fixes, ad banners,
+ *     etc.), so it must never be served stale just because this sw.js
+ *     file itself didn't change. We always try the network first and
+ *     only fall back to the cached copy if the device is offline.
+ *   - manifest.json / icons (app shell chrome) → CACHE-FIRST, since
+ *     these rarely change and cache-first makes repeat/offline loads
+ *     instant.
+ *   - Firestore/Firebase API calls and video files (R2/CDN) → always
+ *     network, never cached — this site's movie data and video files
+ *     change constantly and must never be served stale or offline.
+ *
+ * NOTE: because HTML is now network-first, you generally do NOT need to
+ * bump CACHE_NAME on every content update anymore. Bump it only if you
+ * change the STATIC_SHELL list below (e.g. add/rename an icon file).
  */
 
-const CACHE_NAME = 'maxflix-shell-v2';
-const APP_SHELL = [
-  './',
-  './index.html',
+const CACHE_NAME = 'maxflix-shell-v3';
+const STATIC_SHELL = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
@@ -21,7 +28,7 @@ const APP_SHELL = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).catch(() => {})
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_SHELL)).catch(() => {})
   );
   self.skipWaiting();
 });
@@ -36,7 +43,8 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
+  const req = event.request;
+  const url = new URL(req.url);
 
   // Firestore/Firebase API calls and video files (R2/CDN) — always network, never cache
   if(url.hostname.includes('firestore.googleapis.com') ||
@@ -44,12 +52,32 @@ self.addEventListener('fetch', event => {
      url.hostname.includes('r2.dev') ||
      url.hostname.includes('r2.cloudflarestorage.com') ||
      url.hostname.includes('cdn.maxflixstream.com') ||
-     event.request.method !== 'GET'){
+     req.method !== 'GET'){
     return; // let the browser handle it normally
   }
 
-  // App shell files — cache-first, so repeat visits/offline loads are instant
+  // Page navigations + index.html — NETWORK-FIRST so every deploy reaches
+  // installed PWAs immediately. Falls back to the last-cached copy only
+  // when the device is offline.
+  const isHtmlRequest = req.mode === 'navigate' ||
+    (req.destination === 'document') ||
+    url.pathname.endsWith('/') || url.pathname.endsWith('index.html');
+
+  if(isHtmlRequest){
+    event.respondWith(
+      fetch(req)
+        .then(res => {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(req, resClone)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req).then(cached => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Everything else in the static shell (manifest, icons) — cache-first
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request).catch(() => cached))
+    caches.match(req).then(cached => cached || fetch(req).catch(() => cached))
   );
 });
