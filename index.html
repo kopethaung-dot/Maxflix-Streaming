@@ -8,7 +8,7 @@
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#221f22">
+<meta name="theme-color" content="#1c1516">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -21,10 +21,10 @@
 
 <style>
   :root{
-    --bg:#221f22; --bg-elev:#2b262a; --bg-card:#332e33;
-    --ink:#f5f1ea; --ink-dim:#b9b2b6; --ink-faint:#8a8286;
-    --accent:#f0324a; --accent-dim:#8f1a2a; --gold:#d4a62a; --line:rgba(255,255,255,.10);
-    --accent-grad:linear-gradient(100deg,#f0324a,#c96a2a 65%,#d4a62a);
+    --bg:#1c1516; --bg-elev:#241a1c; --bg-card:#2e2124;
+    --ink:#f3ece6; --ink-dim:#b0a09e; --ink-faint:#8a7478;
+    --accent:#a8283f; --accent-dim:#6b1a29; --gold:#d4a62a; --line:rgba(243,236,230,.08);
+    --accent-grad:linear-gradient(100deg,#a8283f,#c9515f 60%,#d4a62a);
     --font-display:'Bebas Neue','Noto Sans Myanmar',sans-serif;
     --font-body:'Work Sans','Noto Sans Myanmar',sans-serif;
   }
@@ -69,7 +69,7 @@
     box-shadow:0 10px 24px rgba(0,0,0,.4);}
   .mobile-menu.open{display:flex;}
   .mobile-menu .nav-tab{padding:14px 24px;border-bottom:1px solid var(--line);border-left:2px solid transparent;}
-  .mobile-menu .nav-tab.active{border-left-color:var(--accent);background:rgba(224,38,63,.08);}
+  .mobile-menu .nav-tab.active{border-left-color:var(--accent);background:rgba(168,40,63,.08);}
 
   @media (max-width:820px){
     .site-nav{display:none;}
@@ -79,7 +79,7 @@
   /* ---------- Hero ---------- */
   /* ---------- VPN notice bar ---------- */
   .vpn-notice{display:flex;align-items:center;gap:10px;padding:10px clamp(16px,4vw,56px);
-    background:rgba(224,38,63,.12);border-bottom:1px solid rgba(224,38,63,.3);
+    background:rgba(168,40,63,.12);border-bottom:1px solid rgba(168,40,63,.3);
     font-size:13px;color:#f0d9dc;}
   .vpn-notice .icon{flex-shrink:0;font-size:16px;}
   .vpn-notice .msg{flex:1;line-height:1.4;}
@@ -116,6 +116,35 @@
     .promo-banner-img{aspect-ratio:16/7;}
   }
 
+  /* ---------- Video ad banner (short ads video — top) ---------- */
+  .video-ad-banner{padding:0 clamp(16px,4vw,56px);margin:18px 0 0;}
+  .video-ad-banner-link{position:relative;display:block;border-radius:8px;overflow:hidden;border:1px solid var(--line);cursor:pointer;background:var(--bg-card);}
+  .video-ad-banner-video{width:100%;aspect-ratio:21/6;object-fit:cover;display:block;background:var(--bg-card);}
+  .ad-badge{position:absolute;top:8px;right:8px;font-size:10px;font-weight:700;letter-spacing:.5px;
+    color:var(--ink);background:rgba(0,0,0,.55);padding:3px 8px;border-radius:4px;backdrop-filter:blur(2px);}
+  @media (max-width:520px){
+    .video-ad-banner{padding:0 14px;margin:14px 0 0;}
+    .video-ad-banner-video{aspect-ratio:16/7;}
+  }
+
+  /* ---------- Bottom sticky popup ad ---------- */
+  .bottom-ad-bar{position:fixed;left:10px;right:10px;bottom:10px;z-index:90;
+    display:none;align-items:center;gap:12px;background:var(--bg-elev);border:1px solid var(--line);
+    border-radius:10px;padding:8px;box-shadow:0 10px 28px rgba(0,0,0,.45);max-width:460px;margin:0 auto;}
+  .bottom-ad-bar.show{display:flex;}
+  .bottom-ad-link{display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;}
+  .bottom-ad-video{width:56px;height:56px;border-radius:7px;object-fit:cover;flex-shrink:0;background:#000;}
+  .bottom-ad-text{flex:1;min-width:0;}
+  .bottom-ad-text .lbl{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--gold);text-transform:uppercase;}
+  .bottom-ad-text .desc{font-size:12.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+  .bottom-ad-close{flex-shrink:0;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;color:var(--ink-faint);font-size:16px;background:rgba(255,255,255,.06);}
+  .bottom-ad-close:hover{background:rgba(255,255,255,.14);color:var(--ink);}
+  @media (max-width:520px){
+    .bottom-ad-bar{left:8px;right:8px;bottom:8px;padding:7px;}
+    .bottom-ad-video{width:48px;height:48px;}
+  }
+
   /* ---------- Rows / Grids ---------- */
   .rows{padding:12px clamp(16px,4vw,56px) 60px;display:flex;flex-direction:column;gap:34px;}
   .row-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;}
@@ -137,7 +166,7 @@
   .rating-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 
   /* ---------- Splash screen ---------- */
-  .splash-screen{position:fixed;inset:0;z-index:9999;background:#221f22;
+  .splash-screen{position:fixed;inset:0;z-index:9999;background:#1c1516;
     display:flex;align-items:center;justify-content:center;
     animation:splash-fade-out .5s ease .9s forwards;}
   .splash-mark{font-family:var(--font-display);font-size:clamp(40px,10vw,72px);letter-spacing:6px;
@@ -158,9 +187,9 @@
     font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;}
   .card-badge{position:absolute;top:8px;left:8px;background:var(--accent);color:#fff;
     font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;}
-  .card-adult-badge{position:absolute;top:8px;left:8px;background:#c81e35;color:#fff;
+  .card-adult-badge{position:absolute;top:8px;left:8px;background:#a8283f;color:#fff;
     font-size:11px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:3px;
-    box-shadow:0 0 0 1px rgba(255,255,255,.25),0 2px 6px rgba(200,30,53,.5);}
+    box-shadow:0 0 0 1px rgba(255,255,255,.25),0 2px 6px rgba(168,40,63,.5);}
   .card-premium{position:absolute;bottom:52px;left:8px;background:var(--gold);color:#0a0a0d;
     font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 8px;border-radius:3px;}
   .card.is-premium{border:1px solid rgba(212,175,55,.5);box-shadow:0 0 14px rgba(212,175,55,.18);}
@@ -200,19 +229,21 @@
   /* ---------- Player modal ---------- */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
   .modal-overlay.open{display:flex;}
-  .modal-box{width:min(900px,100%);background:var(--bg-elev);border-radius:10px;overflow:hidden;border:1px solid var(--line);}
-  .modal-video-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;}
+  .modal-box{width:min(900px,100%);max-height:90vh;overflow-y:auto;background:var(--bg-elev);border-radius:10px;border:1px solid var(--line);}
+  .modal-video-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px 10px 0 0;overflow:hidden;}
   .modal-video-wrap video{width:100%;height:100%;}
   .modal-info{padding:18px 22px 24px;}
   .modal-title{font-family:var(--font-display);font-size:24px;letter-spacing:1px;margin-bottom:6px;}
   .modal-meta{font-size:12px;color:var(--gold);margin-bottom:10px;}
   .modal-desc{font-size:14px;color:var(--ink-dim);}
+  .modal-ep-list{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
+  .modal-ep-list-title{font-family:var(--font-display);font-size:16px;letter-spacing:.5px;margin-bottom:12px;}
+  .modal-ep-list-stack{display:flex;flex-direction:column;gap:10px;}
+  .modal-ep-list-stack .ep-item.current{border-color:var(--accent);background:rgba(168,40,63,.08);cursor:default;}
+  .modal-ep-list-stack .ep-item:not(.current):hover{border-color:var(--ink-dim);}
+  .modal-ep-list-stack .ep-play{color:var(--accent);}
   .modal-close{position:absolute;top:12px;right:12px;z-index:5;width:34px;height:34px;border-radius:50%;
     background:rgba(0,0,0,.6);color:#fff;border:none;font-size:18px;cursor:pointer;}
-  .player-spinner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4;
-    width:44px;height:44px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--accent);
-    border-radius:50%;animation:player-spin .8s linear infinite;pointer-events:none;}
-  @keyframes player-spin{to{transform:translate(-50%,-50%) rotate(360deg);}}
   .autonext-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);z-index:6;
     display:flex;align-items:center;justify-content:center;padding:20px;}
   .autonext-box{max-width:340px;text-align:center;}
@@ -293,7 +324,8 @@
     .ep-info .t{font-size:13px;}
 
     .modal-overlay{padding:0;}
-    .modal-box{border-radius:0;height:100%;overflow-y:auto;}
+    .modal-box{border-radius:0;height:100%;max-height:none;overflow-y:auto;}
+    .modal-video-wrap{border-radius:0;}
     .modal-info{padding:14px 16px 20px;}
     .modal-title{font-size:19px;}
     .modal-close{top:10px;right:10px;width:32px;height:32px;}
@@ -347,11 +379,11 @@
   <div class="brand" data-view="home">
     <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
       <defs><linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#f0324a"/><stop offset="100%" stop-color="#d4a62a"/>
+        <stop offset="0%" stop-color="#a8283f"/><stop offset="100%" stop-color="#d4a62a"/>
       </linearGradient></defs>
       <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#mfGrad)"/>
       <rect x="1" y="1" width="38" height="38" rx="10" fill="none" stroke="rgba(255,255,255,.15)"/>
-      <path d="M15 12 L28 20 L15 28 Z" fill="#f5f1ea"/>
+      <path d="M15 12 L28 20 L15 28 Z" fill="#f3ece6"/>
     </svg>
     <span>MAXFLIX<span class="brand-sub">STREAMING</span></span>
   </div>
@@ -409,6 +441,12 @@
   <div class="promo-banner" id="promoBanner" style="display:none;">
     <a class="promo-banner-link" id="promoBannerLink" target="_blank" rel="noopener noreferrer">
       <img class="promo-banner-img" id="promoBannerImg" src="" alt="Promotion" loading="lazy">
+    </a>
+  </div>
+  <div class="video-ad-banner" id="videoAdBanner" style="display:none;">
+    <a class="video-ad-banner-link" id="videoAdBannerLink" target="_blank" rel="noopener noreferrer">
+      <video class="video-ad-banner-video" id="videoAdBannerVideo" autoplay muted loop playsinline></video>
+      <span class="ad-badge">Ad</span>
     </a>
   </div>
   <div class="rows" id="rowsWrap">
@@ -488,6 +526,20 @@
         <button class="rating-btn" id="modalMyListBtn">🏷️ My List</button>
       </div>
       <div class="modal-desc" id="modalDesc"></div>
+      <div class="modal-ep-list" id="modalEpList" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 18+ AGE CONFIRMATION GATE ================= -->
+<div class="sm-overlay" id="ageGateOverlay">
+  <div class="sm-box" style="max-width:360px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:10px;">🔞</div>
+    <h3>အသက် အတည်ပြုချက်</h3>
+    <p style="margin-bottom:18px;">ဒီ content က လူကြီးများအတွက်သာ ရည်ရွယ်ပါသည်။<br>သင့်အသက် ၁၈ နှစ် ပြည့်ပြီးပါသလား?</p>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" id="ageGateNoBtn" style="flex:1;">✕ မပြည့်သေးပါ</button>
+      <button class="btn btn-accent" id="ageGateYesBtn" style="flex:1;">✓ ပြည့်ပါသည်</button>
     </div>
   </div>
 </div>
@@ -586,6 +638,17 @@
 </div>
 
 <footer>Maxflix Streaming — All copyright reserve by Maxflix</footer>
+
+<div class="bottom-ad-bar" id="bottomAdBar">
+  <a class="bottom-ad-link" id="bottomAdLink" target="_blank" rel="noopener noreferrer">
+    <video class="bottom-ad-video" id="bottomAdVideo" autoplay muted loop playsinline></video>
+    <div class="bottom-ad-text">
+      <div class="lbl">Ad</div>
+      <div class="desc">နှိပ်ပြီး ကြည့်ရှုပါ</div>
+    </div>
+  </a>
+  <button class="bottom-ad-close" id="bottomAdCloseBtn" aria-label="close">✕</button>
+</div>
 
 <script>
 /* =========================================================
@@ -714,11 +777,32 @@ function requestAdultUnlock(onSuccess){
   if(!currentUser){ openAuthModal(); return; }
   if(adultUnlocked){ onSuccess(); return; }
   pendingUnlockCallback = onSuccess;
+  let ageConfirmed = false;
+  try{ ageConfirmed = !!sessionStorage.getItem('age18Confirmed'); }catch(e){}
+  if(ageConfirmed) openPinModal();
+  else document.getElementById('ageGateOverlay').classList.add('open');
+}
+function openPinModal(){
   document.getElementById('pinInput').value = '';
   document.getElementById('pinErr').classList.remove('show');
   document.getElementById('pinOverlay').classList.add('open');
   document.getElementById('pinInput').focus();
 }
+document.getElementById('ageGateYesBtn').addEventListener('click', () => {
+  try{ sessionStorage.setItem('age18Confirmed', '1'); }catch(e){}
+  document.getElementById('ageGateOverlay').classList.remove('open');
+  openPinModal();
+});
+document.getElementById('ageGateNoBtn').addEventListener('click', () => {
+  document.getElementById('ageGateOverlay').classList.remove('open');
+  pendingUnlockCallback = null; // "No" ဆိုရင် PIN modal ကို ဆက်မဖွင့်ဘူး
+});
+document.getElementById('ageGateOverlay').addEventListener('click', e => {
+  if(e.target.id === 'ageGateOverlay'){
+    e.currentTarget.classList.remove('open');
+    pendingUnlockCallback = null;
+  }
+});
 document.getElementById('pinCancelBtn').addEventListener('click', () => {
   document.getElementById('pinOverlay').classList.remove('open'); pendingUnlockCallback = null;
 });
@@ -1276,7 +1360,7 @@ function openPlayer(id){
   document.getElementById('modalBackBtn').textContent = `← ${VIEW_LABEL[playerReturnView] || 'ပင်မစာမျက်နှာ'} သို့ ပြန်သွားမည်`;
 
   const wrap = document.getElementById('modalVideoWrap');
-  wrap.innerHTML = `<button class="modal-close" id="modalClose">✕</button><div class="player-spinner" id="playerSpinner"></div>`;
+  wrap.innerHTML = `<button class="modal-close" id="modalClose">✕</button>`;
   document.getElementById('modalClose').onclick = () => history.back();
 
   const videoEl = document.createElement('video');
@@ -1302,8 +1386,6 @@ function openPlayer(id){
   } else {
     videoEl.src = srcUrl;
   }
-  videoEl.addEventListener('canplay', () => { const sp = document.getElementById('playerSpinner'); if(sp) sp.remove(); });
-  videoEl.addEventListener('error', () => { const sp = document.getElementById('playerSpinner'); if(sp) sp.remove(); });
   attachProgressTracking(videoEl, m);
   db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
   wireAutoPlayNext(videoEl, m, wrap);
@@ -1313,8 +1395,34 @@ function openPlayer(id){
   document.getElementById('modalMeta').innerHTML = seriesTag + (CATEGORY_LABEL[m.category]||'') + (m.duration ? ' • ' + esc(m.duration) : '') + (m.viewCount ? ' • ' + formatViewCount(m.viewCount) + ' ကြည့်ရှု' : '') + (m.genres && m.genres.length ? ' • ' + m.genres.map(esc).join(', ') : '');
   document.getElementById('modalDesc').textContent = m.desc || '';
   wireModalRatingButtons(m);
+  renderModalEpList(m);
   document.getElementById('modalOverlay').classList.add('open');
   history.pushState({ maxflixModal: 'player' }, '');
+}
+function renderModalEpList(m){
+  const wrap = document.getElementById('modalEpList');
+  if(m.category !== 'drama' || !m.seriesName){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+  const series = getDramaSeries().find(s => s.name === (m.seriesName.trim() || m.title));
+  if(!series || series.episodes.length < 2){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+
+  wrap.style.display = 'block';
+  wrap.innerHTML = `
+    <div class="modal-ep-list-title">${esc(series.name)} — ${series.episodes.length} Episodes</div>
+    <div class="modal-ep-list-stack">
+      ${series.episodes.map((ep, i) => `
+        <div class="ep-item${ep.id === m.id ? ' current' : ''}" data-id="${ep.id}">
+          <div class="ep-num">${ep.episodeNumber || (i+1)}</div>
+          <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'">
+          <div class="ep-info">
+            <div class="t">${esc(ep.title)} ${ep.isPremium ? '<span class="premium-pill">★</span>' : ''}</div>
+            <div class="m">${ep.duration ? esc(ep.duration) : ''}${ep.id === m.id ? ' • ယခုကြည့်နေသည်' : ''}</div>
+          </div>
+          <div class="ep-play">${ep.id === m.id ? '▮▮' : '▶'}</div>
+        </div>`).join('')}
+    </div>`;
+  wrap.querySelectorAll('.ep-item:not(.current)').forEach(el => {
+    el.addEventListener('click', () => openPlayer(el.dataset.id));
+  });
 }
 function wireModalRatingButtons(m){
   const likeBtn = document.getElementById('modalLikeBtn');
@@ -1471,6 +1579,67 @@ function subscribeBanner(){
   }, () => { document.getElementById('promoBanner').style.display = 'none'; });
 }
 subscribeBanner();
+
+/* =========================================================
+   12b) VIDEO ADS — "videoAds" collection, managed from admin panel
+   Short ads video: "top" placement shows in the home-page banner slot
+   (autoplay/loop/muted), "bottom" placement shows as a closable sticky
+   bar. Multiple ads per placement are supported — one is chosen at
+   random each time the list updates. Clicking either opens the ad's
+   link in a new tab.
+   ========================================================= */
+let bottomAdDismissed = false; // resets on full page reload — not persisted on purpose
+
+function pickRandomAd(ads, placement){
+  const pool = ads.filter(a => a.enabled && a.placement === placement && a.videoUrl);
+  if(!pool.length) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function renderTopAdBanner(ad){
+  const wrap = document.getElementById('videoAdBanner');
+  const video = document.getElementById('videoAdBannerVideo');
+  const link = document.getElementById('videoAdBannerLink');
+  if(ad){
+    if(video.getAttribute('src') !== ad.videoUrl) video.src = ad.videoUrl;
+    if(ad.link){ link.href = ad.link; link.style.cursor = 'pointer'; }
+    else { link.removeAttribute('href'); link.style.cursor = 'default'; }
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+function renderBottomAdBar(ad){
+  const bar = document.getElementById('bottomAdBar');
+  const video = document.getElementById('bottomAdVideo');
+  const link = document.getElementById('bottomAdLink');
+  if(ad && !bottomAdDismissed){
+    if(video.getAttribute('src') !== ad.videoUrl) video.src = ad.videoUrl;
+    if(ad.link){ link.href = ad.link; }
+    else { link.removeAttribute('href'); }
+    bar.classList.add('show');
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+document.getElementById('bottomAdCloseBtn').addEventListener('click', () => {
+  bottomAdDismissed = true;
+  document.getElementById('bottomAdBar').classList.remove('show');
+});
+
+function subscribeVideoAds(){
+  db.collection('videoAds').onSnapshot(snap => {
+    const ads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTopAdBanner(pickRandomAd(ads, 'top'));
+    renderBottomAdBar(pickRandomAd(ads, 'bottom'));
+  }, () => {
+    document.getElementById('videoAdBanner').style.display = 'none';
+    document.getElementById('bottomAdBar').classList.remove('show');
+  });
+}
+subscribeVideoAds();
 
 /* ---------- First-visit onboarding modal ---------- */
 (function initOnboarding(){
