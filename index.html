@@ -57,9 +57,18 @@
 
   .account-area{display:flex;align-items:center;gap:10px;flex-shrink:1;min-width:0;}
   .account-btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;background:var(--accent-grad);color:#fff;white-space:nowrap;flex-shrink:0;}
+  .account-menu-wrap{position:relative;min-width:0;}
   .account-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim);cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:20px;min-width:0;max-width:100%;}
+  .account-chip:hover{border-color:var(--accent-dim);}
   .account-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:150px;}
   .premium-pill{font-size:10px;font-weight:700;letter-spacing:.5px;color:#0a0a0d;background:var(--gold);padding:2px 8px;border-radius:10px;}
+  .account-dropdown{position:absolute;top:calc(100% + 8px);right:0;z-index:56;min-width:170px;
+    background:var(--bg-elev);border:1px solid var(--line);border-radius:10px;padding:6px;
+    box-shadow:0 12px 28px rgba(0,0,0,.45);display:none;flex-direction:column;gap:2px;}
+  .account-dropdown.open{display:flex;}
+  .account-dropdown-item{width:100%;text-align:left;font-size:13px;padding:10px 12px;border-radius:6px;color:var(--ink-dim);background:none;}
+  .account-dropdown-item:hover{background:rgba(255,255,255,.06);color:var(--ink);}
+  @media (max-width:520px){ .account-dropdown{right:-8px;} }
 
   .hamburger{display:none;width:38px;height:38px;align-items:center;justify-content:center;border-radius:6px;flex-shrink:0;}
   .hamburger:hover{background:rgba(255,255,255,.08);}
@@ -629,7 +638,10 @@
     <div id="premiumStatePay" style="display:none;">
       <div style="font-size:28px;margin-bottom:8px;">⭐</div>
       <h3>Premium လိုအပ်ပါတယ်</h3>
-      <p>ဒီဇာတ်ကားကို ကြည့်ဖို့ Premium subscription လိုအပ်ပါတယ်</p>
+      <p id="premiumPayDesc">ဒီဇာတ်ကားကို ကြည့်ဖို့ Premium subscription လိုအပ်ပါတယ်</p>
+      <div class="field"><label>Premium ကာလ ရွေးပါ</label>
+        <select id="fPremiumPlan"></select>
+      </div>
       <div class="pay-info" id="payInfoBox"></div>
       <div class="field"><label>ပေးချေမှု နည်းလမ်း</label>
         <select id="fPayMethod"><option value="KBZPay">KBZPay</option><option value="WavePay">WavePay</option></select>
@@ -646,6 +658,22 @@
       <p>သင့်ရဲ့ Premium request ကို admin မှ စစ်ဆေးနေပါတယ်။ အတည်ပြုပြီးရင် ဒီဇာတ်ကားကို ချက်ချင်း ကြည့်လို့ရပါမယ်။</p>
       <button class="btn btn-ghost btn-block" id="premiumPendingCloseBtn">ပိတ်မည်</button>
     </div>
+  </div>
+</div>
+
+<!-- ================= SETTINGS MODAL ================= -->
+<div class="sm-overlay" id="settingsOverlay">
+  <div class="sm-box" style="position:relative;max-width:420px;">
+    <button class="sm-close-x" id="settingsCloseBtn">✕</button>
+    <div style="font-size:28px;margin-bottom:8px;">⚙️</div>
+    <h3>Settings</h3>
+    <div class="field"><label>Email</label>
+      <input type="text" id="settingsEmail" disabled>
+    </div>
+    <div class="field"><label>Premium အခြေအနေ</label>
+      <div class="pay-info" id="settingsPremiumBox"></div>
+    </div>
+    <button class="btn btn-accent btn-block" id="settingsBuyPremiumBtn">⭐ Premium ဝယ်ယူရန်</button>
   </div>
 </div>
 
@@ -686,10 +714,17 @@ const PAYMENT_CONFIG = {
   kbzpayNumber: "09446627892",
   kbzpayName: "Hla Kyi Aung",
   wavepayNumber: "09446627892",
-  wavepayName: "Hla Kyi Aung",
-  price: "3,000 MMK / ၃လ",
-  premiumDurationDays: 90 // admin approve လုပ်ရင် ဒီရက်ပေါင်းအတိုင်း premium ရမယ် (admin dashboard ထဲမှာ ချိန်ညှိလို့ရပါတယ်)
+  wavepayName: "Hla Kyi Aung"
 };
+
+// Premium plans — ကာလအလိုက် ဈေးနှုန်း (dropdown ထဲ ဒီစီစဉ်အတိုင်း ပေါ်ပါမယ်)
+// ပြောင်းချင်ရင် ဒီ list ကိုပဲ ပြင်ပါ — admin.html ထဲမှာ ပြင်စရာ မလိုပါ (planDays/planId ကို request doc ထဲ save ထားလို့ admin ဘက်က auto ဖတ်ပါတယ်)
+const PREMIUM_PLANS = [
+  { id: '1m', label: '၁ လ', days: 30, price: 2000 },
+  { id: '3m', label: '၃ လ', days: 90, price: 5000 },
+  { id: '6m', label: '၆ လ', days: 180, price: 8000 },
+  { id: 'lifetime', label: 'Lifetime (တစ်သက်တာ)', days: null, price: 20000 }
+];
 
 const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8," + encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' width='210' height='315'><rect width='210' height='315' fill='%231a1a21'/><text x='50%' y='50%' fill='%236b6970' font-size='13' font-family='sans-serif' text-anchor='middle'>No Poster</text></svg>`);
@@ -911,17 +946,68 @@ function renderAccountArea(){
   if(currentUser){
     const isPrem = isPremiumActive();
     area.innerHTML = `
-      <div class="account-chip" id="accountChip">
-        <span class="account-email">${esc(currentUser.email)}</span>
-        ${isPrem ? '<span class="premium-pill">PREMIUM</span>' : ''}
-      </div>
-      <button class="account-btn" id="logoutBtn" style="background:rgba(255,255,255,.12);">Logout</button>`;
-    document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+      <div class="account-menu-wrap" id="accountMenuWrap">
+        <div class="account-chip" id="accountChip">
+          <span class="account-email">${esc(currentUser.email)}</span>
+          ${isPrem ? '<span class="premium-pill">PREMIUM</span>' : ''}
+        </div>
+        <div class="account-dropdown" id="accountDropdown">
+          <button class="account-dropdown-item" id="accountSettingsBtn">⚙️ Settings</button>
+          <button class="account-dropdown-item" id="logoutBtn">Logout</button>
+        </div>
+      </div>`;
+    document.getElementById('accountChip').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('accountDropdown').classList.toggle('open');
+    });
+    document.getElementById('accountSettingsBtn').addEventListener('click', () => {
+      document.getElementById('accountDropdown').classList.remove('open');
+      openSettingsModal();
+    });
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      document.getElementById('accountDropdown').classList.remove('open');
+      auth.signOut();
+    });
   } else {
     area.innerHTML = `<button class="account-btn" id="loginNavBtn">Login / Sign up</button>`;
     document.getElementById('loginNavBtn').addEventListener('click', openAuthModal);
   }
 }
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('accountDropdown');
+  const chip = document.getElementById('accountChip');
+  if(dd && dd.classList.contains('open') && !dd.contains(e.target) && (!chip || !chip.contains(e.target))){
+    dd.classList.remove('open');
+  }
+});
+
+/* ---------- Settings modal ---------- */
+function openSettingsModal(){
+  if(!currentUser){ openAuthModal(); return; }
+  document.getElementById('settingsEmail').value = currentUser.email;
+  const box = document.getElementById('settingsPremiumBox');
+  const isPrem = isPremiumActive();
+  if(isPrem){
+    const isLifetime = currentUserDoc.premiumPlanLabel && currentUserDoc.premiumPlanLabel.indexOf('Lifetime') !== -1;
+    const expMs = currentUserDoc.premiumExpiresAt.toMillis ? currentUserDoc.premiumExpiresAt.toMillis() : currentUserDoc.premiumExpiresAt;
+    box.innerHTML = `<div class="row"><span>အခြေအနေ</span><b style="color:var(--gold);">⭐ Premium Active</b></div>` +
+      (currentUserDoc.premiumPlanLabel ? `<div class="row"><span>Plan</span><b>${esc(currentUserDoc.premiumPlanLabel)}</b></div>` : '') +
+      (isLifetime ? '' : `<div class="row"><span>သက်တမ်းကုန်ဆုံးရက်</span><b>${new Date(expMs).toLocaleDateString('en-GB')}</b></div>`);
+  } else if(currentPendingRequest){
+    box.innerHTML = `<div class="row"><span>အခြေအနေ</span><b>⏳ Review လုပ်နေဆဲ</b></div>`;
+  } else {
+    box.innerHTML = `<div class="row"><span>အခြေအနေ</span><b style="color:var(--ink-dim);">Premium မဟုတ်ပါ</b></div>`;
+  }
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+document.getElementById('settingsCloseBtn').addEventListener('click', () => document.getElementById('settingsOverlay').classList.remove('open'));
+document.getElementById('settingsOverlay').addEventListener('click', e => {
+  if(e.target.id === 'settingsOverlay') e.currentTarget.classList.remove('open');
+});
+document.getElementById('settingsBuyPremiumBtn').addEventListener('click', () => {
+  document.getElementById('settingsOverlay').classList.remove('open');
+  openPremiumGate(null);
+});
 
 function isPremiumActive(){
   if(!currentUserDoc || !currentUserDoc.isPremium) return false;
@@ -1009,6 +1095,21 @@ auth.onAuthStateChanged(user => {
 /* =========================================================
    6) PREMIUM GATE
    ========================================================= */
+function renderPremiumPlanOptions(){
+  const sel = document.getElementById('fPremiumPlan');
+  sel.innerHTML = PREMIUM_PLANS.map(p =>
+    `<option value="${p.id}">${esc(p.label)} — ${p.price.toLocaleString()} MMK</option>`
+  ).join('');
+}
+function updatePayInfoBox(){
+  const plan = PREMIUM_PLANS.find(p => p.id === document.getElementById('fPremiumPlan').value) || PREMIUM_PLANS[0];
+  document.getElementById('payInfoBox').innerHTML = `
+    <div class="row"><span>KBZPay</span><b>${esc(PAYMENT_CONFIG.kbzpayNumber)} (${esc(PAYMENT_CONFIG.kbzpayName)})</b></div>
+    <div class="row"><span>WavePay</span><b>${esc(PAYMENT_CONFIG.wavepayNumber)} (${esc(PAYMENT_CONFIG.wavepayName)})</b></div>
+    <div class="row"><span>ဈေးနှုန်း</span><b>${plan.price.toLocaleString()} MMK (${esc(plan.label)})</b></div>`;
+}
+document.getElementById('fPremiumPlan').addEventListener('change', updatePayInfoBox);
+
 function openPremiumGate(movieId){
   pendingPlayId = movieId;
   ['premiumStateAuth','premiumStatePay','premiumStatePending'].forEach(id => document.getElementById(id).style.display = 'none');
@@ -1017,10 +1118,11 @@ function openPremiumGate(movieId){
   } else if(currentPendingRequest){
     document.getElementById('premiumStatePending').style.display = 'block';
   } else {
-    document.getElementById('payInfoBox').innerHTML = `
-      <div class="row"><span>KBZPay</span><b>${esc(PAYMENT_CONFIG.kbzpayNumber)} (${esc(PAYMENT_CONFIG.kbzpayName)})</b></div>
-      <div class="row"><span>WavePay</span><b>${esc(PAYMENT_CONFIG.wavepayNumber)} (${esc(PAYMENT_CONFIG.wavepayName)})</b></div>
-      <div class="row"><span>ဈေးနှုန်း</span><b>${esc(PAYMENT_CONFIG.price)}</b></div>`;
+    document.getElementById('premiumPayDesc').textContent = movieId
+      ? 'ဒီဇာတ်ကားကို ကြည့်ဖို့ Premium subscription လိုအပ်ပါတယ်'
+      : 'Premium ဝယ်ယူပြီး ဇာတ်ကား/Series အားလုံးကို အကန့်အသတ်မဲ့ ကြည့်ရှုနိုင်ပါတယ်';
+    renderPremiumPlanOptions();
+    updatePayInfoBox();
     document.getElementById('fTxnId').value = '';
     document.getElementById('premiumErr').classList.remove('show');
     document.getElementById('premiumStatePay').style.display = 'block';
@@ -1036,12 +1138,14 @@ document.getElementById('premiumGoLoginBtn').addEventListener('click', () => {
 document.getElementById('premiumSubmitBtn').addEventListener('click', async () => {
   const txnId = document.getElementById('fTxnId').value.trim();
   const method = document.getElementById('fPayMethod').value;
+  const plan = PREMIUM_PLANS.find(p => p.id === document.getElementById('fPremiumPlan').value) || PREMIUM_PLANS[0];
   const errEl = document.getElementById('premiumErr');
   if(!txnId){ errEl.textContent = 'Transaction ID ဖြည့်ပါ'; errEl.classList.add('show'); return; }
   try{
     await db.collection('premiumRequests').add({
       uid: currentUser.uid, email: currentUser.email,
       paymentMethod: method, transactionId: txnId,
+      planId: plan.id, planLabel: plan.label, planDays: plan.days, planPrice: plan.price,
       status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     document.getElementById('premiumOverlay').classList.remove('open');
