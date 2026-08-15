@@ -469,7 +469,7 @@
     <div class="pay-info" style="text-align:left;">
       <div class="contact-row">
         <span class="lbl">Telegram</span>
-        <a href="https://t.me/kweepethaung778" target="_blank" rel="noopener noreferrer">@kweepethaung778</a>
+        <a href="https://t.me/kweepethaung778" id="supportTgAdmin" rel="noopener noreferrer">@kweepethaung778</a>
       </div>
       <div class="contact-row">
         <span class="lbl">Viber</span>
@@ -477,9 +477,10 @@
       </div>
       <div class="contact-row">
         <span class="lbl">Telegram Channel</span>
-        <a href="https://t.me/maxflixdrama" target="_blank" rel="noopener noreferrer">t.me/maxflixdrama</a>
+        <a href="https://t.me/maxflixdrama" id="supportTgChannel" rel="noopener noreferrer">t.me/maxflixdrama</a>
       </div>
     </div>
+    <p style="font-size:11px;margin-top:-8px;margin-bottom:14px;">Telegram ဖွင့်မရရင် VPN ဖွင့်ပြီးမှ ထပ်စမ်းကြည့်ပါ</p>
     <button class="btn btn-ghost btn-block" id="supportCloseBtn2">ပိတ်မည်</button>
   </div>
 </div>
@@ -865,6 +866,18 @@ document.getElementById('hamburgerBtn').addEventListener('click', (e) => {
 document.getElementById('mobileMenuOverlay').addEventListener('click', closeMobileMenu);
 
 /* ---------- Support modal ---------- */
+function openTelegramLink(username){
+  const appUrl = 'tg://resolve?domain=' + username;
+  const webUrl = 'https://t.me/' + username;
+  let leftPage = false;
+  const onBlur = () => { leftPage = true; };
+  window.addEventListener('blur', onBlur, {once:true});
+  window.location.href = appUrl;
+  setTimeout(() => {
+    window.removeEventListener('blur', onBlur);
+    if(!leftPage){ window.open(webUrl, '_blank', 'noopener,noreferrer'); }
+  }, 1200);
+}
 function openSupportModal(){
   closeMobileMenu();
   document.getElementById('supportOverlay').classList.add('open');
@@ -875,6 +888,14 @@ document.getElementById('supportCloseBtn').addEventListener('click', () => docum
 document.getElementById('supportCloseBtn2').addEventListener('click', () => document.getElementById('supportOverlay').classList.remove('open'));
 document.getElementById('supportOverlay').addEventListener('click', e => {
   if(e.target.id === 'supportOverlay') e.currentTarget.classList.remove('open');
+});
+document.getElementById('supportTgAdmin').addEventListener('click', e => {
+  e.preventDefault();
+  openTelegramLink('kweepethaung778');
+});
+document.getElementById('supportTgChannel').addEventListener('click', e => {
+  e.preventDefault();
+  openTelegramLink('maxflixdrama');
 });
 
 /* =========================================================
