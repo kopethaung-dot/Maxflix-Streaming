@@ -313,6 +313,24 @@
   .contact-row a{color:var(--accent);font-weight:600;text-decoration:none;word-break:break-all;text-align:right;}
   .contact-row a:hover{text-decoration:underline;}
 
+  /* ---------- Support page ---------- */
+  .support-contact-card{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;max-width:480px;margin-top:18px;}
+  .support-contact-card .contact-row{border-bottom:1px solid var(--line);padding:10px 0;}
+  .support-contact-card .contact-row:last-of-type{border-bottom:none;}
+  .support-vpn-note{color:var(--ink-faint);font-size:11.5px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+  .legal-accordion{max-width:640px;margin-top:14px;display:flex;flex-direction:column;gap:10px;}
+  .legal-accordion details{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .legal-accordion summary{cursor:pointer;list-style:none;padding:15px 18px;font-size:14.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;justify-content:space-between;}
+  .legal-accordion summary::-webkit-details-marker{display:none;}
+  .legal-accordion summary::after{content:'+';color:var(--ink-faint);font-size:18px;font-weight:400;flex-shrink:0;margin-left:10px;transition:transform .2s;}
+  .legal-accordion details[open] summary::after{content:'−';}
+  .legal-accordion details[open] summary{border-bottom:1px solid var(--line);}
+  .legal-body{padding:6px 18px 18px;}
+  .legal-body h4{font-size:13px;color:var(--gold);margin:14px 0 6px;}
+  .legal-body h4:first-child{margin-top:4px;}
+  .legal-body p,.legal-body li{color:var(--ink-dim);font-size:13px;line-height:1.65;margin-bottom:6px;}
+  .legal-body ul{padding-left:20px;margin-bottom:6px;}
+
   footer{padding:26px clamp(16px,4vw,56px);border-top:1px solid var(--line);color:var(--ink-faint);font-size:12px;text-align:center;}
   .loading{padding:60px;text-align:center;color:var(--ink-faint);font-size:13px;}
 
@@ -437,7 +455,7 @@
     <button class="nav-tab" data-view="drama">Short Drama</button>
     <button class="nav-tab" data-view="adult">18+</button>
     <button class="nav-tab" data-view="mylist">My List</button>
-    <button class="nav-tab" id="supportNavBtn">Support</button>
+    <button class="nav-tab" data-view="support" id="supportNavBtn">Support</button>
     <div class="search-box" id="searchBox">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
@@ -471,37 +489,13 @@
   <button class="nav-tab" data-view="drama">Short Drama</button>
   <button class="nav-tab" data-view="adult">18+</button>
     <button class="nav-tab" data-view="mylist">My List</button>
-  <button class="nav-tab support-item" id="supportMenuBtn">
+  <button class="nav-tab support-item" data-view="support" id="supportMenuBtn">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
     <span>Support</span>
   </button>
 </div>
 
-<!-- ================= SUPPORT MODAL ================= -->
-<div class="sm-overlay" id="supportOverlay">
-  <div class="sm-box" style="position:relative;max-width:380px;">
-    <button class="sm-close-x" id="supportCloseBtn">✕</button>
-    <div style="font-size:28px;margin-bottom:8px;">💬</div>
-    <h3>Support</h3>
-    <p>အကူအညီလိုအပ်ရင် admin ကို ဆက်သွယ်ပါ</p>
-    <div class="pay-info" style="text-align:left;">
-      <div class="contact-row">
-        <span class="lbl">Telegram</span>
-        <a href="https://t.me/kweepethaung778" id="supportTgAdmin" rel="noopener noreferrer">@kweepethaung778</a>
-      </div>
-      <div class="contact-row">
-        <span class="lbl">Viber</span>
-        <a href="viber://chat?number=%2B959446627892">09446627892</a>
-      </div>
-      <div class="contact-row">
-        <span class="lbl">Telegram Channel</span>
-        <a href="https://t.me/maxflixdrama" id="supportTgChannel" rel="noopener noreferrer">t.me/maxflixdrama</a>
-      </div>
-    </div>
-    <p style="font-size:11px;margin-top:-8px;margin-bottom:14px;">Telegram ဖွင့်မရရင် VPN ဖွင့်ပြီးမှ ထပ်စမ်းကြည့်ပါ</p>
-    <button class="btn btn-ghost btn-block" id="supportCloseBtn2">ပိတ်မည်</button>
-  </div>
-</div>
+<!-- ================= SUPPORT / LEGAL MOVED TO in-app page (data-view="support") ================= -->
 
 <!-- ================= HOME VIEW ================= -->
 <div id="view-home" class="view-root">
@@ -552,6 +546,94 @@
   <div class="page-title">My List</div>
   <div class="page-sub" id="mylistCount"></div>
   <div class="grid" id="mylistGrid"></div>
+</div>
+
+<div id="view-support" class="page">
+  <div class="page-title">Support</div>
+  <div class="page-sub">အကူအညီလိုအပ်ရင် admin ကို ဆက်သွယ်ပါ</div>
+
+  <div class="support-contact-card">
+    <div class="contact-row">
+      <span class="lbl">Telegram</span>
+      <a href="https://t.me/kweepethaung778" id="supportTgAdmin" rel="noopener noreferrer">@kweepethaung778</a>
+    </div>
+    <div class="contact-row">
+      <span class="lbl">Viber</span>
+      <a href="viber://chat?number=%2B959446627892">09446627892</a>
+    </div>
+    <div class="contact-row">
+      <span class="lbl">Telegram Channel</span>
+      <a href="https://t.me/maxflixdrama" id="supportTgChannel" rel="noopener noreferrer">t.me/maxflixdrama</a>
+    </div>
+    <p class="support-vpn-note">Telegram ဖွင့်မရရင် VPN ဖွင့်ပြီးမှ ထပ်စမ်းကြည့်ပါ</p>
+  </div>
+
+  <div class="page-sub" style="margin-top:32px;">Terms · Privacy · DMCA</div>
+  <div class="legal-accordion">
+    <details>
+      <summary>Terms of Service (အသုံးပြုခွင့် စည်းမျဉ်းများ)</summary>
+      <div class="legal-body">
+        <h4>၁. ဝန်ဆောင်မှု</h4>
+        <p>Maxflix Streaming (“ကျွန်ုပ်တို့”၊ “Maxflix”) ကို အသုံးပြုခြင်းအားဖြင့် အောက်ပါစည်းမျဉ်းများကို လက်ခံသဘောတူပါသည်။ Maxflix Streaming သည် ဇာတ်ကား၊ Short Drama နှင့် အခြားဗီဒီယိုအကြောင်းအရာများကို online streaming ပြသပေးသော platform တစ်ခုဖြစ်ပါသည်။ Content အချို့ကို အခမဲ့ကြည့်ရှုနိုင်ပြီး၊ အချို့ကို Premium subscription ဖြင့်သာ ကြည့်ရှုနိုင်ပါသည်။</p>
+        <h4>၂. Account နှင့် အသက်အရွယ်</h4>
+        <ul>
+          <li>Account ဖန်တီးသူသည် မိမိအချက်အလက်များ တိကျမှန်ကန်စွာဖြည့်သွင်းရမည်။</li>
+          <li>18+ အမှတ်တံဆိပ်ပါ content များကို ကြည့်ရှုရန် အသက် ၁၈ နှစ် ပြည့်ပြီးသူများသာ ဝင်ရောက်ကြည့်ရှုနိုင်ပါသည်။ Age gate နှင့် PIN ကို ကျော်ဖြတ်ရန် ကြိုးစားခြင်းသည် ဤစည်းမျဉ်းကို ချိုးဖောက်ရာရောက်ပါသည်။</li>
+          <li>Account တစ်ခုအား မမှန်ကန်သော ရည်ရွယ်ချက်ဖြင့် အသုံးပြုသည်ဟု တွေ့ရှိပါက ကြိုတင်အကြောင်းကြားခြင်းမရှိဘဲ ရပ်ဆိုင်း/ဖျက်သိမ်းနိုင်ပါသည်။</li>
+        </ul>
+        <h4>၃. Premium Subscription</h4>
+        <ul>
+          <li>Premium subscription request များကို admin မှ စိစစ်ပြီးမှသာ အတည်ပြုပေးပါသည်။</li>
+          <li>ငွေပေးချေမှုနှင့်ပတ်သက်သည့် အငြင်းပွားမှုများအတွက် Support (Telegram/Viber) မှတစ်ဆင့် ဆက်သွယ်နိုင်ပါသည်။</li>
+          <li>Refund မူဝါဒကို case-by-case အလိုက် admin ဆုံးဖြတ်ပါသည်။</li>
+        </ul>
+        <h4>၄. တားမြစ်ချက်များ</h4>
+        <ul>
+          <li>Site ပေါ်ရှိ content များကို ခွင့်ပြုချက်မရှိဘဲ ကူးယူ၊ ပြန်လည်ဖြန့်ဝေခြင်း၊ ရောင်းချခြင်း မပြုလုပ်ရ။</li>
+          <li>Site ၏ security system များကို hack/bypass ကြိုးစားခြင်း၊ automated bot များဖြင့် scrape လုပ်ခြင်းများ မပြုလုပ်ရ။</li>
+        </ul>
+        <h4>၅. တာဝန်ကန့်သတ်ချက်</h4>
+        <p>Maxflix Streaming ကို "as is" အခြေအနေအတိုင်း ဝန်ဆောင်မှုပေးပါသည်။ Network/server ချို့ယွင်းမှုကြောင့် ဖြစ်ပေါ်လာသည့် ဆုံးရှုံးမှုများအတွက် Maxflix Streaming မှ တာဝန်မယူပါ။</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Privacy Policy (ကိုယ်ရေးအချက်အလက် မူဝါဒ)</summary>
+      <div class="legal-body">
+        <h4>၁. ကျွန်ုပ်တို့ စုဆောင်းသော အချက်အလက်</h4>
+        <ul>
+          <li>Account ဖွင့်ချိန်တွင် email address နှင့် ဖြည့်သွင်းသည့် အချက်အလက်များ</li>
+          <li>Premium request တင်သွင်းချိန်တွင် ငွေပေးချေမှုအထောက်အထား (screenshot/reference)</li>
+          <li>Site အသုံးပြုမှု data (ကြည့်ရှုသည့် content, device/browser အချက်အလက် — analytics အတွက်)</li>
+        </ul>
+        <h4>၂. အချက်အလက်များကို အသုံးပြုပုံ</h4>
+        <ul>
+          <li>Account authentication နှင့် Premium access စီမံခန့်ခွဲရန်</li>
+          <li>Site ကို ပိုမိုကောင်းမွန်အောင် improve လုပ်ရန် (aggregate analytics)</li>
+          <li>Support မေးမြန်းချက်များကို ဖြေကြားရန်</li>
+        </ul>
+        <h4>၃. အချက်အလက် မျှဝေခြင်း</h4>
+        <p>ကျွန်ုပ်တို့သည် user ၏ ကိုယ်ရေးအချက်အလက်ကို ပြင်ပ third party များထံ ရောင်းချခြင်း မပြုလုပ်ပါ။ Firebase (Google) နှင့် Cloudflare R2 ကဲ့သို့သော infrastructure providers များကို data storage/hosting အတွက်သာ အသုံးပြုပါသည်။</p>
+        <h4>၄. Cookies နှင့် Local Storage</h4>
+        <p>Login session ထိန်းသိမ်းရန်နှင့် preference များ (ဥပမာ — VPN notice ပိတ်ထားခြင်း) မှတ်သားရန် browser local storage ကို အသုံးပြုပါသည်။</p>
+        <h4>၅. Account ဖျက်သိမ်းခွင့်</h4>
+        <p>Account နှင့် ဆက်စပ်သည့် data ကို ဖျက်သိမ်းလိုပါက Support မှတစ်ဆင့် တောင်းဆိုနိုင်ပါသည်။</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>DMCA / Copyright Notice</summary>
+      <div class="legal-body">
+        <p>Maxflix Streaming သည် Copyright ပိုင်ရှင်များ၏ အခွင့်အရေးကို လေးစားပါသည်။ Site ပေါ်ရှိ content တစ်ခုခုသည် သင်၏ copyright ကို ချိုးဖောက်နေသည်ဟု ယူဆပါက အောက်ပါအချက်အလက်များနှင့်အတူ Support ကို ဆက်သွယ်ပေးပါ –</p>
+        <ul>
+          <li>ချိုးဖောက်ခံရသည်ဟု ဆိုသော content ၏ လင့်ခ်/တည်နေရာ</li>
+          <li>Copyright ပိုင်ဆိုင်မှုအထောက်အထား</li>
+          <li>သင်၏ ဆက်သွယ်ရန်အချက်အလက်</li>
+        </ul>
+        <p>တောင်းဆိုချက်ကို စိစစ်ပြီးပါက သက်ဆိုင်ရာ content ကို ကျိုးကြောင်းအလိုက် ဖယ်ရှားပေးပါမည်။</p>
+      </div>
+    </details>
+  </div>
 </div>
 
 <div id="view-search" class="page">
@@ -732,7 +814,7 @@
   </div>
 </div>
 
-<footer>Maxflix Streaming — All copyright reserve by Maxflix &nbsp;·&nbsp; <a href="legal.html" style="color:var(--ink-dim);text-decoration:underline;">Terms · Privacy · DMCA</a></footer>
+<footer>Maxflix Streaming — All copyright reserve by Maxflix &nbsp;·&nbsp; <a href="#" data-view="support" style="color:var(--ink-dim);text-decoration:underline;">Terms · Privacy · DMCA</a></footer>
 
 <div class="bottom-ad-bar" id="bottomAdBar">
   <a class="bottom-ad-link" id="bottomAdLink" target="_blank" rel="noopener noreferrer">
@@ -850,7 +932,8 @@ function showView(view){
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('[data-view]').forEach(el => {
-  el.addEventListener('click', () => {
+  el.addEventListener('click', (e) => {
+    if(el.tagName === 'A') e.preventDefault();
     document.getElementById('searchInput').value = '';
     document.getElementById('searchInputMobile').value = '';
     const view = el.dataset.view;
@@ -883,7 +966,7 @@ document.getElementById('hamburgerBtn').addEventListener('click', (e) => {
 });
 document.getElementById('mobileMenuOverlay').addEventListener('click', closeMobileMenu);
 
-/* ---------- Support modal ---------- */
+/* ---------- Support page: Telegram deep-link (tg:// app first, t.me fallback) ---------- */
 function openTelegramLink(username){
   const appUrl = 'tg://resolve?domain=' + username;
   const webUrl = 'https://t.me/' + username;
@@ -896,17 +979,6 @@ function openTelegramLink(username){
     if(!leftPage){ window.open(webUrl, '_blank', 'noopener,noreferrer'); }
   }, 1200);
 }
-function openSupportModal(){
-  closeMobileMenu();
-  document.getElementById('supportOverlay').classList.add('open');
-}
-document.getElementById('supportMenuBtn').addEventListener('click', openSupportModal);
-document.getElementById('supportNavBtn').addEventListener('click', openSupportModal);
-document.getElementById('supportCloseBtn').addEventListener('click', () => document.getElementById('supportOverlay').classList.remove('open'));
-document.getElementById('supportCloseBtn2').addEventListener('click', () => document.getElementById('supportOverlay').classList.remove('open'));
-document.getElementById('supportOverlay').addEventListener('click', e => {
-  if(e.target.id === 'supportOverlay') e.currentTarget.classList.remove('open');
-});
 document.getElementById('supportTgAdmin').addEventListener('click', e => {
   e.preventDefault();
   openTelegramLink('kweepethaung778');
