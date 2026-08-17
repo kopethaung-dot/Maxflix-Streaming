@@ -23,7 +23,6 @@
 <meta name="twitter:image" content="https://maxflixstreaming.com/og-image.png">
 
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
@@ -47,22 +46,6 @@
     --accent-grad:linear-gradient(100deg,#5b3fd0,#8b5cf6 55%,#c084fc);
     --font-display:'Bebas Neue','Noto Sans Myanmar',sans-serif;
     --font-body:'Work Sans','Noto Sans Myanmar',sans-serif;
-    /* ---------- Plyr theme (matches site accent/gold) ---------- */
-    --plyr-color-main:#6d4fe0;
-    --plyr-video-background:#000;
-    --plyr-video-control-color:#f2eefb;
-    --plyr-video-control-color-hover:#fff;
-    --plyr-video-control-background-hover:#6d4fe0;
-    --plyr-menu-background:#1d1933;
-    --plyr-menu-color:#f2eefb;
-    --plyr-menu-arrow-color:#7b7397;
-    --plyr-tooltip-background:#1d1933;
-    --plyr-tooltip-color:#f2eefb;
-    --plyr-progress-loading-background:rgba(255,255,255,.15);
-    --plyr-range-track-height:5px;
-    --plyr-range-thumb-height:13px;
-    --plyr-control-radius:6px;
-    --plyr-control-spacing:8px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{overflow-x:hidden;}
@@ -973,21 +956,6 @@ function loadHlsJs(){
 }
 let currentHls = null;
 
-/* Lazy-load Plyr (custom player skin) only when the player modal actually opens. */
-let plyrJsPromise = null;
-function loadPlyrJs(){
-  if(window.Plyr) return Promise.resolve();
-  if(plyrJsPromise) return plyrJsPromise;
-  plyrJsPromise = new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.plyr.io/3.7.8/plyr.polyfilled.js';
-    s.onload = resolve; s.onerror = reject;
-    document.head.appendChild(s);
-  });
-  return plyrJsPromise;
-}
-let currentPlyr = null;
-
 let movies = [];
 let continueList = []; // [{movieId, progress, duration}] for the logged-in user
 let myList = [];        // [movieId,...] — logged-in user ရဲ့ watchlist
@@ -1742,7 +1710,7 @@ function openPlayer(id){
   document.getElementById('modalClose').onclick = () => history.back();
 
   const videoEl = document.createElement('video');
-  videoEl.controls = true; // Plyr wraps this; native controls stay as a fallback if Plyr fails to load
+  videoEl.controls = true;
   videoEl.autoplay = true;
   videoEl.muted = true; // required by most browsers for reliable autoplay; user can unmute via controls
   videoEl.playsInline = true; // keeps video inline on iOS instead of forcing fullscreen
@@ -1760,11 +1728,9 @@ function openPlayer(id){
       } else {
         videoEl.src = srcUrl; // Safari has native HLS support
       }
-      initPlyr(videoEl);
-    }).catch(() => { videoEl.src = srcUrl; initPlyr(videoEl); });
+    }).catch(() => { videoEl.src = srcUrl; });
   } else {
     videoEl.src = srcUrl;
-    initPlyr(videoEl);
   }
   attachProgressTracking(videoEl, m);
   db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
@@ -1820,22 +1786,8 @@ function wireModalRatingButtons(m){
   dislikeBtn.onclick = () => { setRating(m.id, 'dislike'); wireModalRatingButtons(m); };
   myListBtn.onclick = () => { toggleMyList(m.id); wireModalRatingButtons(m); };
 }
-function initPlyr(videoEl){
-  loadPlyrJs().then(() => {
-    if(!window.Plyr) return; // fall back silently to native controls if CDN fails
-    currentPlyr = new Plyr(videoEl, {
-      controls: ['play-large','play','progress','current-time','duration','mute','volume','captions','settings','pip','airplay','fullscreen'],
-      settings: ['speed'],
-      speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
-      seekTime: 10,
-      tooltips: { controls: false, seek: true },
-      i18n: { restart:'ပြန်စမည်', rewind:'{seektime}s နောက်ပြန်', play:'ဖွင့်မည်', pause:'ရပ်မည်', fastForward:'{seektime}s ရှေ့ဆွဲ', seek:'ရှာမည်', played:'ကြည့်ပြီး', buffered:'Buffered', currentTime:'လက်ရှိအချိန်', duration:'စုစုပေါင်း', volume:'အသံ', mute:'အသံပိတ်', unmute:'အသံဖွင့်', enableCaptions:'စာတန်းထိုး', disableCaptions:'စာတန်းပိတ်', settings:'ဆက်တင်', pip:'Picture-in-Picture', enterFullscreen:'Full screen ဝင်မည်', exitFullscreen:'Full screen မှထွက်မည်', speed:'အမြန်နှုန်း', normal:'ပုံမှန်' }
-    });
-  }).catch(() => {}); // native controls (already true) remain the fallback
-}
 function closePlayer(){
   document.getElementById('modalOverlay').classList.remove('open');
-  if(currentPlyr){ currentPlyr.destroy(); currentPlyr = null; }
   if(currentHls){ currentHls.destroy(); currentHls = null; }
   if(autoNextTimer){ clearInterval(autoNextTimer); autoNextTimer = null; }
   document.getElementById('modalVideoWrap').innerHTML = '';
