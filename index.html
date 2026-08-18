@@ -334,6 +334,13 @@
   .contact-row a:hover{text-decoration:underline;}
 
   /* ---------- Support page ---------- */
+  .support-stats-row{display:flex;gap:10px;margin-top:18px;max-width:480px;}
+  .support-stat-box{flex:1;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:14px 10px;text-align:center;}
+  .support-stat-box.premium{background:linear-gradient(100deg,#5b3fd0,#8b5cf6 55%,#c084fc);border-color:transparent;}
+  .support-stat-box .n{font-family:var(--font-display);font-size:26px;letter-spacing:.5px;color:var(--ink);}
+  .support-stat-box.premium .n{color:#fff;}
+  .support-stat-box .l{font-size:11px;color:var(--ink-faint);margin-top:2px;}
+  .support-stat-box.premium .l{color:rgba(255,255,255,.85);}
   .support-account-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;max-width:480px;}
   .support-shortcut-btn{flex:1;min-width:150px;display:flex;align-items:center;justify-content:center;gap:8px;
     background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:13px 14px;
@@ -595,6 +602,17 @@
 <div id="view-support" class="page">
   <div class="page-title">Support</div>
   <div class="page-sub">အကူအညီလိုအပ်ရင် admin ကို ဆက်သွယ်ပါ</div>
+
+  <div class="support-stats-row" id="supportStatsRow" style="display:none;">
+    <div class="support-stat-box">
+      <div class="n" id="statTotalUsers">–</div>
+      <div class="l">Members</div>
+    </div>
+    <div class="support-stat-box premium">
+      <div class="n" id="statPremiumUsers">–</div>
+      <div class="l">Premium Members</div>
+    </div>
+  </div>
 
   <div class="support-account-row">
     <button class="support-shortcut-btn" id="supportSettingsBtn">
@@ -1162,6 +1180,9 @@ document.getElementById('authSubmitBtn').addEventListener('click', async () => {
       await db.collection('users').doc(cred.user.uid).set({
         email, isPremium: false, premiumExpiresAt: null, createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      db.collection('stats').doc('counts').set({
+        totalUsers: firebase.firestore.FieldValue.increment(1)
+      }, { merge: true }).catch(() => {}); // best-effort — never block signup if this fails
     }
     document.getElementById('authOverlay').classList.remove('open');
   }catch(err){
@@ -1169,6 +1190,16 @@ document.getElementById('authSubmitBtn').addEventListener('click', async () => {
     errEl.classList.add('show');
   }
 });
+
+/* ---------- Support page: live Member / Premium Member counts ---------- */
+db.collection('stats').doc('counts').onSnapshot(doc => {
+  const row = document.getElementById('supportStatsRow');
+  if(!doc.exists) return;
+  const d = doc.data();
+  document.getElementById('statTotalUsers').textContent = formatViewCount(d.totalUsers || 0);
+  document.getElementById('statPremiumUsers').textContent = formatViewCount(d.totalPremiumUsers || 0);
+  row.style.display = 'flex';
+}, () => {}); // if rules aren't published yet, just keep the box hidden instead of erroring
 
 function renderAccountArea(){
   const area = document.getElementById('accountArea');
@@ -1417,8 +1448,13 @@ document.getElementById('promoRedeemBtn').addEventListener('click', async () => 
       tx.set(userRef, {
         isPremium: true, premiumExpiresAt: expiresAt,
         premiumPlanLabel: `အစမ်းသုံး (${c.trialDays} ရက်)`,
-        trialUsed: true, trialCodeUsed: code
+        trialUsed: true, trialCodeUsed: code,
+        everPremium: true
       }, { merge: true });
+      if(!u.everPremium){
+        const statsRef = db.collection('stats').doc('counts');
+        tx.set(statsRef, { totalPremiumUsers: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+      }
     });
     document.getElementById('premiumOverlay').classList.remove('open');
     showToast(`🎉 ${trialDays} ရက် Trial စတင်ပါပြီ! Premium content တွေကို ကြည့်လို့ရပါပြီ`, 'ok');
