@@ -831,6 +831,18 @@
       <div style="font-size:28px;margin-bottom:8px;">⭐</div>
       <h3>Premium လိုအပ်ပါတယ်</h3>
       <p id="premiumPayDesc">ဒီဇာတ်ကားကို ကြည့်ဖို့ Premium subscription လိုအပ်ပါတယ်</p>
+
+      <button type="button" id="promoToggleBtn" style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--gold);margin:-4px 0 14px;">
+        🎟 Invite code ရှိပါသလား?
+      </button>
+      <div id="promoRedeemBox" style="display:none;margin-bottom:16px;background:var(--bg-card);border:1px solid var(--line);border-radius:8px;padding:12px;">
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="fPromoRedeemCode" placeholder="Invite code ထည့်ပါ" style="text-transform:uppercase;">
+          <button type="button" class="btn btn-accent" id="promoRedeemBtn" style="white-space:nowrap;padding:10px 16px;">အသုံးပြုမည်</button>
+        </div>
+        <div class="sm-err" id="promoRedeemErr" style="margin-top:8px;"></div>
+      </div>
+
       <div class="field"><label>Premium ကာလ ရွေးပါ</label>
         <select id="fPremiumPlan"></select>
       </div>
@@ -1342,6 +1354,9 @@ function openPremiumGate(movieId){
     updatePayInfoBox();
     document.getElementById('fTxnId').value = '';
     document.getElementById('premiumErr').classList.remove('show');
+    document.getElementById('promoRedeemBox').style.display = 'none';
+    document.getElementById('fPromoRedeemCode').value = '';
+    document.getElementById('promoRedeemErr').classList.remove('show');
     document.getElementById('premiumStatePay').style.display = 'block';
   }
   document.getElementById('premiumOverlay').classList.add('open');
@@ -1367,6 +1382,47 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
     });
     document.getElementById('premiumOverlay').classList.remove('open');
     showToast('Premium request တင်သွင်းပြီးပါပြီ — admin မှ စစ်ဆေးနေပါမည်', 'ok');
+  }catch(err){
+    errEl.textContent = err.message; errEl.classList.add('show');
+  }
+});
+
+/* ---------- Promo / trial invite code redemption ---------- */
+document.getElementById('promoToggleBtn').addEventListener('click', () => {
+  const box = document.getElementById('promoRedeemBox');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('promoRedeemBtn').addEventListener('click', async () => {
+  const code = document.getElementById('fPromoRedeemCode').value.trim().toUpperCase();
+  const errEl = document.getElementById('promoRedeemErr');
+  errEl.classList.remove('show');
+  if(!code){ errEl.textContent = 'Code ထည့်ပါ'; errEl.classList.add('show'); return; }
+  if(!currentUser){ errEl.textContent = 'Login ဝင်ထားရပါမယ်'; errEl.classList.add('show'); return; }
+  try{
+    const codeRef = db.collection('inviteCodes').doc(code);
+    const userRef = db.collection('users').doc(currentUser.uid);
+    let trialDays = 0;
+    await db.runTransaction(async (tx) => {
+      const codeSnap = await tx.get(codeRef);
+      if(!codeSnap.exists) throw new Error('Code မှားနေပါတယ် — ပြန်စစ်ပါ');
+      const c = codeSnap.data();
+      if(!c.active) throw new Error('ဒီ code ကို ရပ်ဆိုင်းထားပါတယ်');
+      if(c.maxUses != null && (c.usedCount || 0) >= c.maxUses) throw new Error('ဒီ code ကို အကုန်သုံးပြီးပါပြီ');
+      const userSnap = await tx.get(userRef);
+      const u = userSnap.exists ? userSnap.data() : {};
+      if(u.trialUsed) throw new Error('Trial ကို တစ်ကြိမ်ပဲ အသုံးပြုခွင့်ရှိပါတယ် — ယခင်က အသုံးပြုပြီးသားပါ');
+      trialDays = c.trialDays;
+      const expiresAt = firebase.firestore.Timestamp.fromDate(new Date(Date.now() + c.trialDays * 24 * 60 * 60 * 1000));
+      tx.update(codeRef, { usedCount: (c.usedCount || 0) + 1 });
+      tx.set(userRef, {
+        isPremium: true, premiumExpiresAt: expiresAt,
+        premiumPlanLabel: `အစမ်းသုံး (${c.trialDays} ရက်)`,
+        trialUsed: true, trialCodeUsed: code
+      }, { merge: true });
+    });
+    document.getElementById('premiumOverlay').classList.remove('open');
+    showToast(`🎉 ${trialDays} ရက် Trial စတင်ပါပြီ! Premium content တွေကို ကြည့်လို့ရပါပြီ`, 'ok');
+    if(pendingPlayId){ const id = pendingPlayId; pendingPlayId = null; openPlayer(id); }
   }catch(err){
     errEl.textContent = err.message; errEl.classList.add('show');
   }
