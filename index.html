@@ -1821,17 +1821,9 @@ function render(){
 /* =========================================================
    9) SERIES DETAIL VIEW
    ========================================================= */
-function openSeries(name, silentRefresh){
-  const series = getDramaSeries().find(s => s.name === name);
-  if(!series) return;
-  currentSeries = name;
-  document.getElementById('seriesPoster').src = series.thumb ? esc(series.thumb) : PLACEHOLDER_THUMB;
-  document.getElementById('seriesPoster').onerror = function(){ this.src = PLACEHOLDER_THUMB; };
-  document.getElementById('seriesTitle').textContent = series.name;
-  document.getElementById('seriesCount').textContent = series.count + ' Episodes';
-  document.getElementById('seriesDesc').textContent = series.desc || '';
+function renderEpList(episodes){
   const epList = document.getElementById('epList');
-  epList.innerHTML = series.episodes.map((ep, i) => `
+  epList.innerHTML = episodes.map((ep, i) => `
     <div class="ep-item" data-id="${ep.id}">
       <div class="ep-num">${ep.episodeNumber || (i+1)}</div>
       <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'">
@@ -1842,7 +1834,44 @@ function openSeries(name, silentRefresh){
       <div class="ep-play">▶</div>
     </div>`).join('');
   epList.querySelectorAll('.ep-item').forEach(el => el.addEventListener('click', () => openPlayer(el.dataset.id)));
+}
+async function openSeries(name, silentRefresh){
+  const series = getDramaSeries().find(s => s.name === name);
+  if(!series) return;
+  currentSeries = name;
+  document.getElementById('seriesPoster').src = series.thumb ? esc(series.thumb) : PLACEHOLDER_THUMB;
+  document.getElementById('seriesPoster').onerror = function(){ this.src = PLACEHOLDER_THUMB; };
+  document.getElementById('seriesTitle').textContent = series.name;
+  document.getElementById('seriesCount').textContent = series.count + ' Episodes';
+  document.getElementById('seriesDesc').textContent = series.desc || '';
+  renderEpList(series.episodes);
   if(!silentRefresh){ showView('series'); history.pushState({ maxflixModal: 'series' }, ''); }
+
+  // `movies` above only holds the most-recently-created N documents
+  // site-wide (see MOVIES_PAGE_SIZE) — an older series can look like it's
+  // "missing" episodes even though every episode still exists in
+  // Firestore. Fetch this series' episodes directly (no site-wide limit)
+  // and merge them in once loaded, so the list is always complete.
+  try{
+    const snap = await db.collection('movies')
+      .where('category', '==', 'drama')
+      .where('seriesName', '==', name)
+      .get();
+    if(currentSeries !== name) return; // user navigated away while this was loading
+    if(!snap.empty){
+      const byId = {};
+      series.episodes.forEach(e => { byId[e.id] = e; });
+      snap.docs.forEach(d => {
+        const data = d.data();
+        byId[d.id] = { id: d.id, ...data, createdAtMs: data.createdAt ? data.createdAt.toMillis() : 0 };
+      });
+      const fullEpisodes = Object.values(byId).sort((a, b) => (Number(a.episodeNumber)||0) - (Number(b.episodeNumber)||0));
+      if(fullEpisodes.length > series.episodes.length){
+        document.getElementById('seriesCount').textContent = fullEpisodes.length + ' Episodes';
+        renderEpList(fullEpisodes);
+      }
+    }
+  }catch(err){ /* silent — the cached (possibly partial) list stays shown */ }
 }
 document.getElementById('seriesBackBtn').addEventListener('click', () => history.back());
 
@@ -1931,22 +1960,49 @@ function openPlayer(id){
 function renderModalEpList(m){
   const wrap = document.getElementById('modalEpList');
   if(m.category !== 'drama' || !m.seriesName){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-  const series = getDramaSeries().find(s => s.name === (m.seriesName.trim() || m.title));
+  const seriesName = m.seriesName.trim() || m.title;
+  const series = getDramaSeries().find(s => s.name === seriesName);
   if(!series || series.episodes.length < 2){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+  paintModalEpList(wrap, series.name, series.episodes, m.id);
 
+  // Same site-wide pagination caveat as openSeries() — fetch this
+  // series' full episode list directly so a currently-playing episode
+  // always shows ALL its siblings below the player, not just whichever
+  // ones happen to be in the paginated `movies` cache right now.
+  db.collection('movies')
+    .where('category', '==', 'drama')
+    .where('seriesName', '==', seriesName)
+    .get()
+    .then(snap => {
+      if(!document.getElementById('modalOverlay').classList.contains('open')) return; // player closed meanwhile
+      if(snap.empty) return;
+      const byId = {};
+      series.episodes.forEach(e => { byId[e.id] = e; });
+      snap.docs.forEach(d => {
+        const data = d.data();
+        byId[d.id] = { id: d.id, ...data, createdAtMs: data.createdAt ? data.createdAt.toMillis() : 0 };
+      });
+      const fullEpisodes = Object.values(byId).sort((a, b) => (Number(a.episodeNumber)||0) - (Number(b.episodeNumber)||0));
+      if(fullEpisodes.length > series.episodes.length){
+        paintModalEpList(wrap, series.name, fullEpisodes, m.id);
+      }
+    })
+    .catch(() => {}); // silent — the cached (possibly partial) list stays shown
+}
+function paintModalEpList(wrap, seriesName, episodes, currentId){
   wrap.style.display = 'block';
   wrap.innerHTML = `
-    <div class="modal-ep-list-title">${esc(series.name)} — ${series.episodes.length} Episodes</div>
+    <div class="modal-ep-list-title">${esc(seriesName)} — ${episodes.length} Episodes</div>
     <div class="modal-ep-list-stack">
-      ${series.episodes.map((ep, i) => `
-        <div class="ep-item${ep.id === m.id ? ' current' : ''}" data-id="${ep.id}">
+      ${episodes.map((ep, i) => `
+        <div class="ep-item${ep.id === currentId ? ' current' : ''}" data-id="${ep.id}">
           <div class="ep-num">${ep.episodeNumber || (i+1)}</div>
           <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'">
           <div class="ep-info">
             <div class="t">${esc(ep.title)} ${ep.isPremium ? '<span class="premium-pill">★</span>' : ''}</div>
-            <div class="m">${ep.duration ? esc(ep.duration) : ''}${ep.id === m.id ? ' • ယခုကြည့်နေသည်' : ''}</div>
+            <div class="m">${ep.duration ? esc(ep.duration) : ''}${ep.id === currentId ? ' • ယခုကြည့်နေသည်' : ''}</div>
           </div>
-          <div class="ep-play">${ep.id === m.id ? '▮▮' : '▶'}</div>
+          <div class="ep-play">${ep.id === currentId ? '▮▮' : '▶'}</div>
         </div>`).join('')}
     </div>`;
   wrap.querySelectorAll('.ep-item:not(.current)').forEach(el => {
