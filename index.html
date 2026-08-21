@@ -375,6 +375,8 @@
   .sm-box h3{font-family:var(--font-display);font-size:24px;letter-spacing:1px;margin-bottom:6px;}
   .sm-box p{font-size:12px;color:var(--ink-faint);margin-bottom:16px;}
   .sm-err{font-size:12px;color:var(--danger);margin:8px 0;display:none;}
+  .sm-ok{font-size:12px;color:#4caf78;margin:8px 0;display:none;}
+  .sm-ok.show{display:block;}
   .sm-err.show{display:block;}
   .sm-ok{font-size:12px;color:#4fd371;margin:8px 0;display:none;}
   .sm-ok.show{display:block;}
@@ -818,7 +820,26 @@
         <button class="rating-btn" id="modalLikeBtn">👍 <span id="modalLikeCount">0</span></button>
         <button class="rating-btn" id="modalDislikeBtn">👎 <span id="modalDislikeCount">0</span></button>
         <button class="rating-btn" id="modalMyListBtn">🏷️ My List</button>
+        <button class="rating-btn" id="modalReportBtn" style="margin-left:auto;color:var(--ink-faint);" title="Video ပျက်နေရင် အသိပေးပါ">🚩 Report</button>
       </div>
+
+      <!-- Report broken video mini-form (collapsed by default) -->
+      <div id="reportBox" style="display:none;background:var(--bg-card);border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:10px;">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:8px;">ဘာပြဿနာ တွေ့ပါသလဲ?</div>
+        <select id="reportReason" style="margin-bottom:8px;">
+          <option value="Video ဖွင့်မရ">Video ဖွင့်မရ / Load မဖြစ်</option>
+          <option value="Video ရပ်နေတယ် / Buffer များတယ်">Video ရပ်နေတယ် / Buffer များတယ်</option>
+          <option value="Audio မရှိဘူး">Audio မရှိဘူး</option>
+          <option value="Video/Audio မတိုက်ဆိုင်ဘူး">Video/Audio မတိုက်ဆိုင်ဘူး</option>
+          <option value="အခြား">အခြား</option>
+        </select>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-accent" id="reportSubmitBtn" style="flex:1;padding:9px;font-size:12.5px;">တင်သွင်းမည်</button>
+          <button class="btn btn-ghost" id="reportCancelBtn" style="padding:9px 14px;font-size:12.5px;">မလုပ်တော့ပါ</button>
+        </div>
+        <div class="sm-ok" id="reportOk" style="margin-top:8px;margin-bottom:0;"></div>
+      </div>
+
       <div class="modal-desc" id="modalDesc"></div>
       <div class="modal-ep-list" id="modalEpList" style="display:none;"></div>
       <div class="modal-related" id="modalRelated" style="display:none;"></div>
@@ -890,7 +911,9 @@
     </div>
     <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"></div>
     <div class="field"><label>Password</label><input type="password" id="authPass" placeholder="••••••••"></div>
+    <button type="button" id="forgotPassBtn" style="display:block;margin:-6px 0 14px;font-size:12px;color:var(--ink-faint);text-decoration:underline;">Password မေ့သွားပါသလား?</button>
     <div class="sm-err" id="authErr"></div>
+    <div class="sm-ok" id="authResetOk"></div>
     <button class="btn btn-accent btn-block" id="authSubmitBtn">Login</button>
   </div>
 </div>
@@ -932,7 +955,7 @@
       <div class="field"><label>ပေးချေမှု နည်းလမ်း</label>
         <select id="fPayMethod"><option value="KBZPay">KBZPay</option><option value="WavePay">WavePay</option></select>
       </div>
-      <div class="field"><label>Transaction ID / ငွေလွှဲအမှတ် *</label><input type="text" id="fTxnId" placeholder="ငွေလွှဲပြီးရင် Transaction ID ကူးထည့်ပါ"></div>
+      <div class="field"><label>Transaction ID ရဲ့ နောက်ဆုံး ၄ လုံး *</label><input type="text" id="fTxnId" placeholder="ဥပမာ - 8823" maxlength="4" inputmode="numeric"></div>
       <div class="sm-err" id="premiumErr"></div>
       <button class="btn btn-accent btn-block" id="premiumSubmitBtn">တင်သွင်းမည်</button>
     </div>
@@ -1060,6 +1083,7 @@ let currentUser = null;      // firebase auth user
 let currentUserDoc = null;   // Firestore users/{uid} doc data
 let currentPendingRequest = null; // latest pending premiumRequests doc for this user
 let pendingPlayId = null;    // movie id waiting on gate resolution
+let currentPlayingMovie = null; // movie object shown in the player right now (for the Report button)
 let searchGenreFilter = '';  // genre dropdown value in search view
 
 /* =========================================================
@@ -1239,6 +1263,7 @@ document.getElementById('pinInput').addEventListener('keydown', e => { if(e.key=
 let authMode = 'login';
 function openAuthModal(){
   document.getElementById('authErr').classList.remove('show');
+  document.getElementById('authResetOk').classList.remove('show');
   document.getElementById('authEmail').value = '';
   document.getElementById('authPass').value = '';
   document.getElementById('authOverlay').classList.add('open');
@@ -1255,7 +1280,23 @@ function setAuthMode(mode){
   document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
   document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'Login' : 'Sign up';
   document.getElementById('authErr').classList.remove('show');
+  document.getElementById('authResetOk').classList.remove('show');
 }
+document.getElementById('forgotPassBtn').addEventListener('click', async () => {
+  const email = document.getElementById('authEmail').value.trim();
+  const errEl = document.getElementById('authErr');
+  const okEl = document.getElementById('authResetOk');
+  errEl.classList.remove('show'); okEl.classList.remove('show');
+  if(!email){ errEl.textContent = 'Password reset link ပို့ဖို့ Email အရင်ဖြည့်ပါ'; errEl.classList.add('show'); return; }
+  try{
+    await auth.sendPasswordResetEmail(email);
+    okEl.textContent = `✓ Password ပြန်လည်သတ်မှတ်ရန် link ကို ${email} ဆီ ပို့လိုက်ပါပြီ — Email inbox (spam folder အပါအဝင်) ကို စစ်ကြည့်ပါ`;
+    okEl.classList.add('show');
+  }catch(err){
+    errEl.textContent = err.message;
+    errEl.classList.add('show');
+  }
+});
 document.getElementById('authSubmitBtn').addEventListener('click', async () => {
   const email = document.getElementById('authEmail').value.trim();
   const pass = document.getElementById('authPass').value;
@@ -1493,7 +1534,8 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
   const method = document.getElementById('fPayMethod').value;
   const plan = PREMIUM_PLANS.find(p => p.id === document.getElementById('fPremiumPlan').value) || PREMIUM_PLANS[0];
   const errEl = document.getElementById('premiumErr');
-  if(!txnId){ errEl.textContent = 'Transaction ID ဖြည့်ပါ'; errEl.classList.add('show'); return; }
+  if(!txnId){ errEl.textContent = 'Transaction ID ရဲ့ နောက်ဆုံး ၄ လုံး ဖြည့်ပါ'; errEl.classList.add('show'); return; }
+  if(!/^\d{4}$/.test(txnId)){ errEl.textContent = 'ဂဏန်း ၄ လုံးတိတိ ဖြည့်ပါ (ဥပမာ - 8823)'; errEl.classList.add('show'); return; }
   try{
     await db.collection('premiumRequests').add({
       uid: currentUser.uid, email: currentUser.email,
@@ -1913,6 +1955,9 @@ function openPlayer(id){
   if(m.category === 'adult' && !adultUnlocked){ requestAdultUnlock(() => openPlayer(id)); return; }
   if(m.isPremium && !isPremiumActive()){ openPremiumGate(id); return; }
 
+  currentPlayingMovie = m; // used by the "Report broken video" button
+  document.getElementById('reportBox').style.display = 'none';
+  document.getElementById('reportOk').classList.remove('show');
   playerReturnView = currentView; // 18+/Movies/Short Drama/Series — ဘယ် view ကနေ ဖွင့်လိုက်တာလဲ မှတ်ထား
   document.getElementById('modalBackBtn').textContent = `← ${VIEW_LABEL[playerReturnView] || 'ပင်မစာမျက်နှာ'} သို့ ပြန်သွားမည်`;
 
@@ -2009,17 +2054,24 @@ function paintModalEpList(wrap, seriesName, episodes, currentId){
     el.addEventListener('click', () => openPlayer(el.dataset.id));
   });
 }
-/* "Relate content" grid shown below the player for 18+ videos — a card
-   grid (same visual language as the homepage rows), not the linear
-   episode-list style used for Short Drama, since 18+ videos are usually
-   standalone rather than sequential episodes. */
+/* "Relate content" grid shown below the player — a card grid (same
+   visual language as the homepage rows). Shown for every category:
+   - adult: other 18+ videos
+   - original (Movies): other movies
+   - drama: only for standalone/single-episode dramas — a multi-episode
+     series already gets its own "what to watch next" via the episode
+     list above, so we skip this here to avoid showing two overlapping
+     "what's next" sections on the same page. */
 function renderModalRelated(m){
   const wrap = document.getElementById('modalRelated');
-  if(m.category !== 'adult'){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+  if(m.category === 'drama' && m.seriesName){
+    const series = getDramaSeries().find(s => s.name === (m.seriesName.trim() || m.title));
+    if(series && series.episodes.length >= 2){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+  }
   const genreSet = new Set(m.genres || []);
-  let pool = movies.filter(x => x.category === 'adult' && x.id !== m.id);
+  let pool = movies.filter(x => x.category === m.category && x.id !== m.id);
   if(pool.length === 0){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-  // Prefer other videos sharing at least one genre tag; fall back to any other 18+ video.
+  // Prefer other videos sharing at least one genre tag; fall back to any other video in the same category.
   const scored = pool.map(x => ({
     m: x,
     score: (x.genres || []).filter(g => genreSet.has(g)).length
@@ -2032,6 +2084,42 @@ function renderModalRelated(m){
     <div class="modal-related-grid">${related.map(movieCardHtml).join('')}</div>`;
   wireCards(wrap);
 }
+
+/* ---------- Report broken video ---------- */
+document.getElementById('modalReportBtn').addEventListener('click', () => {
+  const box = document.getElementById('reportBox');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('reportCancelBtn').addEventListener('click', () => {
+  document.getElementById('reportBox').style.display = 'none';
+});
+document.getElementById('reportSubmitBtn').addEventListener('click', async () => {
+  if(!currentPlayingMovie) return;
+  const reason = document.getElementById('reportReason').value;
+  const okEl = document.getElementById('reportOk');
+  const btn = document.getElementById('reportSubmitBtn');
+  btn.disabled = true;
+  try{
+    await db.collection('reports').add({
+      movieId: currentPlayingMovie.id,
+      movieTitle: currentPlayingMovie.title,
+      reason,
+      uid: currentUser ? currentUser.uid : null,
+      email: currentUser ? currentUser.email : null,
+      status: 'open',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    okEl.textContent = '✓ Report ပို့ပြီးပါပြီ — admin မှ အမြန်ဆုံး ပြင်ဆင်ပေးပါမည်, ကျေးဇူးတင်ပါသည်';
+    okEl.classList.add('show');
+    setTimeout(() => { document.getElementById('reportBox').style.display = 'none'; }, 2500);
+  }catch(err){
+    okEl.textContent = 'Report ပို့မရပါ — ' + err.message;
+    okEl.classList.add('show');
+  }finally{
+    btn.disabled = false;
+  }
+});
+
 function wireModalRatingButtons(m){
   const likeBtn = document.getElementById('modalLikeBtn');
   const dislikeBtn = document.getElementById('modalDislikeBtn');
