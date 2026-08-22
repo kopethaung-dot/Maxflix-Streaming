@@ -26,7 +26,7 @@
 
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#141225">
+<meta name="theme-color" content="#0B0B0F">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -39,16 +39,16 @@
 
 <style>
   :root{
-    --bg:#141225;
-    --bg-elev:rgba(29,25,51,.60); --bg-card:rgba(39,33,65,.52);
-    --ink:#f2eefb; --ink-dim:#aba4c9; --ink-faint:#7b7397;
-    --accent:#6d4fe0; --accent-dim:#4a35a0; --gold:#d4a62a; --line:rgba(242,238,251,.14);
+    --bg:#0B0B0F;
+    --bg-elev:rgba(26,16,19,.60); --bg-card:rgba(36,22,25,.52);
+    --ink:#F5F2F3; --ink-dim:#B8ADB0; --ink-faint:#8A7D80;
+    --accent:#E50914; --accent-dim:#A30712; --gold:#d4a62a; --line:rgba(255,255,255,.14);
     --danger:#e5484d;
-    --accent-grad:linear-gradient(100deg,#5b3fd0,#8b5cf6 55%,#c084fc);
+    --accent-grad:linear-gradient(100deg,#A30712,#E50914 55%,#FF4D5E);
     --font-display:'Bebas Neue','Noto Sans Myanmar',sans-serif;
     --font-body:'Work Sans','Noto Sans Myanmar',sans-serif;
     --glass-blur:blur(18px) saturate(160%);
-    --glow1:rgba(109,79,224,.38); --glow2:rgba(212,166,42,.20); --glow3:rgba(109,79,224,.22);
+    --glow1:rgba(229,9,20,.38); --glow2:rgba(212,166,42,.20); --glow3:rgba(229,9,20,.22);
   }
   /* ---------- Light theme override ----------
      Toggled via body[data-theme="light"] (see themeToggleBtn JS). Since
@@ -56,12 +56,12 @@
      CSS variable, redefining them here re-themes the whole site without
      needing per-selector overrides. */
   body[data-theme="light"]{
-    --bg:#f3f1fa;
+    --bg:#FFF3F1;
     --bg-elev:rgba(255,255,255,.68); --bg-card:rgba(255,255,255,.60);
-    --ink:#211c38; --ink-dim:#4d4667; --ink-faint:#7d7599;
-    --accent:#6d4fe0; --accent-dim:#8a72e8; --gold:#a97909; --line:rgba(33,28,56,.13);
+    --ink:#241417; --ink-dim:#6E5B5D; --ink-faint:#8F7B7D;
+    --accent:#E50914; --accent-dim:#F1495A; --gold:#a97909; --line:rgba(30,20,20,.13);
     --danger:#d63b40;
-    --glow1:rgba(109,79,224,.12); --glow2:rgba(212,166,42,.12); --glow3:rgba(109,79,224,.08);
+    --glow1:rgba(229,9,20,.12); --glow2:rgba(212,166,42,.12); --glow3:rgba(229,9,20,.08);
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{overflow-x:hidden;}
@@ -86,7 +86,7 @@
 
   /* ---------- Glass effect (premium frosted-glass surfaces) ----------
      Every panel that sits on --bg-card/--bg-elev gets the same blur so
-     the ambient purple/gold glow behind it shows through softly. One
+     the ambient red/gold glow behind it shows through softly. One
      rule covers all of them since they already share those variables. */
   .card, .sm-box, .modal-box, .mobile-menu, .pay-info, .support-contact-card,
   .support-shortcut-btn, .legal-accordion details, .support-stat-box, .toast,
@@ -98,7 +98,7 @@
 
   /* ---------- Header / Nav ---------- */
   header{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;
-    padding:14px clamp(16px,4vw,56px);background:linear-gradient(to bottom,rgba(20,18,37,.75),rgba(20,18,37,.55) 70%,transparent);
+    padding:14px clamp(16px,4vw,56px);background:linear-gradient(to bottom,rgba(16,11,12,.75),rgba(16,11,12,.55) 70%,transparent);
     border-bottom:1px solid var(--line);gap:16px;}
   .brand{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-size:26px;letter-spacing:2px;color:var(--ink);cursor:pointer;flex-shrink:0;}
   .brand-sub{font-family:var(--font-body);font-size:9px;letter-spacing:3px;color:var(--ink-faint);font-weight:600;margin-left:1px;}
@@ -181,7 +181,7 @@
   .mobile-menu-handle{width:36px;height:4px;border-radius:3px;background:var(--line);margin:2px auto 12px;flex-shrink:0;}
   .mobile-menu .nav-tab{padding:15px 22px;border-bottom:1px solid var(--line);border-left:3px solid transparent;
     text-align:left;font-size:15px;}
-  .mobile-menu .nav-tab.active{border-left-color:var(--accent);background:rgba(109,79,224,.1);color:var(--ink);}
+  .mobile-menu .nav-tab.active{border-left-color:var(--accent);background:rgba(229,9,20,.1);color:var(--ink);}
   .mobile-menu .nav-tab:last-of-type{border-bottom:none;}
   .mobile-menu .support-item{display:flex;align-items:center;gap:8px;}
   .mobile-menu .support-item svg{width:16px;height:16px;flex-shrink:0;color:var(--gold);}
@@ -193,8 +193,8 @@
   /* ---------- Hero ---------- */
   /* ---------- VPN notice bar ---------- */
   .vpn-notice{display:flex;align-items:center;gap:10px;padding:10px clamp(16px,4vw,56px);
-    background:rgba(109,79,224,.14);border-bottom:1px solid rgba(109,79,224,.3);
-    font-size:13px;color:#e4dbfb;}
+    background:rgba(229,9,20,.14);border-bottom:1px solid rgba(229,9,20,.3);
+    font-size:13px;color:#FBE4E7;}
   .vpn-notice .icon{flex-shrink:0;font-size:16px;}
   .vpn-notice .msg{flex:1;line-height:1.4;}
   .vpn-notice .close-btn{flex-shrink:0;background:none;border:none;color:inherit;font-size:18px;
@@ -280,7 +280,7 @@
   .rating-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 
   /* ---------- Splash screen ---------- */
-  .splash-screen{position:fixed;inset:0;z-index:9999;background:#141225;
+  .splash-screen{position:fixed;inset:0;z-index:9999;background:#0B0B0F;
     display:flex;align-items:center;justify-content:center;
     animation:splash-fade-out .5s ease .9s forwards;}
   .splash-mark{font-family:var(--font-display);font-size:clamp(40px,10vw,72px);letter-spacing:6px;
@@ -303,7 +303,7 @@
     font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;}
   .card-adult-badge{position:absolute;top:8px;left:8px;background:#a8283f;color:#fff;
     font-size:11px;font-weight:800;letter-spacing:.5px;padding:3px 9px;border-radius:3px;
-    box-shadow:0 0 0 1px rgba(255,255,255,.25),0 2px 6px rgba(109,79,224,.5);}
+    box-shadow:0 0 0 1px rgba(255,255,255,.25),0 2px 6px rgba(229,9,20,.5);}
   .card-premium{position:absolute;bottom:52px;left:8px;background:var(--gold);color:#0a0a0d;
     font-size:10px;font-weight:700;letter-spacing:.5px;padding:2px 8px;border-radius:3px;}
   .card.is-premium{border:1px solid rgba(212,175,55,.5);box-shadow:0 0 14px rgba(212,175,55,.18);}
@@ -356,7 +356,7 @@
   .modal-related-title{font-family:var(--font-display);font-size:16px;letter-spacing:.5px;margin-bottom:12px;}
   .modal-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
   .modal-ep-list-stack{display:flex;flex-direction:column;gap:10px;}
-  .modal-ep-list-stack .ep-item.current{border-color:var(--accent);background:rgba(109,79,224,.1);cursor:default;}
+  .modal-ep-list-stack .ep-item.current{border-color:var(--accent);background:rgba(229,9,20,.1);cursor:default;}
   .modal-ep-list-stack .ep-item:not(.current):hover{border-color:var(--ink-dim);}
   .modal-ep-list-stack .ep-play{color:var(--accent);}
   .modal-close{position:absolute;top:12px;right:12px;z-index:5;width:34px;height:34px;border-radius:50%;
@@ -375,8 +375,6 @@
   .sm-box h3{font-family:var(--font-display);font-size:24px;letter-spacing:1px;margin-bottom:6px;}
   .sm-box p{font-size:12px;color:var(--ink-faint);margin-bottom:16px;}
   .sm-err{font-size:12px;color:var(--danger);margin:8px 0;display:none;}
-  .sm-ok{font-size:12px;color:#4caf78;margin:8px 0;display:none;}
-  .sm-ok.show{display:block;}
   .sm-err.show{display:block;}
   .sm-ok{font-size:12px;color:#4fd371;margin:8px 0;display:none;}
   .sm-ok.show{display:block;}
@@ -396,7 +394,7 @@
   /* ---------- Support page ---------- */
   .support-stats-row{display:flex;gap:10px;margin-top:18px;max-width:480px;}
   .support-stat-box{flex:1;background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:14px 10px;text-align:center;}
-  .support-stat-box.premium{background:linear-gradient(100deg,#5b3fd0,#8b5cf6 55%,#c084fc);border-color:transparent;}
+  .support-stat-box.premium{background:linear-gradient(100deg,#A30712,#E50914 55%,#FF4D5E);border-color:transparent;}
   .support-stat-box .n{font-family:var(--font-display);font-size:26px;letter-spacing:.5px;color:var(--ink);}
   .support-stat-box.premium .n{color:#fff;}
   .support-stat-box .l{font-size:11px;color:var(--ink-faint);margin-top:2px;}
@@ -407,7 +405,7 @@
     font-size:13.5px;font-weight:600;color:var(--ink-dim);}
   .support-shortcut-btn svg{width:16px;height:16px;flex-shrink:0;}
   .support-shortcut-btn:hover{border-color:var(--accent-dim);color:var(--ink);}
-  .support-shortcut-btn.premium{background:linear-gradient(100deg,#5b3fd0,#8b5cf6 55%,#c084fc);color:#fff;border-color:transparent;}
+  .support-shortcut-btn.premium{background:linear-gradient(100deg,#A30712,#E50914 55%,#FF4D5E);color:#fff;border-color:transparent;}
   .support-shortcut-btn.premium svg{color:var(--gold);}
   .support-contact-card{background:var(--bg-card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;max-width:480px;margin-top:18px;}
   .support-contact-card .contact-row{border-bottom:1px solid var(--line);padding:10px 0;}
@@ -535,7 +533,7 @@
   <div class="brand" data-view="home">
     <svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
       <defs><linearGradient id="mfGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#6d4fe0"/><stop offset="100%" stop-color="#d4a62a"/>
+        <stop offset="0%" stop-color="#E50914"/><stop offset="100%" stop-color="#d4a62a"/>
       </linearGradient></defs>
       <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#mfGrad)"/>
       <rect x="1" y="1" width="38" height="38" rx="10" fill="none" stroke="rgba(255,255,255,.15)"/>
@@ -820,26 +818,7 @@
         <button class="rating-btn" id="modalLikeBtn">👍 <span id="modalLikeCount">0</span></button>
         <button class="rating-btn" id="modalDislikeBtn">👎 <span id="modalDislikeCount">0</span></button>
         <button class="rating-btn" id="modalMyListBtn">🏷️ My List</button>
-        <button class="rating-btn" id="modalReportBtn" style="margin-left:auto;color:var(--ink-faint);" title="Video ပျက်နေရင် အသိပေးပါ">🚩 Report</button>
       </div>
-
-      <!-- Report broken video mini-form (collapsed by default) -->
-      <div id="reportBox" style="display:none;background:var(--bg-card);border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:10px;">
-        <div style="font-size:12.5px;font-weight:600;margin-bottom:8px;">ဘာပြဿနာ တွေ့ပါသလဲ?</div>
-        <select id="reportReason" style="margin-bottom:8px;">
-          <option value="Video ဖွင့်မရ">Video ဖွင့်မရ / Load မဖြစ်</option>
-          <option value="Video ရပ်နေတယ် / Buffer များတယ်">Video ရပ်နေတယ် / Buffer များတယ်</option>
-          <option value="Audio မရှိဘူး">Audio မရှိဘူး</option>
-          <option value="Video/Audio မတိုက်ဆိုင်ဘူး">Video/Audio မတိုက်ဆိုင်ဘူး</option>
-          <option value="အခြား">အခြား</option>
-        </select>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-accent" id="reportSubmitBtn" style="flex:1;padding:9px;font-size:12.5px;">တင်သွင်းမည်</button>
-          <button class="btn btn-ghost" id="reportCancelBtn" style="padding:9px 14px;font-size:12.5px;">မလုပ်တော့ပါ</button>
-        </div>
-        <div class="sm-ok" id="reportOk" style="margin-top:8px;margin-bottom:0;"></div>
-      </div>
-
       <div class="modal-desc" id="modalDesc"></div>
       <div class="modal-ep-list" id="modalEpList" style="display:none;"></div>
       <div class="modal-related" id="modalRelated" style="display:none;"></div>
@@ -911,9 +890,7 @@
     </div>
     <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"></div>
     <div class="field"><label>Password</label><input type="password" id="authPass" placeholder="••••••••"></div>
-    <button type="button" id="forgotPassBtn" style="display:block;margin:-6px 0 14px;font-size:12px;color:var(--ink-faint);text-decoration:underline;">Password မေ့သွားပါသလား?</button>
     <div class="sm-err" id="authErr"></div>
-    <div class="sm-ok" id="authResetOk"></div>
     <button class="btn btn-accent btn-block" id="authSubmitBtn">Login</button>
   </div>
 </div>
@@ -955,7 +932,7 @@
       <div class="field"><label>ပေးချေမှု နည်းလမ်း</label>
         <select id="fPayMethod"><option value="KBZPay">KBZPay</option><option value="WavePay">WavePay</option></select>
       </div>
-      <div class="field"><label>Transaction ID ရဲ့ နောက်ဆုံး ၄ လုံး *</label><input type="text" id="fTxnId" placeholder="ဥပမာ - 8823" maxlength="4" inputmode="numeric"></div>
+      <div class="field"><label>Transaction ID / ငွေလွှဲအမှတ် *</label><input type="text" id="fTxnId" placeholder="ငွေလွှဲပြီးရင် Transaction ID ကူးထည့်ပါ"></div>
       <div class="sm-err" id="premiumErr"></div>
       <button class="btn btn-accent btn-block" id="premiumSubmitBtn">တင်သွင်းမည်</button>
     </div>
@@ -1083,7 +1060,6 @@ let currentUser = null;      // firebase auth user
 let currentUserDoc = null;   // Firestore users/{uid} doc data
 let currentPendingRequest = null; // latest pending premiumRequests doc for this user
 let pendingPlayId = null;    // movie id waiting on gate resolution
-let currentPlayingMovie = null; // movie object shown in the player right now (for the Report button)
 let searchGenreFilter = '';  // genre dropdown value in search view
 
 /* =========================================================
@@ -1263,7 +1239,6 @@ document.getElementById('pinInput').addEventListener('keydown', e => { if(e.key=
 let authMode = 'login';
 function openAuthModal(){
   document.getElementById('authErr').classList.remove('show');
-  document.getElementById('authResetOk').classList.remove('show');
   document.getElementById('authEmail').value = '';
   document.getElementById('authPass').value = '';
   document.getElementById('authOverlay').classList.add('open');
@@ -1280,23 +1255,7 @@ function setAuthMode(mode){
   document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
   document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'Login' : 'Sign up';
   document.getElementById('authErr').classList.remove('show');
-  document.getElementById('authResetOk').classList.remove('show');
 }
-document.getElementById('forgotPassBtn').addEventListener('click', async () => {
-  const email = document.getElementById('authEmail').value.trim();
-  const errEl = document.getElementById('authErr');
-  const okEl = document.getElementById('authResetOk');
-  errEl.classList.remove('show'); okEl.classList.remove('show');
-  if(!email){ errEl.textContent = 'Password reset link ပို့ဖို့ Email အရင်ဖြည့်ပါ'; errEl.classList.add('show'); return; }
-  try{
-    await auth.sendPasswordResetEmail(email);
-    okEl.textContent = `✓ Password ပြန်လည်သတ်မှတ်ရန် link ကို ${email} ဆီ ပို့လိုက်ပါပြီ — Email inbox (spam folder အပါအဝင်) ကို စစ်ကြည့်ပါ`;
-    okEl.classList.add('show');
-  }catch(err){
-    errEl.textContent = err.message;
-    errEl.classList.add('show');
-  }
-});
 document.getElementById('authSubmitBtn').addEventListener('click', async () => {
   const email = document.getElementById('authEmail').value.trim();
   const pass = document.getElementById('authPass').value;
@@ -1534,8 +1493,7 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
   const method = document.getElementById('fPayMethod').value;
   const plan = PREMIUM_PLANS.find(p => p.id === document.getElementById('fPremiumPlan').value) || PREMIUM_PLANS[0];
   const errEl = document.getElementById('premiumErr');
-  if(!txnId){ errEl.textContent = 'Transaction ID ရဲ့ နောက်ဆုံး ၄ လုံး ဖြည့်ပါ'; errEl.classList.add('show'); return; }
-  if(!/^\d{4}$/.test(txnId)){ errEl.textContent = 'ဂဏန်း ၄ လုံးတိတိ ဖြည့်ပါ (ဥပမာ - 8823)'; errEl.classList.add('show'); return; }
+  if(!txnId){ errEl.textContent = 'Transaction ID ဖြည့်ပါ'; errEl.classList.add('show'); return; }
   try{
     await db.collection('premiumRequests').add({
       uid: currentUser.uid, email: currentUser.email,
@@ -1955,9 +1913,6 @@ function openPlayer(id){
   if(m.category === 'adult' && !adultUnlocked){ requestAdultUnlock(() => openPlayer(id)); return; }
   if(m.isPremium && !isPremiumActive()){ openPremiumGate(id); return; }
 
-  currentPlayingMovie = m; // used by the "Report broken video" button
-  document.getElementById('reportBox').style.display = 'none';
-  document.getElementById('reportOk').classList.remove('show');
   playerReturnView = currentView; // 18+/Movies/Short Drama/Series — ဘယ် view ကနေ ဖွင့်လိုက်တာလဲ မှတ်ထား
   document.getElementById('modalBackBtn').textContent = `← ${VIEW_LABEL[playerReturnView] || 'ပင်မစာမျက်နှာ'} သို့ ပြန်သွားမည်`;
 
@@ -2054,24 +2009,17 @@ function paintModalEpList(wrap, seriesName, episodes, currentId){
     el.addEventListener('click', () => openPlayer(el.dataset.id));
   });
 }
-/* "Relate content" grid shown below the player — a card grid (same
-   visual language as the homepage rows). Shown for every category:
-   - adult: other 18+ videos
-   - original (Movies): other movies
-   - drama: only for standalone/single-episode dramas — a multi-episode
-     series already gets its own "what to watch next" via the episode
-     list above, so we skip this here to avoid showing two overlapping
-     "what's next" sections on the same page. */
+/* "Relate content" grid shown below the player for 18+ videos — a card
+   grid (same visual language as the homepage rows), not the linear
+   episode-list style used for Short Drama, since 18+ videos are usually
+   standalone rather than sequential episodes. */
 function renderModalRelated(m){
   const wrap = document.getElementById('modalRelated');
-  if(m.category === 'drama' && m.seriesName){
-    const series = getDramaSeries().find(s => s.name === (m.seriesName.trim() || m.title));
-    if(series && series.episodes.length >= 2){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-  }
+  if(m.category !== 'adult'){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
   const genreSet = new Set(m.genres || []);
-  let pool = movies.filter(x => x.category === m.category && x.id !== m.id);
+  let pool = movies.filter(x => x.category === 'adult' && x.id !== m.id);
   if(pool.length === 0){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
-  // Prefer other videos sharing at least one genre tag; fall back to any other video in the same category.
+  // Prefer other videos sharing at least one genre tag; fall back to any other 18+ video.
   const scored = pool.map(x => ({
     m: x,
     score: (x.genres || []).filter(g => genreSet.has(g)).length
@@ -2084,42 +2032,6 @@ function renderModalRelated(m){
     <div class="modal-related-grid">${related.map(movieCardHtml).join('')}</div>`;
   wireCards(wrap);
 }
-
-/* ---------- Report broken video ---------- */
-document.getElementById('modalReportBtn').addEventListener('click', () => {
-  const box = document.getElementById('reportBox');
-  box.style.display = box.style.display === 'none' ? 'block' : 'none';
-});
-document.getElementById('reportCancelBtn').addEventListener('click', () => {
-  document.getElementById('reportBox').style.display = 'none';
-});
-document.getElementById('reportSubmitBtn').addEventListener('click', async () => {
-  if(!currentPlayingMovie) return;
-  const reason = document.getElementById('reportReason').value;
-  const okEl = document.getElementById('reportOk');
-  const btn = document.getElementById('reportSubmitBtn');
-  btn.disabled = true;
-  try{
-    await db.collection('reports').add({
-      movieId: currentPlayingMovie.id,
-      movieTitle: currentPlayingMovie.title,
-      reason,
-      uid: currentUser ? currentUser.uid : null,
-      email: currentUser ? currentUser.email : null,
-      status: 'open',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    okEl.textContent = '✓ Report ပို့ပြီးပါပြီ — admin မှ အမြန်ဆုံး ပြင်ဆင်ပေးပါမည်, ကျေးဇူးတင်ပါသည်';
-    okEl.classList.add('show');
-    setTimeout(() => { document.getElementById('reportBox').style.display = 'none'; }, 2500);
-  }catch(err){
-    okEl.textContent = 'Report ပို့မရပါ — ' + err.message;
-    okEl.classList.add('show');
-  }finally{
-    btn.disabled = false;
-  }
-});
-
 function wireModalRatingButtons(m){
   const likeBtn = document.getElementById('modalLikeBtn');
   const dislikeBtn = document.getElementById('modalDislikeBtn');
