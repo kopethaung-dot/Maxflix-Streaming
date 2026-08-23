@@ -1559,7 +1559,10 @@ document.getElementById('promoRedeemBtn').addEventListener('click', async () => 
    ========================================================= */
 function movieCardHtml(m){
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
-  const ratioStyle = m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '';
+  // 18+ content ကို layout အားလုံး 16:9 ပဲ ဖြစ်အောင် — video ရဲ့ actual
+  // detected aspect ratio (m.thumbAspectRatio) ကို override လုပ်တယ်။
+  // Movies/Short Drama တွေကတော့ detected ratio ကိုပဲ ဆက်သုံးမယ် (မပြောင်းထား)
+  const ratioStyle = m.category === 'adult' ? ' style="aspect-ratio:16/9;"' : (m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '');
   const inList = myList.includes(m.id);
   return `<div class="card${m.isPremium ? ' is-premium' : ''}" data-type="movie" data-id="${m.id}">
     <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
@@ -1587,7 +1590,7 @@ function seriesCardHtml(s){
 function continueCardHtml(m, c){
   const pct = c.duration ? Math.min(100, Math.max(4, (c.progress / c.duration) * 100)) : 0;
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
-  const ratioStyle = m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '';
+  const ratioStyle = m.category === 'adult' ? ' style="aspect-ratio:16/9;"' : (m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '');
   return `<div class="card" data-type="movie" data-id="${m.id}">
     <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <div class="continue-bar"><div class="continue-bar-fill" style="width:${pct}%;"></div></div>
@@ -1623,18 +1626,24 @@ function wireHoverPreview(container){
       hoverTimer = setTimeout(() => {
         const img = card.querySelector('.card-thumb');
         if(!img) return;
-        previewVideo = document.createElement('video');
-        previewVideo.className = 'card-hover-preview';
-        previewVideo.src = pickVideoUrl(m);
-        previewVideo.muted = true; previewVideo.autoplay = true; previewVideo.loop = false; previewVideo.playsInline = true;
-        previewVideo.addEventListener('timeupdate', () => { if(previewVideo.currentTime > 6) previewVideo.currentTime = 0; });
-        img.insertAdjacentElement('afterend', previewVideo);
-        previewVideo.play().catch(()=>{});
+        const vid = document.createElement('video');
+        vid.className = 'card-hover-preview';
+        vid.src = pickVideoUrl(m);
+        vid.muted = true; vid.autoplay = true; vid.loop = false; vid.playsInline = true;
+        // `vid` (not the shared `previewVideo` variable) is captured here on purpose —
+        // previewVideo gets set to null on mouseleave, and if this event fires after
+        // that (video removed from DOM but not garbage-collected yet) reading
+        // previewVideo.currentTime would throw. `vid` always points at this exact
+        // instance so it stays valid for the lifetime of this listener.
+        vid.addEventListener('timeupdate', () => { if(vid.currentTime > 6) vid.currentTime = 0; });
+        img.insertAdjacentElement('afterend', vid);
+        vid.play().catch(()=>{});
+        previewVideo = vid;
       }, 700);
     });
     card.addEventListener('mouseleave', () => {
       clearTimeout(hoverTimer);
-      if(previewVideo){ previewVideo.remove(); previewVideo = null; }
+      if(previewVideo){ previewVideo.pause(); previewVideo.remove(); previewVideo = null; }
     });
   });
 }
