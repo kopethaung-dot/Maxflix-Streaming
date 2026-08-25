@@ -1913,6 +1913,47 @@ function pickVideoUrl(m){
   const isSlowConn = !!(conn && (conn.saveData || /2g/.test(conn.effectiveType || '')));
   return (isSmallScreen || isSlowConn) ? m.videoUrlMobile : m.videoUrl;
 }
+
+/* Loads a URL into the player <video> element, with HLS support.
+   If the URL was the "mobile" variant (m.videoUrlMobile) and it fails to
+   load/play (bad file, wrong codec, broken/expired URL, CORS, etc.), this
+   automatically falls back to the main video (m.videoUrl) once, so a broken
+   mobile-only upload never leaves mobile viewers with a blank/silent player
+   the way it did before — it just quietly plays the main file instead. */
+function playVideoSrc(videoEl, url, m){
+  let usedMobileFallback = false;
+  const tryFallbackIfMobile = () => {
+    if(usedMobileFallback) return false; // already tried, don't loop forever
+    if(url !== m.videoUrlMobile || !m.videoUrl || m.videoUrl === url) return false;
+    usedMobileFallback = true;
+    console.warn('[maxflix] mobile video failed to load, falling back to main video:', url);
+    loadInto(m.videoUrl);
+    return true;
+  };
+  const loadInto = (srcUrl) => {
+    if(currentHls){ currentHls.destroy(); currentHls = null; }
+    if(/\.m3u8(\?|$)/i.test(srcUrl || '')){
+      loadHlsJs().then(() => {
+        if(window.Hls && window.Hls.isSupported()){
+          currentHls = new Hls();
+          currentHls.on(Hls.Events.ERROR, (evt, data) => {
+            if(data && data.fatal && !tryFallbackIfMobile()){
+              console.error('[maxflix] fatal HLS error:', data);
+            }
+          });
+          currentHls.loadSource(srcUrl);
+          currentHls.attachMedia(videoEl);
+        } else {
+          videoEl.src = srcUrl; // Safari has native HLS support
+        }
+      }).catch(() => { videoEl.src = srcUrl; });
+    } else {
+      videoEl.src = srcUrl;
+    }
+  };
+  videoEl.onerror = () => { tryFallbackIfMobile(); };
+  loadInto(url);
+}
 const VIEW_LABEL = { home: 'ပင်မစာမျက်နှာ', own: 'Movies', drama: 'Short Drama', series: 'Short Drama', adult: '18+', search: 'ရှာဖွေမှု' };
 let playerReturnView = 'home';
 
@@ -1939,19 +1980,7 @@ function openPlayer(id){
   wrap.appendChild(videoEl);
 
   const srcUrl = pickVideoUrl(m);
-  if(/\.m3u8(\?|$)/i.test(srcUrl || '')){
-    loadHlsJs().then(() => {
-      if(window.Hls && window.Hls.isSupported()){
-        currentHls = new Hls();
-        currentHls.loadSource(srcUrl);
-        currentHls.attachMedia(videoEl);
-      } else {
-        videoEl.src = srcUrl; // Safari has native HLS support
-      }
-    }).catch(() => { videoEl.src = srcUrl; });
-  } else {
-    videoEl.src = srcUrl;
-  }
+  playVideoSrc(videoEl, srcUrl, m);
   attachProgressTracking(videoEl, m);
   db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
   wireAutoPlayNext(videoEl, m, wrap);
@@ -2149,18 +2178,38 @@ document.getElementById('premiumOverlay').addEventListener('click', e => {
 });
 
 /* =========================================================
-   11) LIVE DATA — Firestore "movies" collection (paginated)
+   11) LIVE DATA — Firestore "movies" collection
    ========================================================= */
+/* moviesById is the single shared cache behind the global `movies` array
+   that every render/lookup in this file already reads from. Two kinds of
+   listeners feed it:
+
+   1) subscribeMovies() — the paginated home-feed ("Load More"), limited to
+      moviesLimit docs site-wide, newest first. It only ADDS/UPDATES entries
+      and never deletes: a doc merely aging out of this top-N window is not
+      the same as it being deleted, so removing it here would just recreate
+      the "hidden until Load More" bug for a different item.
+
+   2) subscribeCategory('original'|'drama'|'adult') — one UNLIMITED listener
+      per tab. Because each of these queries the full category with no
+      limit, it is always complete, so a doc missing from its snapshot really
+      was deleted (or recategorized) — safe to remove from the cache here.
+      This is what actually fixes Movies/Short Drama/18+ items only showing
+      up after pressing "Load More": those tabs no longer depend on the
+      site-wide paginated window at all. */
 const MOVIES_PAGE_SIZE = 30;
 let moviesLimit = MOVIES_PAGE_SIZE;
 let moviesUnsub = null;
+let moviesById = {};
+function docToMovie(d){
+  const data = d.data();
+  return { id: d.id, ...data, createdAtMs: data.createdAt ? data.createdAt.toMillis() : 0 };
+}
 function subscribeMovies(){
   if(moviesUnsub) moviesUnsub();
   moviesUnsub = db.collection('movies').orderBy('createdAt', 'desc').limit(moviesLimit).onSnapshot(snap => {
-    movies = snap.docs.map(d => {
-      const data = d.data();
-      return { id: d.id, ...data, createdAtMs: data.createdAt ? data.createdAt.toMillis() : 0 };
-    });
+    snap.docs.forEach(d => { moviesById[d.id] = docToMovie(d); });
+    movies = Object.values(moviesById);
     hasMoreMovies = snap.docs.length === moviesLimit; // heuristic: a full page suggests more may exist
     render();
     updateLoadMoreVisibility();
@@ -2169,11 +2218,24 @@ function subscribeMovies(){
       `<div class="loading">ချိတ်ဆက်မှု အမှား — firebaseConfig ကို စစ်ကြည့်ပါ (${esc(err.message)})</div>`;
   });
 }
+function subscribeCategory(category){
+  db.collection('movies').where('category', '==', category).onSnapshot(snap => {
+    snap.docChanges().forEach(change => {
+      if(change.type === 'removed'){ delete moviesById[change.doc.id]; }
+      else { moviesById[change.doc.id] = docToMovie(change.doc); }
+    });
+    movies = Object.values(moviesById);
+    render();
+  }, err => console.error(`[maxflix] ${category} listener error:`, err));
+}
 document.getElementById('loadMoreBtn').addEventListener('click', () => {
   moviesLimit += MOVIES_PAGE_SIZE;
   subscribeMovies();
 });
 subscribeMovies();
+subscribeCategory('original');
+subscribeCategory('drama');
+subscribeCategory('adult');
 
 /* =========================================================
    12) PROMO BANNER — settings/banner doc, managed from admin panel
