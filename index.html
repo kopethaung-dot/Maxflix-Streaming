@@ -1056,6 +1056,37 @@ let myList = [];        // [movieId,...] — logged-in user ရဲ့ watchlist
 let myListUnsub = null;
 let currentView = 'home';
 let currentSeries = null;
+/* ---------- Persist current tab across page refresh ----------
+   Previously a refresh always dropped the user back to Home. This saves
+   the tab (and, for a series detail page, which series) to localStorage on
+   every navigation, and restores it once on load. "search" is skipped
+   since the typed query itself isn't saved, so there'd be nothing to show.
+   "adult" IS restorable, but only back to the locked 🔒 placeholder —
+   adultUnlocked always resets to false on load, so the PIN is still
+   required to actually see 18+ content; this only restores which TAB is
+   open, not the unlock state. */
+let pendingRestoreSeries = null;
+let didInitialViewRestore = false;
+function saveLastView(view){
+  try{
+    if(view === 'search') return;
+    const payload = view === 'series' ? { view, series: currentSeries } : { view };
+    localStorage.setItem('maxflixLastView', JSON.stringify(payload));
+  }catch(e){}
+}
+function tryRestoreSeries(){
+  if(!pendingRestoreSeries) return;
+  const series = getDramaSeries().find(s => s.name === pendingRestoreSeries);
+  if(series){ openSeries(pendingRestoreSeries); pendingRestoreSeries = null; }
+}
+function restoreLastView(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem('maxflixLastView') || 'null'); }catch(e){}
+  if(!saved || !saved.view || saved.view === 'home') return; // home is already shown by default
+  if(saved.view === 'series' && saved.series){ pendingRestoreSeries = saved.series; tryRestoreSeries(); return; }
+  if(saved.view === 'mylist' && !currentUser) return; // needs login — stay on Home instead of the login prompt
+  showView(saved.view);
+}
 let currentUser = null;      // firebase auth user
 let currentUserDoc = null;   // Firestore users/{uid} doc data
 let currentPendingRequest = null; // latest pending premiumRequests doc for this user
@@ -1067,6 +1098,7 @@ let searchGenreFilter = '';  // genre dropdown value in search view
    ========================================================= */
 function showView(view){
   currentView = view;
+  saveLastView(view);
   document.querySelectorAll('.view-root, .page').forEach(el => {
     el.classList.remove('open');
     if(el.id === 'view-home') el.style.display = (view === 'home') ? '' : 'none';
@@ -1440,6 +1472,7 @@ auth.onAuthStateChanged(user => {
   subscribeMyList();
   renderAccountArea();
   render();
+  if(!didInitialViewRestore){ didInitialViewRestore = true; restoreLastView(); }
 });
 
 /* =========================================================
@@ -2226,6 +2259,7 @@ function subscribeCategory(category){
     });
     movies = Object.values(moviesById);
     render();
+    tryRestoreSeries(); // completes a pending series-page restore once drama data is in
   }, err => console.error(`[maxflix] ${category} listener error:`, err));
 }
 document.getElementById('loadMoreBtn').addEventListener('click', () => {
