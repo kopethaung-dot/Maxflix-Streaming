@@ -49,6 +49,7 @@
     --font-body:'Work Sans','Noto Sans Myanmar',sans-serif;
     --glass-blur:blur(18px) saturate(160%);
     --glow1:rgba(229,9,20,.38); --glow2:rgba(212,166,42,.20); --glow3:rgba(229,9,20,.22);
+    --header-grad-1:rgba(16,11,12,.75); --header-grad-2:rgba(16,11,12,.55);
   }
   /* ---------- Light theme override ----------
      Toggled via body[data-theme="light"] (see themeToggleBtn JS). Since
@@ -62,9 +63,18 @@
     --accent:#E50914; --accent-dim:#F1495A; --gold:#a97909; --line:rgba(30,20,20,.13);
     --danger:#d63b40;
     --glow1:rgba(229,9,20,.12); --glow2:rgba(212,166,42,.12); --glow3:rgba(229,9,20,.08);
+    /* Header gradient was previously hardcoded dark (rgba(16,11,12,...)) — it never
+       switched with the theme, so light-theme ink colors (dark text, meant for a
+       light surface) sat on top of a still-dark header and became unreadable.
+       This flips the header to a light gradient so --ink/--ink-dim text (nav
+       tabs, theme-toggle icon, account chip) stays visible in both themes. */
+    --header-grad-1:rgba(255,243,241,.88); --header-grad-2:rgba(255,243,241,.62);
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{overflow-x:hidden;}
+  /* Keyboard navigation — visible focus ring only when tabbing (not on mouse click) */
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px;}
+  .card:focus-visible{outline-offset:-2px;}
   body{
     background:
       radial-gradient(circle at 12% -8%, var(--glow1), transparent 42%),
@@ -98,7 +108,7 @@
 
   /* ---------- Header / Nav ---------- */
   header{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;
-    padding:14px clamp(16px,4vw,56px);background:linear-gradient(to bottom,rgba(16,11,12,.75),rgba(16,11,12,.55) 70%,transparent);
+    padding:14px clamp(16px,4vw,56px);background:linear-gradient(to bottom,var(--header-grad-1),var(--header-grad-2) 70%,transparent);
     border-bottom:1px solid var(--line);gap:16px;}
   .brand{display:flex;align-items:center;gap:9px;font-family:var(--font-display);font-size:26px;letter-spacing:2px;color:var(--ink);cursor:pointer;flex-shrink:0;}
   .brand-sub{font-family:var(--font-body);font-size:9px;letter-spacing:3px;color:var(--ink-faint);font-weight:600;margin-left:1px;}
@@ -289,10 +299,21 @@
   @keyframes splash-fade-out{0%{opacity:1;pointer-events:auto;}100%{opacity:0;pointer-events:none;visibility:hidden;}}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
 
+  /* ---------- Skeleton loading (initial rows load, before Firebase responds) ---------- */
+  .skeleton-row-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;}
+  .skeleton-bar{height:16px;border-radius:4px;background:linear-gradient(90deg,var(--bg-card) 25%,var(--bg-elev) 37%,var(--bg-card) 63%);
+    background-size:400% 100%;animation:skeleton-shimmer 1.4s ease infinite;}
+  .skeleton-row-head .skeleton-bar{width:140px;}
+  .skeleton-track{display:flex;gap:14px;overflow-x:hidden;}
+  .skeleton-card{flex:0 0 auto;width:210px;border-radius:6px;overflow:hidden;}
+  .skeleton-card .skeleton-bar{width:100%;aspect-ratio:2/3;border-radius:6px;height:auto;}
+  @media(max-width:520px){ .skeleton-card{width:118px;} }
+
   .card{position:relative;flex:0 0 auto;width:210px;background:var(--bg-card);border:1px solid var(--line);
     border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .15s;}
   .grid .card{width:100%;}
-  .card:hover{transform:translateY(-5px);border-color:var(--accent-dim);}
+  .card:hover{transform:translateY(-5px);border-color:var(--accent-dim);box-shadow:0 12px 26px rgba(0,0,0,.35);}
+  .card{transition:transform .15s,box-shadow .15s,border-color .15s;}
   .card-thumb{width:100%;aspect-ratio:2/3;object-fit:cover;background:#222;}
   .card-thumb.img-loading{background:linear-gradient(90deg,var(--bg-card) 25%,var(--bg-elev) 37%,var(--bg-card) 63%);
     background-size:400% 100%;animation:skeleton-shimmer 1.4s ease infinite;}
@@ -367,6 +388,13 @@
   .autonext-label{color:var(--ink-dim);font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
   .autonext-title{color:var(--ink);font-size:16px;font-weight:600;margin-bottom:18px;}
   .autonext-actions{display:flex;flex-direction:column;gap:8px;}
+
+  /* ---------- Player error overlay (playback failure / unrecoverable HLS error) ---------- */
+  .player-error-overlay{position:absolute;inset:0;background:rgba(0,0,0,.88);z-index:6;
+    display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;}
+  .player-error-box{max-width:340px;}
+  .player-error-box .icon{font-size:30px;margin-bottom:10px;}
+  .player-error-box .msg{color:var(--ink);font-size:14px;margin-bottom:18px;line-height:1.5;}
 
   /* ---------- Generic small modal (auth / pin / premium gate) ---------- */
   .sm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:110;padding:20px;}
@@ -634,7 +662,24 @@
     </a>
   </div>
   <div class="rows" id="rowsWrap">
-    <div class="loading">ဇာတ်ကားများ ခေါ်နေသည်...</div>
+    <div class="row" aria-hidden="true">
+      <div class="skeleton-row-head"><span class="skeleton-bar"></span></div>
+      <div class="skeleton-track">
+        <div class="skeleton-card"><span class="skeleton-bar"></span></div>
+        <div class="skeleton-card"><span class="skeleton-bar"></span></div>
+        <div class="skeleton-card"><span class="skeleton-bar"></span></div>
+        <div class="skeleton-card"><span class="skeleton-bar"></span></div>
+      </div>
+    </div>
+    <div class="row" aria-hidden="true">
+      <div class="skeleton-row-head"><span class="skeleton-bar"></span></div>
+      <div class="skeleton-track">
+        <div class="skeleton-card"><span class="skeleton-bar"></span></div>
+        <div class="skeleton-card"><span class="skeleton-bar"></span></div>
+        <div class="skeleton-card"><span class="skeleton-bar"></span></div>
+        <div class="skeleton-card"><span class="skeleton-bar"></span></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -808,7 +853,7 @@
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-box">
     <div class="modal-video-wrap" id="modalVideoWrap">
-      <button class="modal-close" id="modalClose">✕</button>
+      <button class="modal-close" id="modalClose" aria-label="ပိတ်မည်">✕</button>
     </div>
     <div class="modal-info">
       <button class="back-link" id="modalBackBtn" style="margin-bottom:10px;"></button>
@@ -881,7 +926,7 @@
 <!-- ================= AUTH MODAL (Login / Sign up) ================= -->
 <div class="sm-overlay" id="authOverlay">
   <div class="sm-box" style="position:relative;">
-    <button class="sm-close-x" id="authCloseBtn">✕</button>
+    <button class="sm-close-x" id="authCloseBtn" aria-label="ပိတ်မည်">✕</button>
     <h3 style="margin-top:6px;">Account</h3>
     <p>Login သို့မဟုတ် Sign up ဝင်ပါ</p>
     <div class="sm-tabs">
@@ -898,7 +943,7 @@
 <!-- ================= PREMIUM GATE MODAL ================= -->
 <div class="sm-overlay" id="premiumOverlay">
   <div class="sm-box" style="position:relative;max-width:420px;">
-    <button class="sm-close-x" id="premiumCloseBtn">✕</button>
+    <button class="sm-close-x" id="premiumCloseBtn" aria-label="ပိတ်မည်">✕</button>
 
     <!-- State: not logged in -->
     <div id="premiumStateAuth" style="display:none;">
@@ -950,7 +995,7 @@
 <!-- ================= SETTINGS MODAL ================= -->
 <div class="sm-overlay" id="settingsOverlay">
   <div class="sm-box" style="position:relative;max-width:420px;">
-    <button class="sm-close-x" id="settingsCloseBtn">✕</button>
+    <button class="sm-close-x" id="settingsCloseBtn" aria-label="ပိတ်မည်">✕</button>
     <div style="font-size:28px;margin-bottom:8px;">⚙️</div>
     <h3>Settings</h3>
     <div class="field"><label>Email</label>
@@ -1641,6 +1686,16 @@ function wireCards(container){
       toggleMyList(btn.dataset.id);
     });
   });
+  // Keyboard/screen-reader access — cards are clickable <div>s, so Tab + Enter/Space
+  // needs to work the same as a click for anyone not using a mouse/touch.
+  container.querySelectorAll('.card').forEach(card => {
+    if(card.hasAttribute('tabindex')) return;
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.addEventListener('keydown', e => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); card.click(); }
+    });
+  });
   wireHoverPreview(container);
 }
 
@@ -1952,9 +2007,29 @@ function pickVideoUrl(m){
    load/play (bad file, wrong codec, broken/expired URL, CORS, etc.), this
    automatically falls back to the main video (m.videoUrl) once, so a broken
    mobile-only upload never leaves mobile viewers with a blank/silent player
-   the way it did before — it just quietly plays the main file instead. */
-function playVideoSrc(videoEl, url, m){
+   the way it did before — it just quietly plays the main file instead.
+   If nothing can be played (no fallback available, or the fallback also
+   fails), a visible error message + retry button is shown instead of a
+   silent black screen. */
+function showPlayerError(wrap, onRetry){
+  document.querySelectorAll('.player-error-overlay').forEach(el => el.remove());
+  const overlay = document.createElement('div');
+  overlay.className = 'player-error-overlay';
+  overlay.innerHTML = `
+    <div class="player-error-box">
+      <div class="icon">⚠️</div>
+      <div class="msg">ဗီဒီယို ဖွင့်ရာတွင် ပြဿနာ ဖြစ်နေပါသည်။<br>Internet connection စစ်ဆေးပြီး ထပ်ကြိုးစားကြည့်ပါ။</div>
+      <button class="btn btn-accent" id="playerRetryBtn">🔄 ထပ်ကြိုးစားမည်</button>
+    </div>`;
+  wrap.appendChild(overlay);
+  overlay.querySelector('#playerRetryBtn').addEventListener('click', () => {
+    overlay.remove();
+    onRetry();
+  });
+}
+function playVideoSrc(videoEl, url, m, wrap){
   let usedMobileFallback = false;
+  let hlsRecoverAttempts = 0;
   const tryFallbackIfMobile = () => {
     if(usedMobileFallback) return false; // already tried, don't loop forever
     if(url !== m.videoUrlMobile || !m.videoUrl || m.videoUrl === url) return false;
@@ -1963,6 +2038,9 @@ function playVideoSrc(videoEl, url, m){
     loadInto(m.videoUrl);
     return true;
   };
+  const giveUp = () => {
+    if(wrap) showPlayerError(wrap, () => { hlsRecoverAttempts = 0; usedMobileFallback = false; loadInto(url); });
+  };
   const loadInto = (srcUrl) => {
     if(currentHls){ currentHls.destroy(); currentHls = null; }
     if(/\.m3u8(\?|$)/i.test(srcUrl || '')){
@@ -1970,8 +2048,21 @@ function playVideoSrc(videoEl, url, m){
         if(window.Hls && window.Hls.isSupported()){
           currentHls = new Hls();
           currentHls.on(Hls.Events.ERROR, (evt, data) => {
-            if(data && data.fatal && !tryFallbackIfMobile()){
-              console.error('[maxflix] fatal HLS error:', data);
+            if(!data || !data.fatal) return; // non-fatal — hls.js already handles these internally
+            // Standard hls.js recovery pattern: retry network/media errors a couple
+            // times before giving up, instead of destroying on the very first blip
+            // (a brief network hiccup shouldn't kill playback outright).
+            if(data.type === Hls.ErrorTypes.NETWORK_ERROR && hlsRecoverAttempts < 2){
+              hlsRecoverAttempts++;
+              console.warn('[maxflix] HLS network error, retrying load:', data);
+              currentHls.startLoad();
+            } else if(data.type === Hls.ErrorTypes.MEDIA_ERROR && hlsRecoverAttempts < 2){
+              hlsRecoverAttempts++;
+              console.warn('[maxflix] HLS media error, attempting recovery:', data);
+              currentHls.recoverMediaError();
+            } else if(!tryFallbackIfMobile()){
+              console.error('[maxflix] fatal HLS error, giving up:', data);
+              giveUp();
             }
           });
           currentHls.loadSource(srcUrl);
@@ -1984,23 +2075,30 @@ function playVideoSrc(videoEl, url, m){
       videoEl.src = srcUrl;
     }
   };
-  videoEl.onerror = () => { tryFallbackIfMobile(); };
+  videoEl.onerror = () => { if(!tryFallbackIfMobile()) giveUp(); };
   loadInto(url);
 }
 const VIEW_LABEL = { home: 'ပင်မစာမျက်နှာ', own: 'Movies', drama: 'Short Drama', series: 'Short Drama', adult: '18+', search: 'ရှာဖွေမှု' };
 let playerReturnView = 'home';
+let currentPlayerToken = 0; // bumped on every openPlayer() call — lets async callbacks detect they're stale
+let lastOpenPlayerCallAt = 0;
 
 function openPlayer(id){
+  const now = Date.now();
+  if(now - lastOpenPlayerCallAt < 500) return; // guards against double-tap/double-click firing this twice
+  lastOpenPlayerCallAt = now;
   const m = movies.find(x => x.id === id);
   if(!m) return;
   if(m.category === 'adult' && !adultUnlocked){ requestAdultUnlock(() => openPlayer(id)); return; }
   if(m.isPremium && !isPremiumActive()){ openPremiumGate(id); return; }
 
+  const myToken = ++currentPlayerToken;
+  const modalWasAlreadyOpen = document.getElementById('modalOverlay').classList.contains('open');
   playerReturnView = currentView; // 18+/Movies/Short Drama/Series — ဘယ် view ကနေ ဖွင့်လိုက်တာလဲ မှတ်ထား
   document.getElementById('modalBackBtn').textContent = `← ${VIEW_LABEL[playerReturnView] || 'ပင်မစာမျက်နှာ'} သို့ ပြန်သွားမည်`;
 
   const wrap = document.getElementById('modalVideoWrap');
-  wrap.innerHTML = `<button class="modal-close" id="modalClose">✕</button>`;
+  wrap.innerHTML = `<button class="modal-close" id="modalClose" aria-label="ပိတ်မည်">✕</button>`;
   document.getElementById('modalClose').onclick = () => history.back();
 
   const videoEl = document.createElement('video');
@@ -2013,7 +2111,7 @@ function openPlayer(id){
   wrap.appendChild(videoEl);
 
   const srcUrl = pickVideoUrl(m);
-  playVideoSrc(videoEl, srcUrl, m);
+  playVideoSrc(videoEl, srcUrl, m, wrap);
   attachProgressTracking(videoEl, m);
   db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
   wireAutoPlayNext(videoEl, m, wrap);
@@ -2023,12 +2121,19 @@ function openPlayer(id){
   document.getElementById('modalMeta').innerHTML = seriesTag + (CATEGORY_LABEL[m.category]||'') + (m.duration ? ' • ' + esc(m.duration) : '') + (m.viewCount ? ' • ' + formatViewCount(m.viewCount) + ' ကြည့်ရှု' : '') + (m.genres && m.genres.length ? ' • ' + m.genres.map(esc).join(', ') : '');
   document.getElementById('modalDesc').textContent = m.desc || '';
   wireModalRatingButtons(m);
-  renderModalEpList(m);
+  renderModalEpList(m, myToken);
   renderModalRelated(m);
   document.getElementById('modalOverlay').classList.add('open');
-  history.pushState({ maxflixModal: 'player' }, '');
+  // Switching to a different video WHILE the modal is already open (related
+  // video, next episode, autoplay-next) should replace the current history
+  // entry rather than stack a new one — otherwise each switch adds another
+  // "player" entry and the hardware/gesture back button needs several
+  // presses (some invisible) to actually leave the modal. Only the very
+  // first open (from a browse view) should push a new entry.
+  if(modalWasAlreadyOpen){ history.replaceState({ maxflixModal: 'player' }, ''); }
+  else{ history.pushState({ maxflixModal: 'player' }, ''); }
 }
-function renderModalEpList(m){
+function renderModalEpList(m, token){
   const wrap = document.getElementById('modalEpList');
   if(m.category !== 'drama' || !m.seriesName){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
   const seriesName = m.seriesName.trim() || m.title;
@@ -2045,6 +2150,12 @@ function renderModalEpList(m){
     .where('seriesName', '==', seriesName)
     .get()
     .then(snap => {
+      // Guard against a race: if the user has since switched to a different
+      // video (token changed) while this fetch was in flight, painting now
+      // would show the wrong series/"currently playing" episode. Checking
+      // "is a modal open" alone isn't enough — a different video's modal
+      // could be open by the time this resolves.
+      if(token !== currentPlayerToken) return;
       if(!document.getElementById('modalOverlay').classList.contains('open')) return; // player closed meanwhile
       if(snap.empty) return;
       const byId = {};
@@ -2121,6 +2232,10 @@ function wireModalRatingButtons(m){
 }
 function closePlayer(){
   document.getElementById('modalOverlay').classList.remove('open');
+  currentPlayerToken++; // invalidate any in-flight async callbacks tied to this player session
+  const videoEl = document.querySelector('#modalVideoWrap video');
+  if(videoEl){ videoEl.pause(); } // triggers the existing 'pause' → saveProgress listener before teardown,
+                                   // so the last few seconds of watch time aren't silently dropped
   if(currentHls){ currentHls.destroy(); currentHls = null; }
   if(autoNextTimer){ clearInterval(autoNextTimer); autoNextTimer = null; }
   document.getElementById('modalVideoWrap').innerHTML = '';
@@ -2276,20 +2391,26 @@ subscribeCategory('adult');
    ========================================================= */
 function subscribeBanner(){
   db.collection('settings').doc('banner').onSnapshot(doc => {
-    const wrap = document.getElementById('promoBanner');
     const img = document.getElementById('promoBannerImg');
     const link = document.getElementById('promoBannerLink');
     const d = doc.exists ? doc.data() : null;
     if(d && d.enabled && d.imageUrl){
-      img.onerror = () => { wrap.style.display = 'none'; };
+      img.onerror = () => { promoBannerReady = false; updatePromoBannerVisibility(); };
       img.src = d.imageUrl;
       if(d.link){ link.href = d.link; link.style.cursor = 'pointer'; }
       else { link.removeAttribute('href'); link.style.cursor = 'default'; }
-      wrap.style.display = 'block';
+      promoBannerReady = true;
     } else {
-      wrap.style.display = 'none';
+      promoBannerReady = false;
     }
-  }, () => { document.getElementById('promoBanner').style.display = 'none'; });
+    updatePromoBannerVisibility();
+  }, () => { promoBannerReady = false; updatePromoBannerVisibility(); });
+}
+let promoBannerReady = false;
+function updatePromoBannerVisibility(){
+  const wrap = document.getElementById('promoBanner');
+  const videoAdShowing = document.getElementById('videoAdBanner').style.display === 'block';
+  wrap.style.display = (promoBannerReady && !videoAdShowing) ? 'block' : 'none';
 }
 subscribeBanner();
 
@@ -2301,7 +2422,10 @@ subscribeBanner();
    random each time the list updates. Clicking either opens the ad's
    link in a new tab.
    ========================================================= */
-let bottomAdDismissed = false; // resets on full page reload — not persisted on purpose
+// Session အတွင်း တစ်ခါ dismiss လုပ်ရင် reload ချင်တိုင်း ထပ်မပေါ်စေချင်လို့
+// sessionStorage သုံးထားတယ် — browser/tab အသစ်ဖွင့်ရင်တော့ ပုံမှန်ပြန်ပေါ်မယ်
+let bottomAdDismissed = false;
+try{ bottomAdDismissed = sessionStorage.getItem('bottomAdDismissed_v1') === '1'; }catch(e){}
 
 function pickRandomAd(ads, placement){
   const pool = ads.filter(a => a.enabled && a.placement === placement && a.videoUrl);
@@ -2321,6 +2445,9 @@ function renderTopAdBanner(ad){
   } else {
     wrap.style.display = 'none';
   }
+  // Video ad နဲ့ static promo banner ကို တစ်ပြိုင်နက် မပြချင်လို့ — video ad ရှိရင်
+  // promo banner ကို ဖျောက်ထားမယ် (hero အောက် banner နှစ်ခု ဆက်တိုက်မတွေ့ရအောင်)
+  updatePromoBannerVisibility();
 }
 
 function renderBottomAdBar(ad){
@@ -2339,6 +2466,7 @@ function renderBottomAdBar(ad){
 
 document.getElementById('bottomAdCloseBtn').addEventListener('click', () => {
   bottomAdDismissed = true;
+  try{ sessionStorage.setItem('bottomAdDismissed_v1', '1'); }catch(e){}
   document.getElementById('bottomAdBar').classList.remove('show');
 });
 
