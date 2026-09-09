@@ -360,6 +360,15 @@
   .card-meta{font-size:11px;color:var(--ink-faint);}
   .empty-row,.empty-page{color:var(--ink-faint);font-size:13px;padding:26px;border:1px dashed var(--line);border-radius:6px;width:100%;text-align:center;}
 
+  /* ---------- Shop tab (product tiles -> direct link redirect) ---------- */
+  .shop-card{display:block;background:var(--bg-card);border:1px solid var(--line);border-radius:8px;
+    overflow:hidden;text-decoration:none;color:inherit;cursor:pointer;
+    transition:transform .15s,box-shadow .15s,border-color .15s;}
+  .shop-card:hover{transform:translateY(-5px);border-color:var(--accent-dim);box-shadow:0 12px 26px rgba(0,0,0,.35);}
+  .shop-card-img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#222;display:block;}
+  .shop-card-name{padding:10px 8px;text-align:center;font-size:13px;font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
   /* ---------- Series detail (episode list) ---------- */
   .series-header{display:flex;gap:22px;margin-bottom:30px;flex-wrap:wrap;}
   .series-poster{width:160px;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:#222;flex-shrink:0;}
@@ -598,6 +607,7 @@
     <button class="nav-tab" data-view="own"><span class="nav-tab-icon">🎬</span>Movies</button>
     <button class="nav-tab" data-view="drama"><span class="nav-tab-icon">📺</span>Short Drama</button>
     <button class="nav-tab" data-view="adult"><span class="nav-tab-icon">🔞</span>18+</button>
+    <button class="nav-tab" data-view="shop"><span class="nav-tab-icon">🛒</span>Shop</button>
     <button class="nav-tab" data-view="mylist"><span class="nav-tab-icon">🔖</span>My List</button>
     <button class="nav-tab" data-view="support" id="supportNavBtn"><span class="nav-tab-icon">💬</span>Support</button>
     <div class="search-box" id="searchBox">
@@ -653,6 +663,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type="text" id="searchInputMobile" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
   </div>
+  <button class="nav-tab" data-view="shop">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    <span>Shop</span>
+  </button>
   <button class="nav-tab" data-view="mylist">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z"/></svg>
     <span>My List</span>
@@ -731,6 +745,12 @@
   <div class="page-title">My List</div>
   <div class="page-sub" id="mylistCount"></div>
   <div class="grid" id="mylistGrid"></div>
+</div>
+
+<div id="view-shop" class="page">
+  <div class="page-title">Shop</div>
+  <div class="page-sub">ပုံကို နှိပ်လိုက်ရုံနဲ့ တန်းဝယ်လို့ရအောင် တိုက်ရိုက် ပို့ပေးပါမည်</div>
+  <div class="grid" id="shopGrid"></div>
 </div>
 
 <div id="view-support" class="page">
@@ -1462,6 +1482,18 @@ document.getElementById('authSubmitBtn').addEventListener('click', async () => {
 
 /* ---------- Google Sign-In ---------- */
 const googleProvider = new firebase.auth.GoogleAuthProvider();
+// Installed home-screen PWA ("Add to Home Screen" / standalone display mode) breaks
+// signInWithRedirect() on most phones: the redirect takes the WHOLE standalone window
+// to accounts.google.com, and coming back doesn't reliably land in the same standalone
+// window/storage context, so getRedirectResult() finds nothing and it just looks like
+// "nothing happened" after tapping Continue. A popup survives this much better because
+// the standalone window itself never navigates away. iOS standalone apps can still be
+// flaky either way (a WebKit/PWA platform limitation, not something fixable in this
+// file) — if a user is stuck on iPhone, having them sign in once via Safari (same URL,
+// not the home-screen icon) then reopen the icon usually picks up the session, since
+// iOS shares site storage between Safari and the installed icon for the same origin.
+const isStandaloneApp = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                         || window.navigator.standalone === true;
 
 // Creates the users/{uid} Firestore doc the rest of the app relies on
 // (isPremium, adultPin, etc.) the first time someone signs in with Google —
@@ -1487,10 +1519,11 @@ function showGoogleAuthError(err){
 }
 document.getElementById('authGoogleBtn').addEventListener('click', async () => {
   document.getElementById('authErr').classList.remove('show');
-  // Popups get blocked/flaky on most mobile browsers, so only devices with a
-  // real mouse (same signal already used for card hover-preview) try the
-  // popup flow; everything else uses a full-page redirect.
-  if(supportsHoverPreview){
+  // Popups get blocked/flaky on most mobile BROWSER tabs, so those still use a full-page
+  // redirect. But an installed standalone PWA needs the opposite fix (see comment above)
+  // — for that case we try popup first regardless of hover support, since redirect is the
+  // thing that's actually broken there.
+  if(supportsHoverPreview || isStandaloneApp){
     try{
       const result = await auth.signInWithPopup(googleProvider);
       await ensureGoogleUserDoc(result.user, result.additionalUserInfo && result.additionalUserInfo.isNewUser);
@@ -2568,6 +2601,33 @@ function updatePromoBannerVisibility(){
   wrap.style.display = (promoBannerReady && !videoAdShowing) ? 'block' : 'none';
 }
 subscribeBanner();
+
+/* =========================================================
+   12a) SHOP — "shopProducts" collection, managed from admin panel.
+   Each product is an image tile; tapping it opens the admin-set
+   Link URL directly (new tab) — e.g. a Telegram channel/website for
+   buying MLBB Diamond, PUBG UC, etc. "enabled" is filtered client-side
+   (not via .where()) to avoid needing a Firestore composite index.
+   ========================================================= */
+function subscribeShop(){
+  db.collection('shopProducts').orderBy('order', 'asc').onSnapshot(snap => {
+    const products = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.enabled !== false);
+    renderShopGrid(products);
+  }, err => {
+    document.getElementById('shopGrid').innerHTML = `<div class="empty-page">Shop ကို load လုပ်၍ မရပါ — ${esc(err.message)}</div>`;
+  });
+}
+function renderShopGrid(products){
+  const grid = document.getElementById('shopGrid');
+  if(!products.length){ grid.innerHTML = '<div class="empty-page">ပစ္စည်း မတင်ရသေးပါ</div>'; return; }
+  grid.innerHTML = products.map(p => `
+    <a class="shop-card" href="${esc(p.link || '#')}" target="_blank" rel="noopener noreferrer">
+      <img class="shop-card-img" src="${esc(p.imageUrl)}" loading="lazy" alt="${esc(p.name)}">
+      <div class="shop-card-name">${esc(p.name)}</div>
+    </a>
+  `).join('');
+}
+subscribeShop();
 
 /* =========================================================
    12b) VIDEO ADS — "videoAds" collection, managed from admin panel
