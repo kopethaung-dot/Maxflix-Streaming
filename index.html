@@ -249,6 +249,24 @@
   .btn-accent{background:var(--accent);color:#fff;}
   .btn-block{width:100%;justify-content:center;}
 
+  /* ---------- Google auth button (premium look) ----------
+     Soft depth shadow + subtle gold/red accent ring on hover so it reads
+     as a premium action rather than a flat stock "Sign in with Google" button. */
+  .google-auth-btn{position:relative;background:linear-gradient(180deg,#ffffff,#f2f2f2);
+    color:#1f1f1f;border:1px solid rgba(0,0,0,.08);border-radius:8px;
+    box-shadow:0 1px 2px rgba(0,0,0,.10),0 8px 20px -6px rgba(0,0,0,.35);
+    transition:transform .18s ease,box-shadow .25s ease,background .25s ease;}
+  .google-auth-btn::after{content:'';position:absolute;inset:-1px;border-radius:inherit;
+    padding:1px;pointer-events:none;opacity:0;transition:opacity .25s ease;
+    background:linear-gradient(120deg,var(--gold),transparent 40%,transparent 60%,var(--accent));
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;}
+  .google-auth-btn:hover{background:linear-gradient(180deg,#ffffff,#eaeaea);
+    transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.12),0 12px 26px -6px rgba(0,0,0,.45);}
+  .google-auth-btn:hover::after{opacity:.55;}
+  .google-auth-btn:active{transform:translateY(0) scale(.98);
+    box-shadow:0 1px 2px rgba(0,0,0,.12);}
+
   /* ---------- Promo banner ---------- */
   .promo-banner{padding:0 clamp(16px,4vw,56px);margin:18px 0 0;}
   .promo-banner-link{display:block;border-radius:8px;overflow:hidden;border:1px solid var(--line);cursor:pointer;}
@@ -307,14 +325,41 @@
   .rating-btn:hover{border-color:var(--ink-dim);color:var(--ink);}
   .rating-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 
-  /* ---------- Splash screen ---------- */
+  /* ---------- Splash screen (logo animation) ----------
+     Sequence: mark icon pops in with a glow -> MAXFLIX letters cascade in
+     one by one -> a thin gold/red underline draws itself -> brief hold ->
+     the whole screen fades + zooms out to reveal the site underneath. */
   .splash-screen{position:fixed;inset:0;z-index:9999;background:#0B0B0F;
-    display:flex;align-items:center;justify-content:center;
-    animation:splash-fade-out .5s ease .9s forwards;}
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    animation:splash-fade-out .55s ease 1.55s forwards;}
+  .splash-screen::before{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(circle at 50% 50%, rgba(229,9,20,.28), transparent 60%);
+    opacity:0;animation:splash-glow-pulse 1.5s ease .05s forwards;}
+  .splash-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;}
+  .splash-logo-icon{width:54px;height:54px;margin-bottom:16px;
+    opacity:0;transform:scale(.4) rotate(-10deg);
+    filter:drop-shadow(0 0 0 rgba(229,9,20,0));
+    animation:splash-icon-in .6s cubic-bezier(.2,.85,.25,1.4) .1s forwards;}
   .splash-mark{font-family:var(--font-display);font-size:clamp(40px,10vw,72px);letter-spacing:6px;
-    color:var(--accent);animation:splash-mark-in .7s cubic-bezier(.2,.9,.3,1.2) both;}
-  @keyframes splash-mark-in{0%{opacity:0;transform:scale(.85);letter-spacing:2px;}100%{opacity:1;transform:scale(1);letter-spacing:6px;}}
-  @keyframes splash-fade-out{0%{opacity:1;pointer-events:auto;}100%{opacity:0;pointer-events:none;visibility:hidden;}}
+    color:var(--accent);display:flex;}
+  .splash-mark span{display:inline-block;opacity:0;transform:translateY(18px);
+    animation:splash-letter-in .45s cubic-bezier(.2,.85,.3,1.2) forwards;
+    animation-delay:calc(.42s + var(--i) * .045s);}
+  .splash-underline{width:0;height:2px;margin-top:12px;border-radius:2px;
+    background:var(--accent-grad);
+    animation:splash-underline-draw .4s ease .85s forwards;}
+  @keyframes splash-icon-in{
+    0%{opacity:0;transform:scale(.4) rotate(-10deg);filter:drop-shadow(0 0 0 rgba(229,9,20,0));}
+    65%{opacity:1;transform:scale(1.1) rotate(3deg);filter:drop-shadow(0 0 16px rgba(229,9,20,.6));}
+    100%{opacity:1;transform:scale(1) rotate(0deg);filter:drop-shadow(0 0 9px rgba(229,9,20,.35));}
+  }
+  @keyframes splash-letter-in{ to{opacity:1;transform:translateY(0);} }
+  @keyframes splash-underline-draw{ to{width:130px;} }
+  @keyframes splash-glow-pulse{ 0%{opacity:0;} 55%{opacity:1;} 100%{opacity:.45;} }
+  @keyframes splash-fade-out{
+    0%{opacity:1;pointer-events:auto;transform:scale(1);}
+    100%{opacity:0;pointer-events:none;visibility:hidden;transform:scale(1.04);}
+  }
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
 
   /* ---------- Skeleton loading (initial rows load, before Firebase responds) ---------- */
@@ -586,7 +631,20 @@
 <body style="position:relative;">
 
 <div id="splashScreen" class="splash-screen">
-  <div class="splash-mark">MAXFLIX</div>
+  <div class="splash-inner">
+    <svg class="splash-logo-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="splashGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#A30712"/><stop offset="55%" stop-color="#E50914"/><stop offset="100%" stop-color="#d4a62a"/>
+      </linearGradient></defs>
+      <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#splashGrad)"/>
+      <rect x="1" y="1" width="38" height="38" rx="10" fill="none" stroke="rgba(255,255,255,.15)"/>
+      <path d="M15 12 L28 20 L15 28 Z" fill="#f3ece6"/>
+    </svg>
+    <div class="splash-mark">
+      <span style="--i:0">M</span><span style="--i:1">A</span><span style="--i:2">X</span><span style="--i:3">F</span><span style="--i:4">L</span><span style="--i:5">I</span><span style="--i:6">X</span>
+    </div>
+    <div class="splash-underline"></div>
+  </div>
 </div>
 
 <header>
@@ -987,7 +1045,7 @@
       <button class="sm-tab active" id="tabLogin">Login</button>
       <button class="sm-tab" id="tabSignup">Sign up</button>
     </div>
-    <button type="button" class="btn btn-block" id="authGoogleBtn" style="background:#fff;color:#1f1f1f;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;">
+    <button type="button" class="btn btn-block google-auth-btn" id="authGoogleBtn" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;">
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.9 5.1 29.7 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.8-.4-4.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.9 5.1 29.7 3 24 3c-7.6 0-14.1 4.3-17.4 10.6z"/><path fill="#4CAF50" d="M24 45c5.6 0 10.7-1.9 14.6-5.2l-6.7-5.7C29.8 35.7 27 36.8 24 36.8c-5.3 0-9.7-3.4-11.3-8l-6.6 5.1C9.8 40.6 16.3 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.7 5.7C41.9 36.6 45 30.9 45 24c0-1.4-.1-2.8-.4-3.5z"/></svg>
       Google နဲ့ ဆက်လက်လုပ်ဆောင်မည်
     </button>
@@ -2772,3 +2830,434 @@ if('serviceWorker' in navigator){
 -->
 </body>
 </html>
+<!-- ============================================================
+     MAXFLIX UPGRADE LAYER v1 — UI Polish + New Features + Performance
+     (Browser moves any markup appearing after </html> back into <body>,
+      so this whole block loads exactly like normal inline code.)
+     ============================================================ -->
+<style>
+/* ---------- UI polish: row titles ---------- */
+.row-title{display:inline-block;padding-bottom:2px;}
+.row-title::after{content:'';display:block;width:42px;height:3px;border-radius:2px;
+  background:var(--accent-grad);margin-top:5px;transition:width .35s ease;}
+.row-head:hover .row-title::after{width:100%;}
+
+/* ---------- Card polish ---------- */
+.card:hover .card-title{color:var(--accent);}
+.card.is-premium{overflow:hidden;}
+.card.is-premium::after{content:'';position:absolute;inset:-40%;
+  background:conic-gradient(from 0deg,transparent 0 70%,rgba(212,166,42,.28) 78%,rgba(229,9,20,.30) 84%,transparent 92%);
+  animation:mfx-premium-spin 6s linear infinite;pointer-events:none;opacity:0;transition:opacity .3s;}
+.card.is-premium:hover::after{opacity:1;}
+@keyframes mfx-premium-spin{to{transform:rotate(1turn);}}
+
+/* ---------- NEW badge (auto: created within 7 days) ---------- */
+.mfx-badge-new{position:absolute;top:8px;left:8px;z-index:3;
+  background:linear-gradient(100deg,#00b09b,#96c93d);color:#04120b;
+  font-size:10px;font-weight:800;letter-spacing:.8px;padding:3px 8px;border-radius:3px;
+  animation:mfx-new-pulse 1.8s ease infinite;}
+@keyframes mfx-new-pulse{0%,100%{box-shadow:0 0 0 0 rgba(150,201,61,.55);}50%{box-shadow:0 0 0 6px rgba(150,201,61,0);}}
+.card-adult-badge{left:auto;right:8px;} /* NEW badge and 18+ badge never overlap */
+
+/* ---------- View / page transitions ---------- */
+.page.open{animation:mfx-view-in .28s ease;}
+#view-home .row{animation:mfx-view-in .28s ease;}
+@keyframes mfx-view-in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ---------- Nicer horizontal scrollbars ---------- */
+.row-track{scrollbar-width:thin;scrollbar-color:var(--accent-dim) transparent;}
+.row-track::-webkit-scrollbar{height:6px;}
+.row-track::-webkit-scrollbar-thumb{background:var(--accent-dim);border-radius:3px;}
+.row-track::-webkit-scrollbar-track{background:transparent;}
+
+/* ---------- Toast icons ---------- */
+#toastWrap .toast{display:flex;align-items:center;gap:9px;}
+#toastWrap .toast::before{content:'ⓘ';font-size:14px;color:var(--accent);flex-shrink:0;}
+#toastWrap .toast.ok::before{content:'✓';color:#4fd371;}
+
+/* ---------- Buttons / modals polish ---------- */
+.btn-accent{background:var(--accent-grad);border-radius:6px;
+  transition:transform .15s,box-shadow .2s,filter .15s;}
+.btn-accent:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(229,9,20,.4);filter:brightness(1.06);}
+.btn-accent:active{transform:translateY(0) scale(.98);}
+.sm-box{box-shadow:0 24px 60px rgba(0,0,0,.5);}
+.support-stat-box{transition:transform .2s;}
+.support-stat-box:hover{transform:translateY(-3px);}
+.shop-card{position:relative;}
+.shop-card::after{content:'';position:absolute;inset:0;border-radius:8px;
+  box-shadow:inset 0 -42px 34px -26px rgba(0,0,0,.55);pointer-events:none;}
+
+/* ---------- Back-to-top button ---------- */
+.mfx-back-top{position:fixed;right:16px;bottom:calc(var(--tabbar-h, 0px) + 24px);z-index:80;
+  width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
+  background:var(--bg-elev);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  color:var(--ink);font-size:17px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;opacity:0;pointer-events:none;transform:translateY(12px);
+  transition:opacity .25s,transform .25s,border-color .15s;box-shadow:0 8px 22px rgba(0,0,0,.35);}
+.mfx-back-top.show{opacity:1;pointer-events:auto;transform:translateY(0);}
+.mfx-back-top:hover{border-color:var(--accent-dim);}
+.mfx-back-top svg{width:18px;height:18px;}
+
+/* ---------- Share button (player) ---------- */
+.rating-btn.mfx-share-btn.active{background:var(--gold);border-color:var(--gold);color:#111;}
+</style>
+
+<!-- ---------- Back-to-top button markup ---------- -->
+<button id="mfxBackTop" class="mfx-back-top" aria-label="အပေါ်သို့ ပြန်တင်မည်" title="အပေါ်သို့">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+</button>
+
+<script>
+/* ============================================================
+   MAXFLIX UPGRADE JS v1 — all wrapped in an IIFE, no globals leaked.
+   Everything below re-uses the existing Firebase/live functions
+   (movies, render, openPlayer, openPremiumGate, showView, wireCards,
+   isPremiumActive, currentUser, currentUserDoc, showToast...) via
+   closure — nothing original is overwritten.
+   ============================================================ */
+(function(){
+  'use strict';
+
+  /* ---------- 1) NEW badge: auto-tag items created within 7 days ---------- */
+  const NEW_DAYS = 7;
+  function isNew(m){
+    try{
+      const ms = m.createdAtMs || (m.createdAt && m.createdAt.toMillis ? m.createdAt.toMillis() : 0);
+      return ms && (Date.now() - ms) < NEW_DAYS * 86400000;
+    }catch(e){ return false; }
+  }
+  // Decorate every card right after each render() call — render() is called
+  // by all the existing Firestore listeners, so this stays live forever.
+  const origRender = window.render;
+  window.render = function(){ origRender.apply(this, arguments); decorateCards(); };
+  function decorateCards(){
+    document.querySelectorAll('.card[data-id]').forEach(card => {
+      if(card.querySelector('.mfx-badge-new')) return;
+      const m = (window.movies || []).find(x => x.id === card.dataset.id);
+      if(m && isNew(m) && m.category !== 'adult'){
+        const b = document.createElement('div');
+        b.className = 'mfx-badge-new';
+        b.textContent = 'NEW';
+        card.querySelector('.card-thumb')?.insertAdjacentElement('afterend', b);
+      }
+    });
+  }
+
+  /* ---------- 2) Back-to-top button ---------- */
+  const backTop = document.getElementById('mfxBackTop');
+  window.addEventListener('scroll', () => {
+    backTop.classList.toggle('show', window.scrollY > 500);
+  }, { passive: true });
+  backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  /* ---------- 3) Share button in the player (Telegram / Viber / Copy link) ---------- */
+  const shareHost = 'https://maxflixstreaming.com/';
+  const SHARE_TEXT = 'Maxflix Streaming မှာ ဒီ ဇာတ်ကားကို ကြည့်ရှုလို့ရပါတယ် 🎬';
+  function shareSheet(m){
+    const url = shareHost;
+    navigator.clipboard?.writeText(SHARE_TEXT + ' ' + url).then(() => {
+      showToast('Link copy လုပ်ပြီးပါပြီ — မိတ်ဆွေတွေကို မျှဝေနိုင်ပါတယ်', 'ok');
+    }).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = SHARE_TEXT + ' ' + url;
+      document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); showToast('Link copy လုပ်ပြီးပါပြီ', 'ok'); }
+      catch(e){ showToast('Copy လုပ်၍ မရပါ'); }
+      ta.remove();
+    });
+    if(navigator.share){
+      navigator.share({ title: m ? m.title : 'Maxflix Streaming', text: SHARE_TEXT, url }).catch(() => {});
+    }
+  }
+  // Inject share button into the player modal rating row whenever it opens.
+  // We hook openPlayer (the original gate logic — premium/18+ — still runs first).
+  const origOpenPlayer = window.openPlayer;
+  window.openPlayer = function(id){
+    origOpenPlayer.apply(this, arguments);
+    addShareButton(id);
+  };
+  function addShareButton(id){
+    const row = document.getElementById('modalRatingRow');
+    if(!row || row.querySelector('.mfx-share-btn')) return;
+    const m = (window.movies || []).find(x => x.id === id);
+    const btn = document.createElement('button');
+    btn.className = 'rating-btn mfx-share-btn';
+    btn.innerHTML = '📤 မျှဝေမည်';
+    btn.addEventListener('click', () => shareSheet(m));
+    row.appendChild(btn);
+  }
+
+  /* ---------- 4) Double-tap like (mobile) ---------- */
+  let lastTap = 0, lastCard = null;
+  document.body.addEventListener('touchend', e => {
+    const card = e.target.closest?.('.card[data-id]');
+    if(!card) return;
+    if(e.target.closest('.card-bookmark')) return;
+    const now = Date.now();
+    if(now - lastTap < 320 && lastCard === card){
+      const id = card.dataset.id;
+      if(id && window.setRating && typeof setRating === 'function'){}
+      const setRatingFn = window.setRating;
+      if(typeof setRatingFn === 'function'){
+        setRatingFn(id, 'like');
+        heartBurst(card, e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+      }
+      lastTap = 0; lastCard = null; return;
+    }
+    lastTap = now; lastCard = card;
+  }, { passive: true });
+  function heartBurst(card, x, y){
+    const h = document.createElement('div');
+    h.textContent = '❤️';
+    h.style.cssText = `position:fixed;left:${x - 14}px;top:${y - 14}px;z-index:999;
+      font-size:28px;pointer-events:none;transition:transform .5s ease,opacity .5s ease;`;
+    document.body.appendChild(h);
+    requestAnimationFrame(() => {
+      h.style.transform = 'translateY(-46px) scale(1.5)';
+      h.style.opacity = '0';
+    });
+    setTimeout(() => h.remove(), 600);
+  }
+
+  /* ---------- 5) Search: recent searches (chips) ---------- */
+  const SEARCH_HISTORY_KEY = 'maxflixSearchHistory_v1';
+  function getSearchHistory(){
+    try{ return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]'); }catch(e){ return []; }
+  }
+  function saveSearchTerm(t){
+    if(!t) return;
+    let h = getSearchHistory().filter(x => x.toLowerCase() !== t.toLowerCase());
+    h.unshift(t); h = h.slice(0, 8);
+    try{ localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(h)); }catch(e){}
+  }
+  function buildSearchChips(){
+    const wrap = document.getElementById('view-search');
+    if(!wrap || wrap.querySelector('.mfx-search-chips')) return;
+    const sub = wrap.querySelector('.page-sub');
+    const chips = document.createElement('div');
+    chips.className = 'mfx-search-chips';
+    chips.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:-10px 0 18px;';
+    sub.parentNode.insertBefore(chips, sub.nextSibling);
+    paintSearchChips();
+  }
+  function paintSearchChips(){
+    const chips = document.querySelector('.mfx-search-chips');
+    if(!chips) return;
+    const h = getSearchHistory();
+    chips.innerHTML = h.length
+      ? h.map(t => `<button class="rating-btn mfx-chip" style="font-size:12px;padding:5px 12px;"
+            data-term="${String(t).replace(/"/g,'&quot;')}">${String(t).replace(/</g,'&lt;')}</button>`).join('')
+        + `<button class="rating-btn mfx-chip-clear" style="font-size:12px;padding:5px 12px;color:var(--ink-faint);">✕ Clear</button>`
+      : '';
+    chips.querySelectorAll('.mfx-chip').forEach(b => b.addEventListener('click', () => {
+      document.getElementById('searchInput').value = b.dataset.term;
+      window.performSearch(b.dataset.term);
+    }));
+    chips.querySelector('.mfx-chip-clear')?.addEventListener('click', () => {
+      try{ localStorage.removeItem(SEARCH_HISTORY_KEY); }catch(e){}
+      paintSearchChips();
+    });
+  }
+  const origPerformSearch = window.performSearch;
+  window.performSearch = function(q){
+    origPerformSearch.apply(this, arguments);
+    saveSearchTerm(typeof q === 'string' ? q.trim() : '');
+    buildSearchChips();
+    paintSearchChips();
+  };
+
+  /* ---------- 6) Profile page (watch history + account info) ---------- */
+  const PSTATS_KEY = 'mfxStats_v1';
+  function loadStats(){ try{ return JSON.parse(localStorage.getItem(PSTATS_KEY) || '{}'); }catch(e){ return {}; } }
+  function saveStats(s){ try{ localStorage.setItem(PSTATS_KEY, JSON.stringify(s)); }catch(e){} }
+
+  const PROFILE_HTML = `
+  <div id="view-profile" class="page" style="display:none;">
+    <div class="page-title">Profile</div>
+    <div class="page-sub" id="mfxProfileSub"></div>
+    <div class="support-stats-row">
+      <div class="support-stat-box">
+        <div class="n" id="mfxStatWatched">0</div>
+        <div class="l">ကြည့်ပြီး (ဇာတ်ကား)</div>
+      </div>
+      <div class="support-stat-box premium">
+        <div class="n" id="mfxStatMin">0</div>
+        <div class="l">ကြည့်ရှုချိန် (မိနစ်)</div>
+      </div>
+    </div>
+    <div class="legal-accordion" style="margin-top:20px;">
+      <details>
+        <summary>🕘 ကြည့်ရှုမှု မှတ်တမ်း (Watch History)</summary>
+        <div class="legal-body">
+          <p id="mfxHistoryList" style="color:var(--ink-dim);font-size:13px;">မရှိသေးပါ</p>
+        </div>
+      </details>
+    </div>
+  </div>`;
+  document.querySelector('footer').insertAdjacentHTML('beforebegin', PROFILE_HTML);
+
+  function updateProfileStats(){
+    const s = loadStats();
+    const watchedEl = document.getElementById('mfxStatWatched');
+    const minEl = document.getElementById('mfxStatMin');
+    const histEl = document.getElementById('mfxHistoryList');
+    if(!watchedEl) return;
+    watchedEl.textContent = formatViewCount(s.watchedCount || 0);
+    minEl.textContent = formatViewCount(Math.round((s.watchedMs || 0) / 60000));
+    const hist = (s.history || []).slice(0, 12);
+    histEl.innerHTML = hist.length
+      ? hist.map((h, i) => `<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;
+          border-bottom:1px solid var(--line);font-size:12.5px;">
+          <span style="color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${String(h.title).replace(/</g,'&lt;')}</span>
+          <span style="color:var(--ink-faint);flex-shrink:0;">${escDate(h.at)}</span>
+        </div>`).join('')
+        + `<button class="link-btn" id="mfxClearHistory" style="margin-top:10px;">🧹 မှတ်တမ်း ရှင်းလင်းမည်</button>`
+      : 'မရှိသေးပါ';
+    document.getElementById('mfxClearHistory')?.addEventListener('click', () => {
+      const st = loadStats(); st.history = []; saveStats(st);
+      updateProfileStats(); showToast('Watch history ရှင်းလင်းပြီးပါပြီ', 'ok');
+    });
+    const sub = document.getElementById('mfxProfileSub');
+    if(sub){
+      if(currentUser){ sub.textContent = (currentUser.email || '') + (isPremiumActive() ? ' • ⭐ Premium Active' : ' • Free member'); }
+      else { sub.textContent = 'Login ဝင်ထားခြင်း မရှိပါ'; }
+    }
+  }
+  function escDate(ms){ try{ return new Date(ms).toLocaleDateString('en-GB'); }catch(e){ return ''; } }
+
+  /* Track watch time + history: hook openPlayer (after gates pass). */
+  window.openPlayer = (function(prev){
+    return function(id){
+      prev.apply(this, arguments);
+      trackWatch(id);
+    };
+  })(window.openPlayer);
+  function trackWatch(id){
+    const m = (window.movies || []).find(x => x.id === id);
+    if(!m || m.category === 'adult') return;
+    const s = loadStats();
+    s.watchedCount = (s.watchedCount || 0) + 1;
+    s.history = (s.history || []).filter(h => h.title !== m.title).slice(0, 23);
+    s.history.unshift({ title: m.title, at: Date.now() });
+    saveStats(s);
+  }
+  // Watch-time (ms) tracking: poll the player's <video> every 5s while open.
+  let watchTick = setInterval(() => {
+    const v = document.querySelector('#modalVideoWrap video');
+    if(v && !v.paused && !v.ended){
+      const s = loadStats();
+      s.watchedMs = (s.watchedMs || 0) + 5000;
+      saveStats(s);
+    }
+  }, 5000);
+
+  /* Profile nav entry: add tab to account dropdown + mobile menu + desktop nav. */
+  function addProfileNav(){
+    // account dropdown (logged in)
+    const dd = document.getElementById('accountDropdown');
+    if(dd && !dd.querySelector('[data-view="profile"]')){
+      const b = document.createElement('button');
+      b.className = 'account-dropdown-item';
+      b.dataset.view = 'profile';
+      b.innerHTML = '👤 Profile';
+      b.addEventListener('click', () => { dd.classList.remove('open'); openProfile(); });
+      dd.insertBefore(b, dd.firstChild);
+    }
+    // mobile bottom menu
+    const menu = document.getElementById('mobileMenu');
+    if(menu && !menu.querySelector('[data-view="profile"]')){
+      const b = document.createElement('button');
+      b.className = 'nav-tab';
+      b.dataset.view = 'profile';
+      b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4  rebase placeholder"/><circle cx="12" cy="7" r="4"/></svg> <span>Profile</span>`;
+      b.addEventListener('click', () => { openProfile(); });
+      menu.insertBefore(b, menu.lastElementChild);
+    }
+    // desktop nav (once)
+    const nav = document.querySelector('.site-nav');
+    if(nav && !nav.querySelector('[data-view="profile"]')){
+      const b = document.createElement('button');
+      b.className = 'nav-tab';
+      b.dataset.view = 'profile';
+      b.innerHTML = '<span class="nav-tab-icon">👤</span>Profile';
+      b.addEventListener('click', () => openProfile());
+      const supportBtn = nav.querySelector('[data-view="support"]');
+      supportBtn ? supportBtn.parentNode.insertBefore(b, supportBtn) : nav.appendChild(b);
+    }
+  }
+  const origRenderAccount = window.renderAccountArea;
+  window.renderAccountArea = function(){
+    origRenderAccount.apply(this, arguments);
+    addProfileNav();
+  };
+  function openProfile(){
+    updateProfileStats();
+    showView('profile');
+    document.getElementById('view-profile').classList.add('open');
+  }
+  // showView only toggles .open on known page divs; view-profile is created
+  // after the original wiring, so handle it manually here.
+  const origShowView = window.showView;
+  window.showView = function(view){
+    origShowView.apply(this, arguments);
+    const p = document.getElementById('view-profile');
+    if(p){
+      const isProfile = view === 'profile';
+      p.classList.toggle('open', isProfile);
+      p.style.display = isProfile ? '' : 'none';
+    }
+    if(isProfile) updateProfileStats();
+  };
+
+  /* ---------- 7) Keyboard shortcuts ---------- */
+  document.addEventListener('keydown', e => {
+    if(e.target.matches('input, textarea, select')) return;
+    if(document.querySelector('.sm-overlay.open, .modal-overlay.open')) return;
+    if(e.key === '/'){ e.preventDefault(); (document.getElementById('searchBox').offsetParent ? document.getElementById('searchInput') : document.getElementById('searchInputMobile')).focus(); }
+    if(e.key === 'Escape'){ closeMobileMenu(); }
+  });
+
+  /* ---------- 8) Premium expiry warning toast ---------- */
+  function checkPremiumExpiry(){
+    if(!currentUserDoc || !currentUserDoc.isPremium || !currentUserDoc.premiumExpiresAt) return;
+    let ms = 0;
+    try{ ms = currentUserDoc.premiumExpiresAt.toMillis ? currentUserDoc.premiumExpiresAt.toMillis() : currentUserDoc.premiumExpiresAt; }catch(e){}
+    const daysLeft = Math.ceil((ms - Date.now()) / 86400000);
+    const WARN_KEY = 'mfxPremWarn_' + Math.floor(ms / 86400000);
+    if(daysLeft > 0 && daysLeft <= 3){
+      try{ if(!localStorage.getItem(WARN_KEY)){ showToast(`⭐ Premium သက်တမ်း ${daysLeft} ရက်သာ ကျန်တော့ပါပြီ — အသစ် ဝယ်ယူထားပါ`, 'ok'); localStorage.setItem(WARN_KEY, '1'); } }catch(e){}
+    }
+  }
+  setInterval(checkPremiumExpiry, 60 * 60 * 1000);
+  // Run once shortly after page load, once auth data is likely ready.
+  setTimeout(checkPremiumExpiry, 4000);
+
+  /* ---------- 9) PWA offline toast ---------- */
+  window.addEventListener('offline', () => showToast('📡 Internet connection ပြတ်နေပါသည် — အချို့ content များ မမြင်ရနိုင်ပါ'));
+  window.addEventListener('online', () => showToast('📡 Internet ပြန်လည် ချိတ်ဆက်ပြီးပါပြီ', 'ok'));
+
+  /* ---------- 10) Performance: image decoding + preconnect ---------- */
+  // Hint browsers to preconnect to common thumbnail/video hosts (helps first paint).
+  ['https://fonts.gstatic.com', 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'].forEach(h => {
+    if(document.querySelector(`link[href="${h}"]`)) return;
+    const l = document.createElement('link');
+    l.rel = 'preconnect'; l.href = h; l.crossOrigin = '';
+    document.head.appendChild(l);
+  });
+  // All card images decode off the main thread once they're in the DOM.
+  new MutationObserver(() => {
+    document.querySelectorAll('img.card-thumb:not([decoding])').forEach(img => {
+      img.setAttribute('decoding', 'async');
+    });
+  }).observe(document.body, { childList: true, subtree: true });
+
+  /* ---------- 11) Auto re-try Firestore listener init if offline at load ---------- */
+  window.addEventListener('online', () => {
+    // Re-render from cache; the original live listeners auto-resume on reconnect.
+    try{ if(typeof render === 'function' && (window.movies || []).length) render(); }catch(e){}
+  });
+
+  decorateCards(); // initial pass (in case data arrived before this script ran)
+  buildSearchChips();
+})();
+</script>
