@@ -235,7 +235,9 @@
   .row-continue-top .row-track{gap:12px;}
 
   .hero{position:relative;min-height:70vh;display:flex;align-items:flex-end;
-    padding:0 clamp(16px,4vw,56px) 60px;background-size:cover;background-position:center;background-color:var(--bg-elev);}
+    padding:0 clamp(16px,4vw,56px) 60px;background-size:cover;background-position:center;background-color:var(--bg-elev);
+    transition:opacity .22s ease;}
+  .hero.hero-swap{opacity:0;}
   .hero::before{content:'';position:absolute;inset:0;
     background:linear-gradient(to top,var(--bg) 5%,transparent 55%),linear-gradient(to right,rgba(10,10,13,.85),transparent 55%);}
   .hero-content{position:relative;max-width:600px;}
@@ -266,6 +268,17 @@
   .google-auth-btn:hover::after{opacity:.55;}
   .google-auth-btn:active{transform:translateY(0) scale(.98);
     box-shadow:0 1px 2px rgba(0,0,0,.12);}
+
+  /* ---------- Loading spinner for async buttons (login/signup/premium/promo) ----------
+     Mobile connections here are often slow/patchy (see the VPN notice), so every button
+     that fires a network request gets a visible spinner + becomes unclickable while the
+     request is in flight, instead of looking like the tap did nothing. */
+  .btn.is-loading{position:relative;color:transparent!important;pointer-events:none;}
+  .btn.is-loading::after{content:'';position:absolute;left:50%;top:50%;width:16px;height:16px;
+    margin:-8px 0 0 -8px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+    animation:btn-spin .6s linear infinite;}
+  .google-auth-btn.is-loading::after{border-color:rgba(0,0,0,.2);border-top-color:#1f1f1f;}
+  @keyframes btn-spin{ to{ transform:rotate(360deg); } }
 
   /* ---------- Promo banner ---------- */
   .promo-banner{padding:0 clamp(16px,4vw,56px);margin:18px 0 0;}
@@ -311,6 +324,27 @@
   .row-title{font-family:var(--font-display);font-size:22px;letter-spacing:1px;}
   .row-count{font-size:12px;color:var(--ink-faint);}
   .row-track{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px;}
+  .row{position:relative;}
+
+  /* Hover-revealed row arrows — desktop/mouse only (injected in JS only when
+     `supportsHoverPreview` is true), so touch/mobile keeps plain native swipe
+     with zero extra DOM or visual clutter. */
+  .row-arrow{position:absolute;top:38px;bottom:10px;width:44px;display:flex;align-items:center;justify-content:center;
+    border:none;border-radius:6px;background:rgba(10,10,13,.55);color:#fff;font-size:20px;z-index:5;
+    opacity:0;transition:opacity .2s ease,background .2s ease;cursor:pointer;}
+  .row-arrow:hover{background:rgba(10,10,13,.82);}
+  .row:hover .row-arrow{opacity:1;}
+  .row-arrow.prev{left:-4px;}
+  .row-arrow.next{right:-4px;}
+  .row-arrow.at-edge{opacity:0!important;pointer-events:none;}
+
+  /* ---------- Page/view transition ----------
+     A plain fade+slide-up on whichever view becomes visible, so switching
+     tabs feels like an app rather than an instant, jarring content swap. */
+  @media (prefers-reduced-motion: no-preference){
+    .view-transition-in{animation:view-fade-in .32s cubic-bezier(.16,.8,.3,1) both;}
+  }
+  @keyframes view-fade-in{0%{opacity:0;transform:translateY(10px);}100%{opacity:1;transform:translateY(0);}}
 
   .page{display:none;padding:100px clamp(16px,4vw,56px) 60px;}
   .page.open{display:block;}
@@ -670,7 +704,7 @@
     <button class="nav-tab" data-view="support" id="supportNavBtn"><span class="nav-tab-icon">💬</span>Support</button>
     <div class="search-box" id="searchBox">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
+      <input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
     </div>
   </nav>
 
@@ -719,7 +753,7 @@
   <div class="mobile-menu-handle"></div>
   <div class="search-box search-box-mobile" id="searchBoxMobile">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="searchInputMobile" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
+    <input type="text" id="searchInputMobile" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
   </div>
   <button class="nav-tab" data-view="shop">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -955,7 +989,7 @@
 
 <!-- ================= PLAYER MODAL ================= -->
 <div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box">
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-video-wrap" id="modalVideoWrap">
       <button class="modal-close" id="modalClose" aria-label="ပိတ်မည်">✕</button>
     </div>
@@ -977,7 +1011,7 @@
 
 <!-- ================= 18+ AGE CONFIRMATION GATE ================= -->
 <div class="sm-overlay" id="ageGateOverlay">
-  <div class="sm-box" style="max-width:360px;text-align:center;">
+  <div class="sm-box" role="dialog" aria-modal="true" aria-label="အသက် အတည်ပြုချက်" style="max-width:360px;text-align:center;">
     <div style="font-size:36px;margin-bottom:10px;">🔞</div>
     <h3>အသက် အတည်ပြုချက်</h3>
     <p style="margin-bottom:18px;">ဒီ content က လူကြီးများအတွက်သာ ရည်ရွယ်ပါသည်။<br>သင့်အသက် ၁၈ နှစ် ပြည့်ပြီးပါသလား?</p>
@@ -991,7 +1025,7 @@
 <!-- ================= 18+ PIN LOCK MODAL ================= -->
 <!-- ================= FIRST-VISIT ONBOARDING ================= -->
 <div class="sm-overlay" id="onboardOverlay">
-  <div class="sm-box" style="max-width:420px;text-align:left;">
+  <div class="sm-box" role="dialog" aria-modal="true" aria-label="Maxflix Streaming မှ ကြိုဆိုပါတယ်" style="max-width:420px;text-align:left;">
     <div style="font-size:32px;margin-bottom:10px;text-align:center;">🎬</div>
     <h3 style="text-align:center;">Maxflix Streaming မှ ကြိုဆိုပါတယ်</h3>
     <p style="text-align:center;margin-bottom:16px;">စတင်ခင် ဒီ ၃ ချက်ကို သိထားပါ —</p>
@@ -1014,13 +1048,13 @@
 </div>
 
 <div class="sm-overlay" id="pinOverlay">
-  <div class="sm-box">
+  <div class="sm-box" role="dialog" aria-modal="true" aria-label="18+ Content PIN">
     <div style="font-size:28px;margin-bottom:8px;">🔒</div>
     <h3>18+ Content</h3>
     <p>ဆက်ကြည့်ရန် PIN နံပါတ် ရိုက်ထည့်ပါ</p>
     <div class="field">
       <div class="pw-field-wrap">
-        <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="••••">
+        <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="••••" autocomplete="off">
         <button type="button" class="pw-toggle-btn" data-target="pinInput" aria-label="PIN ပြသရန်/ဖျောက်ရန်">
           <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
           <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a20.3 20.3 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
@@ -1037,7 +1071,7 @@
 
 <!-- ================= AUTH MODAL (Login / Sign up) ================= -->
 <div class="sm-overlay" id="authOverlay">
-  <div class="sm-box" style="position:relative;">
+  <div class="sm-box" role="dialog" aria-modal="true" aria-labelledby="authTitle" style="position:relative;">
     <button class="sm-close-x" id="authCloseBtn" aria-label="ပိတ်မည်">✕</button>
     <h3 style="margin-top:6px;" id="authTitle">Account</h3>
     <p id="authSubtitle">Login သို့မဟုတ် Sign up ဝင်ပါ</p>
@@ -1053,16 +1087,18 @@
       <div style="position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line);z-index:0;"></div>
       <span style="background:var(--bg-elev);padding:0 10px;position:relative;z-index:1;">သို့မဟုတ်</span>
     </div>
-    <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"></div>
-    <div class="field" id="authPassField"><label>Password</label>
-      <div class="pw-field-wrap">
-        <input type="password" id="authPass" placeholder="••••••••">
-        <button type="button" class="pw-toggle-btn" data-target="authPass" aria-label="Password ပြသရန်/ဖျောက်ရန်">
-          <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
-          <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a20.3 20.3 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
-        </button>
+    <form id="authForm" autocomplete="on" onsubmit="return false;">
+      <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com" autocomplete="username" inputmode="email"></div>
+      <div class="field" id="authPassField"><label>Password</label>
+        <div class="pw-field-wrap">
+          <input type="password" id="authPass" placeholder="••••••••" autocomplete="current-password">
+          <button type="button" class="pw-toggle-btn" data-target="authPass" aria-label="Password ပြသရန်/ဖျောက်ရန်">
+            <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a20.3 20.3 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+          </button>
+        </div>
       </div>
-    </div>
+    </form>
     <button class="link-btn" id="forgotPassBtn" style="display:block;margin:-6px 0 12px;">Password မေ့နေပါသလား?</button>
     <div class="sm-err" id="authErr"></div>
     <div class="sm-ok" id="authOk"></div>
@@ -1073,7 +1109,7 @@
 
 <!-- ================= PREMIUM GATE MODAL ================= -->
 <div class="sm-overlay" id="premiumOverlay">
-  <div class="sm-box" style="position:relative;max-width:420px;">
+  <div class="sm-box" role="dialog" aria-modal="true" aria-label="Premium" style="position:relative;max-width:420px;">
     <button class="sm-close-x" id="premiumCloseBtn" aria-label="ပိတ်မည်">✕</button>
 
     <!-- State: not logged in -->
@@ -1125,7 +1161,7 @@
 
 <!-- ================= SETTINGS MODAL ================= -->
 <div class="sm-overlay" id="settingsOverlay">
-  <div class="sm-box" style="position:relative;max-width:420px;">
+  <div class="sm-box" role="dialog" aria-modal="true" aria-label="Settings" style="position:relative;max-width:420px;">
     <button class="sm-close-x" id="settingsCloseBtn" aria-label="ပိတ်မည်">✕</button>
     <div style="font-size:28px;margin-bottom:8px;">⚙️</div>
     <h3>Settings</h3>
@@ -1279,9 +1315,16 @@ function showView(view){
     el.classList.remove('open');
     if(el.id === 'view-home') el.style.display = (view === 'home') ? '' : 'none';
   });
+  let enteringEl = document.getElementById('view-home');
   if(view !== 'home'){
     const el = document.getElementById('view-' + view);
-    if(el) el.classList.add('open');
+    if(el){ el.classList.add('open'); enteringEl = el; }
+  }
+  if(enteringEl){
+    // Restart the fade-in every time, even when re-selecting the same tab.
+    enteringEl.classList.remove('view-transition-in');
+    void enteringEl.offsetWidth; // force reflow
+    enteringEl.classList.add('view-transition-in');
   }
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
   closeMobileMenu();
@@ -1317,6 +1360,7 @@ function openMobileMenu(){
   menu.style.display = 'flex';
   document.getElementById('bottomAdBar').style.display = 'none';
   requestAnimationFrame(() => { overlay.classList.add('show'); menu.classList.add('show'); });
+  pushOverlayHistory('mobileMenu');
 }
 function closeMobileMenu(){
   const menu = document.getElementById('mobileMenu');
@@ -1326,6 +1370,7 @@ function closeMobileMenu(){
   overlay.classList.remove('show');
   menu.classList.remove('show');
   setTimeout(() => { overlay.classList.remove('open'); menu.style.display = 'none'; }, 300);
+  popOverlayHistory('mobileMenu');
 }
 document.getElementById('moreTabBtn').addEventListener('click', (e) => {
   e.stopPropagation();
@@ -1333,6 +1378,65 @@ document.getElementById('moreTabBtn').addEventListener('click', (e) => {
   openMobileMenu();
 });
 document.getElementById('mobileMenuOverlay').addEventListener('click', closeMobileMenu);
+
+/* ---------- Small-modal <-> browser history bridge (Android/iOS back gesture) ----------
+   The player + series view already close on the phone's back action via
+   history.pushState/popstate (see the listener near the end of section 9).
+   These two helpers extend the same idea to the smaller modals — mobile menu,
+   auth, premium, settings, PIN, age-gate: one call where each one opens, one
+   call at every place it can close, so the phone's back gesture always
+   dismisses whichever is open instead of leaving the page. */
+let overlayHistoryStack = [];
+let closingOverlayViaPopstate = false;
+function pushOverlayHistory(id){
+  if(overlayHistoryStack.includes(id)) return;
+  overlayHistoryStack.push(id);
+  if(!closingOverlayViaPopstate) history.pushState({ maxflixOverlay: id }, '');
+}
+function popOverlayHistory(id){
+  const idx = overlayHistoryStack.lastIndexOf(id);
+  if(idx === -1) return;
+  overlayHistoryStack.splice(idx, 1);
+  if(!closingOverlayViaPopstate) history.back();
+}
+// Maps each overlay id to the action that closes it exactly the way its own
+// close/cancel button would — reused by Escape, Tab-trap and the back-gesture
+// popstate handler so none of them need to duplicate an overlay's own logic.
+const OVERLAY_CLOSERS = {
+  mobileMenu: () => closeMobileMenu(),
+  ageGateOverlay: () => document.getElementById('ageGateNoBtn').click(),
+  pinOverlay: () => document.getElementById('pinCancelBtn').click(),
+  authOverlay: () => document.getElementById('authCloseBtn').click(),
+  premiumOverlay: () => document.getElementById('premiumCloseBtn').click(),
+  settingsOverlay: () => document.getElementById('settingsCloseBtn').click()
+};
+/* ---------- Escape key + Tab focus-trap for whichever modal is open ----------
+   Keyboard users (and phones with a keyboard attached) can dismiss any open
+   modal with Escape, and Tab cycles only within it instead of leaking focus
+   into the page underneath. */
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    if(document.getElementById('mobileMenu').classList.contains('show')){ closeMobileMenu(); return; }
+    const openOverlay = document.querySelector('.sm-overlay.open, .modal-overlay.open');
+    if(!openOverlay) return;
+    const closer = OVERLAY_CLOSERS[openOverlay.id];
+    if(closer) closer();
+    else if(openOverlay.id === 'modalOverlay') history.back();
+    return;
+  }
+  if(e.key !== 'Tab') return;
+  const menuOpen = document.getElementById('mobileMenu').classList.contains('show');
+  const openOverlay = menuOpen ? document.getElementById('mobileMenu') : document.querySelector('.sm-overlay.open, .modal-overlay.open');
+  if(!openOverlay) return;
+  const box = openOverlay.querySelector('.sm-box, .modal-box') || openOverlay;
+  const focusables = Array.from(box.querySelectorAll(
+    'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+  )).filter(el => el.offsetParent !== null);
+  if(!focusables.length) return;
+  const first = focusables[0], last = focusables[focusables.length - 1];
+  if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+});
 
 /* ---------- Dark / Light theme toggle ---------- */
 function applyTheme(theme){
@@ -1385,31 +1489,35 @@ function requestAdultUnlock(onSuccess){
   let ageConfirmed = false;
   try{ ageConfirmed = !!sessionStorage.getItem('age18Confirmed'); }catch(e){}
   if(ageConfirmed) openPinModal();
-  else document.getElementById('ageGateOverlay').classList.add('open');
+  else{ document.getElementById('ageGateOverlay').classList.add('open'); pushOverlayHistory('ageGateOverlay'); }
 }
 function openPinModal(){
   document.getElementById('pinInput').value = '';
   document.getElementById('pinErr').classList.remove('show');
   document.getElementById('pinOverlay').classList.add('open');
+  pushOverlayHistory('pinOverlay');
   document.getElementById('pinInput').focus();
 }
 document.getElementById('ageGateYesBtn').addEventListener('click', () => {
   try{ sessionStorage.setItem('age18Confirmed', '1'); }catch(e){}
   document.getElementById('ageGateOverlay').classList.remove('open');
+  popOverlayHistory('ageGateOverlay');
   openPinModal();
 });
 document.getElementById('ageGateNoBtn').addEventListener('click', () => {
   document.getElementById('ageGateOverlay').classList.remove('open');
+  popOverlayHistory('ageGateOverlay');
   pendingUnlockCallback = null; // "No" ဆိုရင် PIN modal ကို ဆက်မဖွင့်ဘူး
 });
 document.getElementById('ageGateOverlay').addEventListener('click', e => {
   if(e.target.id === 'ageGateOverlay'){
     e.currentTarget.classList.remove('open');
+    popOverlayHistory('ageGateOverlay');
     pendingUnlockCallback = null;
   }
 });
 document.getElementById('pinCancelBtn').addEventListener('click', () => {
-  document.getElementById('pinOverlay').classList.remove('open'); pendingUnlockCallback = null;
+  document.getElementById('pinOverlay').classList.remove('open'); popOverlayHistory('pinOverlay'); pendingUnlockCallback = null;
 });
 document.getElementById('pinSubmitBtn').addEventListener('click', () => {
   const errEl = document.getElementById('pinErr');
@@ -1434,6 +1542,7 @@ document.getElementById('pinSubmitBtn').addEventListener('click', () => {
   if(document.getElementById('pinInput').value === myPin){
     adultUnlocked = true;
     document.getElementById('pinOverlay').classList.remove('open');
+    popOverlayHistory('pinOverlay');
     renderAdultSection();
     if(pendingUnlockCallback) pendingUnlockCallback();
     pendingUnlockCallback = null;
@@ -1445,6 +1554,36 @@ document.getElementById('pinInput').addEventListener('keydown', e => { if(e.key=
    5) AUTH (Login / Sign up)
    ========================================================= */
 let authMode = 'login';
+
+/* ---------- Reusable loading/disabled state for async buttons ----------
+   Mobile connections here are often slow/patchy (see the VPN notice), so
+   every button that fires a network request gets a visible spinner and
+   becomes unclickable while the request is in flight, instead of looking
+   like the tap did nothing. */
+function setBtnLoading(btn, isLoading){
+  btn.disabled = isLoading;
+  btn.classList.toggle('is-loading', isLoading);
+}
+
+/* ---------- Friendlier Firebase Auth error messages ----------
+   Firebase's raw error text is English/technical (e.g. "Firebase: Error
+   (auth/wrong-password)."). Map the common codes to the same short Burmese
+   style already used elsewhere in this modal; anything unmapped falls back
+   to the raw message so nothing is silently swallowed. */
+const AUTH_ERROR_MESSAGES = {
+  'auth/wrong-password': 'Password မှားနေပါတယ်',
+  'auth/user-not-found': 'ဒီ Email နဲ့ Account မရှိသေးပါ — Sign up လုပ်ကြည့်ပါ',
+  'auth/invalid-email': 'Email format မှားနေပါတယ်',
+  'auth/invalid-credential': 'Email/Password မှားနေပါတယ်',
+  'auth/email-already-in-use': 'ဒီ Email နဲ့ Account ရှိပြီးသားပါ — Login ဝင်ကြည့်ပါ',
+  'auth/weak-password': 'Password က အနည်းဆုံး ၆ လုံး ရှိရပါမယ်',
+  'auth/too-many-requests': 'ကြိုးစားမှု အကြိမ်များနေလို့ ခဏစောင့်ပြီး ထပ်ကြိုးစားပါ',
+  'auth/network-request-failed': 'Internet connection စစ်ကြည့်ပြီး ထပ်ကြိုးစားပါ',
+  'auth/popup-closed-by-user': 'Google login window ကို ပိတ်လိုက်ပါတယ် — ထပ်ကြိုးစားပါ'
+};
+function friendlyAuthError(err){
+  return AUTH_ERROR_MESSAGES[err.code] || err.message;
+}
 
 // Show/hide toggle for password & PIN fields — delegated so it also covers
 // any .pw-toggle-btn added later (e.g. inside a dynamically-built form).
@@ -1464,11 +1603,15 @@ function openAuthModal(){
   document.getElementById('authPass').value = '';
   setAuthMode('login');
   document.getElementById('authOverlay').classList.add('open');
+  pushOverlayHistory('authOverlay');
 }
 document.getElementById('loginNavBtn').addEventListener('click', () => {
   if(currentUser){ openAuthModal(); } else { openAuthModal(); }
 });
-document.getElementById('authCloseBtn').addEventListener('click', () => document.getElementById('authOverlay').classList.remove('open'));
+document.getElementById('authCloseBtn').addEventListener('click', () => {
+  document.getElementById('authOverlay').classList.remove('open');
+  popOverlayHistory('authOverlay');
+});
 document.getElementById('tabLogin').addEventListener('click', () => setAuthMode('login'));
 document.getElementById('tabSignup').addEventListener('click', () => setAuthMode('signup'));
 function setAuthMode(mode){
@@ -1489,21 +1632,34 @@ function setAuthMode(mode){
     document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
   }
   document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'Login' : mode==='signup' ? 'Sign up' : 'Reset Link ပို့မည်';
+  document.getElementById('authEmail').autocomplete = isReset ? 'email' : (mode === 'signup' ? 'email' : 'username');
+  document.getElementById('authPass').autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
   document.getElementById('authErr').classList.remove('show');
   document.getElementById('authOk').classList.remove('show');
 }
 document.getElementById('forgotPassBtn').addEventListener('click', () => setAuthMode('reset'));
 document.getElementById('backToLoginBtn').addEventListener('click', () => setAuthMode('login'));
+// The form wrapper around email/password exists mainly so the browser scopes
+// autofill correctly (previously, with no form element anywhere on the page,
+// some browsers' saved-login autofill could misfire onto an unrelated field
+// like the search box). The HTML's onsubmit="return false" blocks the native
+// page-reload submit; this just routes Enter-to-submit into the button's logic.
+document.getElementById('authForm').addEventListener('submit', e => {
+  e.preventDefault();
+  document.getElementById('authSubmitBtn').click();
+});
 document.getElementById('authSubmitBtn').addEventListener('click', async () => {
   const email = document.getElementById('authEmail').value.trim().toLowerCase();
   const pass = document.getElementById('authPass').value;
   const errEl = document.getElementById('authErr');
   const okEl = document.getElementById('authOk');
+  const btn = document.getElementById('authSubmitBtn');
   errEl.classList.remove('show');
   okEl.classList.remove('show');
 
   if(authMode === 'reset'){
     if(!email){ errEl.textContent = 'Email ဖြည့်ပါ'; errEl.classList.add('show'); return; }
+    setBtnLoading(btn, true);
     try{
       await auth.sendPasswordResetEmail(email);
       // Firebase itself does not reveal whether the email is registered (this is
@@ -1512,13 +1668,16 @@ document.getElementById('authSubmitBtn').addEventListener('click', async () => {
       okEl.textContent = 'Reset link ကို Email ကို ပို့ပြီးပါပြီ — Inbox (Spam folder အပါအဝင်) ကို စစ်ကြည့်ပါ။';
       okEl.classList.add('show');
     }catch(err){
-      errEl.textContent = err.code === 'auth/invalid-email' ? 'Email format မှားနေပါတယ်' : err.message;
+      errEl.textContent = friendlyAuthError(err);
       errEl.classList.add('show');
+    } finally {
+      setBtnLoading(btn, false);
     }
     return;
   }
 
   if(!email || !pass){ errEl.textContent = 'Email/Password ဖြည့်ပါ'; errEl.classList.add('show'); return; }
+  setBtnLoading(btn, true);
   try{
     if(authMode === 'login'){
       await auth.signInWithEmailAndPassword(email, pass);
@@ -1532,9 +1691,12 @@ document.getElementById('authSubmitBtn').addEventListener('click', async () => {
       }, { merge: true }).catch(() => {}); // best-effort — never block signup if this fails
     }
     document.getElementById('authOverlay').classList.remove('open');
+    popOverlayHistory('authOverlay');
   }catch(err){
-    errEl.textContent = err.message;
+    errEl.textContent = friendlyAuthError(err);
     errEl.classList.add('show');
+  } finally {
+    setBtnLoading(btn, false);
   }
 });
 
@@ -1572,11 +1734,14 @@ function showGoogleAuthError(err){
   const errEl = document.getElementById('authErr');
   errEl.textContent = err.code === 'auth/account-exists-with-different-credential'
     ? `${err.email || 'ဒီ email'} ဟာ Password နဲ့ Sign up ဝင်ထားပြီးသားပါ — Password နဲ့ Login ဝင်ပါ`
-    : err.message;
+    : friendlyAuthError(err);
   errEl.classList.add('show');
 }
 document.getElementById('authGoogleBtn').addEventListener('click', async () => {
-  document.getElementById('authErr').classList.remove('show');
+  const errEl = document.getElementById('authErr');
+  const btn = document.getElementById('authGoogleBtn');
+  errEl.classList.remove('show');
+  setBtnLoading(btn, true);
   // Popups get blocked/flaky on most mobile BROWSER tabs, so those still use a full-page
   // redirect. But an installed standalone PWA needs the opposite fix (see comment above)
   // — for that case we try popup first regardless of hover support, since redirect is the
@@ -1586,15 +1751,18 @@ document.getElementById('authGoogleBtn').addEventListener('click', async () => {
       const result = await auth.signInWithPopup(googleProvider);
       await ensureGoogleUserDoc(result.user, result.additionalUserInfo && result.additionalUserInfo.isNewUser);
       document.getElementById('authOverlay').classList.remove('open');
+      popOverlayHistory('authOverlay');
     }catch(err){
       if(err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment'){
         auth.signInWithRedirect(googleProvider).catch(showGoogleAuthError);
       } else {
         showGoogleAuthError(err);
       }
+    } finally {
+      setBtnLoading(btn, false);
     }
   } else {
-    auth.signInWithRedirect(googleProvider).catch(showGoogleAuthError);
+    auth.signInWithRedirect(googleProvider).catch(err => { showGoogleAuthError(err); setBtnLoading(btn, false); });
   }
 });
 // Picks up the result after a mobile signInWithRedirect() round-trip.
@@ -1672,13 +1840,18 @@ function openSettingsModal(){
     box.innerHTML = `<div class="row"><span>အခြေအနေ</span><b style="color:var(--ink-dim);">Premium မဟုတ်ပါ</b></div>`;
   }
   document.getElementById('settingsOverlay').classList.add('open');
+  pushOverlayHistory('settingsOverlay');
 }
-document.getElementById('settingsCloseBtn').addEventListener('click', () => document.getElementById('settingsOverlay').classList.remove('open'));
+document.getElementById('settingsCloseBtn').addEventListener('click', () => {
+  document.getElementById('settingsOverlay').classList.remove('open');
+  popOverlayHistory('settingsOverlay');
+});
 document.getElementById('settingsOverlay').addEventListener('click', e => {
-  if(e.target.id === 'settingsOverlay') e.currentTarget.classList.remove('open');
+  if(e.target.id === 'settingsOverlay'){ e.currentTarget.classList.remove('open'); popOverlayHistory('settingsOverlay'); }
 });
 document.getElementById('settingsBuyPremiumBtn').addEventListener('click', () => {
   document.getElementById('settingsOverlay').classList.remove('open');
+  popOverlayHistory('settingsOverlay');
   openPremiumGate(null);
 });
 
@@ -1805,11 +1978,19 @@ function openPremiumGate(movieId){
     document.getElementById('premiumStatePay').style.display = 'block';
   }
   document.getElementById('premiumOverlay').classList.add('open');
+  pushOverlayHistory('premiumOverlay');
 }
-document.getElementById('premiumCloseBtn').addEventListener('click', () => document.getElementById('premiumOverlay').classList.remove('open'));
-document.getElementById('premiumPendingCloseBtn').addEventListener('click', () => document.getElementById('premiumOverlay').classList.remove('open'));
+document.getElementById('premiumCloseBtn').addEventListener('click', () => {
+  document.getElementById('premiumOverlay').classList.remove('open');
+  popOverlayHistory('premiumOverlay');
+});
+document.getElementById('premiumPendingCloseBtn').addEventListener('click', () => {
+  document.getElementById('premiumOverlay').classList.remove('open');
+  popOverlayHistory('premiumOverlay');
+});
 document.getElementById('premiumGoLoginBtn').addEventListener('click', () => {
   document.getElementById('premiumOverlay').classList.remove('open');
+  popOverlayHistory('premiumOverlay');
   openAuthModal();
 });
 document.getElementById('premiumSubmitBtn').addEventListener('click', async () => {
@@ -1817,7 +1998,9 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
   const method = document.getElementById('fPayMethod').value;
   const plan = PREMIUM_PLANS.find(p => p.id === document.getElementById('fPremiumPlan').value) || PREMIUM_PLANS[0];
   const errEl = document.getElementById('premiumErr');
+  const btn = document.getElementById('premiumSubmitBtn');
   if(!txnId){ errEl.textContent = 'Transaction ID ဖြည့်ပါ'; errEl.classList.add('show'); return; }
+  setBtnLoading(btn, true);
   try{
     await db.collection('premiumRequests').add({
       uid: currentUser.uid, email: currentUser.email,
@@ -1826,9 +2009,12 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
       status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     document.getElementById('premiumOverlay').classList.remove('open');
+    popOverlayHistory('premiumOverlay');
     showToast('Premium request တင်သွင်းပြီးပါပြီ — admin မှ စစ်ဆေးနေပါမည်', 'ok');
   }catch(err){
     errEl.textContent = err.message; errEl.classList.add('show');
+  } finally {
+    setBtnLoading(btn, false);
   }
 });
 
@@ -1840,9 +2026,11 @@ document.getElementById('promoToggleBtn').addEventListener('click', () => {
 document.getElementById('promoRedeemBtn').addEventListener('click', async () => {
   const code = document.getElementById('fPromoRedeemCode').value.trim().toUpperCase();
   const errEl = document.getElementById('promoRedeemErr');
+  const btn = document.getElementById('promoRedeemBtn');
   errEl.classList.remove('show');
   if(!code){ errEl.textContent = 'Code ထည့်ပါ'; errEl.classList.add('show'); return; }
   if(!currentUser){ errEl.textContent = 'Login ဝင်ထားရပါမယ်'; errEl.classList.add('show'); return; }
+  setBtnLoading(btn, true);
   try{
     const codeRef = db.collection('inviteCodes').doc(code);
     const userRef = db.collection('users').doc(currentUser.uid);
@@ -1871,10 +2059,13 @@ document.getElementById('promoRedeemBtn').addEventListener('click', async () => 
       }
     });
     document.getElementById('premiumOverlay').classList.remove('open');
+    popOverlayHistory('premiumOverlay');
     showToast(`🎉 ${trialDays} ရက် Trial စတင်ပါပြီ! Premium content တွေကို ကြည့်လို့ရပါပြီ`, 'ok');
     if(pendingPlayId){ const id = pendingPlayId; pendingPlayId = null; openPlayer(id); }
   }catch(err){
     errEl.textContent = err.message; errEl.classList.add('show');
+  } finally {
+    setBtnLoading(btn, false);
   }
 });
 
@@ -1943,6 +2134,7 @@ function wireCards(container){
     });
   });
   wireHoverPreview(container);
+  wireRowArrows(container);
 }
 
 /* ---------- Hover preview (desktop only) ----------
@@ -1979,6 +2171,38 @@ function wireHoverPreview(container){
       clearTimeout(hoverTimer);
       if(previewVideo){ previewVideo.pause(); previewVideo.remove(); previewVideo = null; }
     });
+  });
+}
+
+/* ---------- Row carousel arrows (desktop/mouse only) ----------
+   Adds click-to-scroll ‹ › buttons to any .row-track found inside `container`
+   — only on hover-capable devices (same `supportsHoverPreview` check as
+   above), so touch/mobile keeps plain native swipe with zero extra buttons.
+   Arrows fade in on hover and hide themselves once a scroll end is reached. */
+function wireRowArrows(container){
+  if(!supportsHoverPreview) return;
+  container.querySelectorAll('.row-track').forEach(track => {
+    const row = track.closest('.row');
+    if(!row || row.querySelector('.row-arrow')) return; // no row wrapper, or already wired
+    if(track.scrollWidth <= track.clientWidth + 4) return; // nothing to scroll yet
+    const makeArrow = dir => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'row-arrow ' + (dir === -1 ? 'prev' : 'next');
+      btn.setAttribute('aria-label', dir === -1 ? 'ဘယ်ဘက်သို့ ရွှေ့မည်' : 'ညာဘက်သို့ ရွှေ့မည်');
+      btn.textContent = dir === -1 ? '‹' : '›';
+      btn.addEventListener('click', () => track.scrollBy({ left: dir * track.clientWidth * 0.85, behavior: 'smooth' }));
+      row.appendChild(btn);
+      return btn;
+    };
+    const prevBtn = makeArrow(-1);
+    const nextBtn = makeArrow(1);
+    const updateEdges = () => {
+      prevBtn.classList.toggle('at-edge', track.scrollLeft <= 4);
+      nextBtn.classList.toggle('at-edge', track.scrollLeft >= track.scrollWidth - track.clientWidth - 4);
+    };
+    track.addEventListener('scroll', updateEdges, { passive: true });
+    updateEdges();
   });
 }
 
@@ -2028,14 +2252,29 @@ function performSearch(query){
 }
 let searchDebounceTimer = null;
 function wireSearchInput(input){
+  // Tracks a *real* keystroke/paste/IME event, as opposed to a value that just
+  // "appears" in the field — the latter means the browser or a password manager
+  // filled it in on its own (this is what caused a saved email to show up in the
+  // search box and trigger a search with nobody having typed anything). Until one
+  // of these real-interaction events has fired, any 'input' event is treated as
+  // autofill and ignored instead of acted on.
+  let userTyped = false;
+  input.addEventListener('keydown', () => { userTyped = true; });
+  input.addEventListener('compositionstart', () => { userTyped = true; }); // IME (e.g. Myanmar keyboards)
+  input.addEventListener('paste', () => { userTyped = true; });
   input.addEventListener('keydown', e => { if(e.key === 'Enter'){ clearTimeout(searchDebounceTimer); performSearch(input.value); } });
   input.addEventListener('input', () => {
+    if(!userTyped){ input.value = ''; return; }
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(() => performSearch(input.value), 300); // debounced instant search
   });
 }
 wireSearchInput(document.getElementById('searchInput'));
 wireSearchInput(document.getElementById('searchInputMobile'));
+// Belt-and-suspenders: explicitly clear both fields on load too, in case a
+// value was auto-filled in before this script even ran.
+document.getElementById('searchInput').value = '';
+document.getElementById('searchInputMobile').value = '';
 function clearSearchInputs(){
   document.getElementById('searchInput').value = '';
   document.getElementById('searchInputMobile').value = '';
@@ -2091,6 +2330,8 @@ function getDramaSeries(){
 /* =========================================================
    8) RENDER
    ========================================================= */
+let lastFeaturedId = null; // tracks the hero's current pick so a live admin
+                            // update crossfades instead of swapping instantly
 function render(){
   const originals = movies.filter(m => m.category === 'original');
   const series = getDramaSeries();
@@ -2150,12 +2391,25 @@ function render(){
 
   const featured = movies.find(m => m.featured && m.category !== 'adult') || movies.find(m => m.category !== 'adult');
   if(featured){
-    document.getElementById('heroSection').style.backgroundImage =
-      featured.thumbUrl ? `linear-gradient(to top, var(--bg), transparent 40%), url('${featured.thumbUrl}')` : '';
-    document.getElementById('heroBadge').textContent = CATEGORY_LABEL[featured.category] || '';
-    document.getElementById('heroTitle').textContent = featured.title;
-    document.getElementById('heroDesc').textContent = featured.desc || '';
-    document.getElementById('heroPlayBtn').onclick = () => openPlayer(featured.id);
+    const heroEl = document.getElementById('heroSection');
+    const applyHero = () => {
+      heroEl.style.backgroundImage =
+        featured.thumbUrl ? `linear-gradient(to top, var(--bg), transparent 40%), url('${featured.thumbUrl}')` : '';
+      document.getElementById('heroBadge').textContent = CATEGORY_LABEL[featured.category] || '';
+      document.getElementById('heroTitle').textContent = featured.title;
+      document.getElementById('heroDesc').textContent = featured.desc || '';
+      document.getElementById('heroPlayBtn').onclick = () => openPlayer(featured.id);
+    };
+    if(lastFeaturedId !== null && lastFeaturedId !== featured.id){
+      // The featured pick changed under a returning viewer (e.g. admin updated
+      // it while the page was open) — fade out, swap, fade back in instead of
+      // an instant/jarring background-image swap.
+      heroEl.classList.add('hero-swap');
+      setTimeout(() => { applyHero(); heroEl.classList.remove('hero-swap'); }, 220);
+    } else {
+      applyHero();
+    }
+    lastFeaturedId = featured.id;
   }
 
   if(currentSeries) openSeries(currentSeries, true);
@@ -2221,6 +2475,14 @@ document.getElementById('seriesBackBtn').addEventListener('click', () => history
 /* Hardware/gesture "back" ကို modal/series view ပိတ်ဖို့ပဲ သုံးမယ် — history entry
    ကနေ pop ဖြစ်တာနဲ့ site တစ်ခုလုံးကနေ ထွက်မသွားဘဲ ပြီးခဲ့တဲ့ view ကိုပဲ ပြန်ပြပေးမယ် */
 window.addEventListener('popstate', () => {
+  if(overlayHistoryStack.length){
+    const id = overlayHistoryStack[overlayHistoryStack.length - 1];
+    closingOverlayViaPopstate = true;
+    const closer = OVERLAY_CLOSERS[id];
+    if(closer) closer(); else overlayHistoryStack.pop();
+    closingOverlayViaPopstate = false;
+    return;
+  }
   if(document.getElementById('modalOverlay').classList.contains('open')){
     closePlayer();
     return;
@@ -2562,13 +2824,13 @@ function attachProgressTracking(videoEl, m){
 document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') history.back(); });
 document.getElementById('modalBackBtn').addEventListener('click', () => history.back());
 document.getElementById('pinOverlay').addEventListener('click', e => {
-  if(e.target.id==='pinOverlay'){ e.currentTarget.classList.remove('open'); pendingUnlockCallback = null; }
+  if(e.target.id==='pinOverlay'){ e.currentTarget.classList.remove('open'); popOverlayHistory('pinOverlay'); pendingUnlockCallback = null; }
 });
 document.getElementById('authOverlay').addEventListener('click', e => {
-  if(e.target.id==='authOverlay') e.currentTarget.classList.remove('open');
+  if(e.target.id==='authOverlay'){ e.currentTarget.classList.remove('open'); popOverlayHistory('authOverlay'); }
 });
 document.getElementById('premiumOverlay').addEventListener('click', e => {
-  if(e.target.id==='premiumOverlay') e.currentTarget.classList.remove('open');
+  if(e.target.id==='premiumOverlay'){ e.currentTarget.classList.remove('open'); popOverlayHistory('premiumOverlay'); }
 });
 
 /* =========================================================
@@ -2830,434 +3092,3 @@ if('serviceWorker' in navigator){
 -->
 </body>
 </html>
-<!-- ============================================================
-     MAXFLIX UPGRADE LAYER v1 — UI Polish + New Features + Performance
-     (Browser moves any markup appearing after </html> back into <body>,
-      so this whole block loads exactly like normal inline code.)
-     ============================================================ -->
-<style>
-/* ---------- UI polish: row titles ---------- */
-.row-title{display:inline-block;padding-bottom:2px;}
-.row-title::after{content:'';display:block;width:42px;height:3px;border-radius:2px;
-  background:var(--accent-grad);margin-top:5px;transition:width .35s ease;}
-.row-head:hover .row-title::after{width:100%;}
-
-/* ---------- Card polish ---------- */
-.card:hover .card-title{color:var(--accent);}
-.card.is-premium{overflow:hidden;}
-.card.is-premium::after{content:'';position:absolute;inset:-40%;
-  background:conic-gradient(from 0deg,transparent 0 70%,rgba(212,166,42,.28) 78%,rgba(229,9,20,.30) 84%,transparent 92%);
-  animation:mfx-premium-spin 6s linear infinite;pointer-events:none;opacity:0;transition:opacity .3s;}
-.card.is-premium:hover::after{opacity:1;}
-@keyframes mfx-premium-spin{to{transform:rotate(1turn);}}
-
-/* ---------- NEW badge (auto: created within 7 days) ---------- */
-.mfx-badge-new{position:absolute;top:8px;left:8px;z-index:3;
-  background:linear-gradient(100deg,#00b09b,#96c93d);color:#04120b;
-  font-size:10px;font-weight:800;letter-spacing:.8px;padding:3px 8px;border-radius:3px;
-  animation:mfx-new-pulse 1.8s ease infinite;}
-@keyframes mfx-new-pulse{0%,100%{box-shadow:0 0 0 0 rgba(150,201,61,.55);}50%{box-shadow:0 0 0 6px rgba(150,201,61,0);}}
-.card-adult-badge{left:auto;right:8px;} /* NEW badge and 18+ badge never overlap */
-
-/* ---------- View / page transitions ---------- */
-.page.open{animation:mfx-view-in .28s ease;}
-#view-home .row{animation:mfx-view-in .28s ease;}
-@keyframes mfx-view-in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-
-/* ---------- Nicer horizontal scrollbars ---------- */
-.row-track{scrollbar-width:thin;scrollbar-color:var(--accent-dim) transparent;}
-.row-track::-webkit-scrollbar{height:6px;}
-.row-track::-webkit-scrollbar-thumb{background:var(--accent-dim);border-radius:3px;}
-.row-track::-webkit-scrollbar-track{background:transparent;}
-
-/* ---------- Toast icons ---------- */
-#toastWrap .toast{display:flex;align-items:center;gap:9px;}
-#toastWrap .toast::before{content:'ⓘ';font-size:14px;color:var(--accent);flex-shrink:0;}
-#toastWrap .toast.ok::before{content:'✓';color:#4fd371;}
-
-/* ---------- Buttons / modals polish ---------- */
-.btn-accent{background:var(--accent-grad);border-radius:6px;
-  transition:transform .15s,box-shadow .2s,filter .15s;}
-.btn-accent:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(229,9,20,.4);filter:brightness(1.06);}
-.btn-accent:active{transform:translateY(0) scale(.98);}
-.sm-box{box-shadow:0 24px 60px rgba(0,0,0,.5);}
-.support-stat-box{transition:transform .2s;}
-.support-stat-box:hover{transform:translateY(-3px);}
-.shop-card{position:relative;}
-.shop-card::after{content:'';position:absolute;inset:0;border-radius:8px;
-  box-shadow:inset 0 -42px 34px -26px rgba(0,0,0,.55);pointer-events:none;}
-
-/* ---------- Back-to-top button ---------- */
-.mfx-back-top{position:fixed;right:16px;bottom:calc(var(--tabbar-h, 0px) + 24px);z-index:80;
-  width:42px;height:42px;border-radius:50%;border:1px solid var(--line);
-  background:var(--bg-elev);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
-  color:var(--ink);font-size:17px;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;opacity:0;pointer-events:none;transform:translateY(12px);
-  transition:opacity .25s,transform .25s,border-color .15s;box-shadow:0 8px 22px rgba(0,0,0,.35);}
-.mfx-back-top.show{opacity:1;pointer-events:auto;transform:translateY(0);}
-.mfx-back-top:hover{border-color:var(--accent-dim);}
-.mfx-back-top svg{width:18px;height:18px;}
-
-/* ---------- Share button (player) ---------- */
-.rating-btn.mfx-share-btn.active{background:var(--gold);border-color:var(--gold);color:#111;}
-</style>
-
-<!-- ---------- Back-to-top button markup ---------- -->
-<button id="mfxBackTop" class="mfx-back-top" aria-label="အပေါ်သို့ ပြန်တင်မည်" title="အပေါ်သို့">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
-</button>
-
-<script>
-/* ============================================================
-   MAXFLIX UPGRADE JS v1 — all wrapped in an IIFE, no globals leaked.
-   Everything below re-uses the existing Firebase/live functions
-   (movies, render, openPlayer, openPremiumGate, showView, wireCards,
-   isPremiumActive, currentUser, currentUserDoc, showToast...) via
-   closure — nothing original is overwritten.
-   ============================================================ */
-(function(){
-  'use strict';
-
-  /* ---------- 1) NEW badge: auto-tag items created within 7 days ---------- */
-  const NEW_DAYS = 7;
-  function isNew(m){
-    try{
-      const ms = m.createdAtMs || (m.createdAt && m.createdAt.toMillis ? m.createdAt.toMillis() : 0);
-      return ms && (Date.now() - ms) < NEW_DAYS * 86400000;
-    }catch(e){ return false; }
-  }
-  // Decorate every card right after each render() call — render() is called
-  // by all the existing Firestore listeners, so this stays live forever.
-  const origRender = window.render;
-  window.render = function(){ origRender.apply(this, arguments); decorateCards(); };
-  function decorateCards(){
-    document.querySelectorAll('.card[data-id]').forEach(card => {
-      if(card.querySelector('.mfx-badge-new')) return;
-      const m = (window.movies || []).find(x => x.id === card.dataset.id);
-      if(m && isNew(m) && m.category !== 'adult'){
-        const b = document.createElement('div');
-        b.className = 'mfx-badge-new';
-        b.textContent = 'NEW';
-        card.querySelector('.card-thumb')?.insertAdjacentElement('afterend', b);
-      }
-    });
-  }
-
-  /* ---------- 2) Back-to-top button ---------- */
-  const backTop = document.getElementById('mfxBackTop');
-  window.addEventListener('scroll', () => {
-    backTop.classList.toggle('show', window.scrollY > 500);
-  }, { passive: true });
-  backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-
-  /* ---------- 3) Share button in the player (Telegram / Viber / Copy link) ---------- */
-  const shareHost = 'https://maxflixstreaming.com/';
-  const SHARE_TEXT = 'Maxflix Streaming မှာ ဒီ ဇာတ်ကားကို ကြည့်ရှုလို့ရပါတယ် 🎬';
-  function shareSheet(m){
-    const url = shareHost;
-    navigator.clipboard?.writeText(SHARE_TEXT + ' ' + url).then(() => {
-      showToast('Link copy လုပ်ပြီးပါပြီ — မိတ်ဆွေတွေကို မျှဝေနိုင်ပါတယ်', 'ok');
-    }).catch(() => {
-      const ta = document.createElement('textarea');
-      ta.value = SHARE_TEXT + ' ' + url;
-      document.body.appendChild(ta); ta.select();
-      try{ document.execCommand('copy'); showToast('Link copy လုပ်ပြီးပါပြီ', 'ok'); }
-      catch(e){ showToast('Copy လုပ်၍ မရပါ'); }
-      ta.remove();
-    });
-    if(navigator.share){
-      navigator.share({ title: m ? m.title : 'Maxflix Streaming', text: SHARE_TEXT, url }).catch(() => {});
-    }
-  }
-  // Inject share button into the player modal rating row whenever it opens.
-  // We hook openPlayer (the original gate logic — premium/18+ — still runs first).
-  const origOpenPlayer = window.openPlayer;
-  window.openPlayer = function(id){
-    origOpenPlayer.apply(this, arguments);
-    addShareButton(id);
-  };
-  function addShareButton(id){
-    const row = document.getElementById('modalRatingRow');
-    if(!row || row.querySelector('.mfx-share-btn')) return;
-    const m = (window.movies || []).find(x => x.id === id);
-    const btn = document.createElement('button');
-    btn.className = 'rating-btn mfx-share-btn';
-    btn.innerHTML = '📤 မျှဝေမည်';
-    btn.addEventListener('click', () => shareSheet(m));
-    row.appendChild(btn);
-  }
-
-  /* ---------- 4) Double-tap like (mobile) ---------- */
-  let lastTap = 0, lastCard = null;
-  document.body.addEventListener('touchend', e => {
-    const card = e.target.closest?.('.card[data-id]');
-    if(!card) return;
-    if(e.target.closest('.card-bookmark')) return;
-    const now = Date.now();
-    if(now - lastTap < 320 && lastCard === card){
-      const id = card.dataset.id;
-      if(id && window.setRating && typeof setRating === 'function'){}
-      const setRatingFn = window.setRating;
-      if(typeof setRatingFn === 'function'){
-        setRatingFn(id, 'like');
-        heartBurst(card, e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-      }
-      lastTap = 0; lastCard = null; return;
-    }
-    lastTap = now; lastCard = card;
-  }, { passive: true });
-  function heartBurst(card, x, y){
-    const h = document.createElement('div');
-    h.textContent = '❤️';
-    h.style.cssText = `position:fixed;left:${x - 14}px;top:${y - 14}px;z-index:999;
-      font-size:28px;pointer-events:none;transition:transform .5s ease,opacity .5s ease;`;
-    document.body.appendChild(h);
-    requestAnimationFrame(() => {
-      h.style.transform = 'translateY(-46px) scale(1.5)';
-      h.style.opacity = '0';
-    });
-    setTimeout(() => h.remove(), 600);
-  }
-
-  /* ---------- 5) Search: recent searches (chips) ---------- */
-  const SEARCH_HISTORY_KEY = 'maxflixSearchHistory_v1';
-  function getSearchHistory(){
-    try{ return JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]'); }catch(e){ return []; }
-  }
-  function saveSearchTerm(t){
-    if(!t) return;
-    let h = getSearchHistory().filter(x => x.toLowerCase() !== t.toLowerCase());
-    h.unshift(t); h = h.slice(0, 8);
-    try{ localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(h)); }catch(e){}
-  }
-  function buildSearchChips(){
-    const wrap = document.getElementById('view-search');
-    if(!wrap || wrap.querySelector('.mfx-search-chips')) return;
-    const sub = wrap.querySelector('.page-sub');
-    const chips = document.createElement('div');
-    chips.className = 'mfx-search-chips';
-    chips.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:-10px 0 18px;';
-    sub.parentNode.insertBefore(chips, sub.nextSibling);
-    paintSearchChips();
-  }
-  function paintSearchChips(){
-    const chips = document.querySelector('.mfx-search-chips');
-    if(!chips) return;
-    const h = getSearchHistory();
-    chips.innerHTML = h.length
-      ? h.map(t => `<button class="rating-btn mfx-chip" style="font-size:12px;padding:5px 12px;"
-            data-term="${String(t).replace(/"/g,'&quot;')}">${String(t).replace(/</g,'&lt;')}</button>`).join('')
-        + `<button class="rating-btn mfx-chip-clear" style="font-size:12px;padding:5px 12px;color:var(--ink-faint);">✕ Clear</button>`
-      : '';
-    chips.querySelectorAll('.mfx-chip').forEach(b => b.addEventListener('click', () => {
-      document.getElementById('searchInput').value = b.dataset.term;
-      window.performSearch(b.dataset.term);
-    }));
-    chips.querySelector('.mfx-chip-clear')?.addEventListener('click', () => {
-      try{ localStorage.removeItem(SEARCH_HISTORY_KEY); }catch(e){}
-      paintSearchChips();
-    });
-  }
-  const origPerformSearch = window.performSearch;
-  window.performSearch = function(q){
-    origPerformSearch.apply(this, arguments);
-    saveSearchTerm(typeof q === 'string' ? q.trim() : '');
-    buildSearchChips();
-    paintSearchChips();
-  };
-
-  /* ---------- 6) Profile page (watch history + account info) ---------- */
-  const PSTATS_KEY = 'mfxStats_v1';
-  function loadStats(){ try{ return JSON.parse(localStorage.getItem(PSTATS_KEY) || '{}'); }catch(e){ return {}; } }
-  function saveStats(s){ try{ localStorage.setItem(PSTATS_KEY, JSON.stringify(s)); }catch(e){} }
-
-  const PROFILE_HTML = `
-  <div id="view-profile" class="page" style="display:none;">
-    <div class="page-title">Profile</div>
-    <div class="page-sub" id="mfxProfileSub"></div>
-    <div class="support-stats-row">
-      <div class="support-stat-box">
-        <div class="n" id="mfxStatWatched">0</div>
-        <div class="l">ကြည့်ပြီး (ဇာတ်ကား)</div>
-      </div>
-      <div class="support-stat-box premium">
-        <div class="n" id="mfxStatMin">0</div>
-        <div class="l">ကြည့်ရှုချိန် (မိနစ်)</div>
-      </div>
-    </div>
-    <div class="legal-accordion" style="margin-top:20px;">
-      <details>
-        <summary>🕘 ကြည့်ရှုမှု မှတ်တမ်း (Watch History)</summary>
-        <div class="legal-body">
-          <p id="mfxHistoryList" style="color:var(--ink-dim);font-size:13px;">မရှိသေးပါ</p>
-        </div>
-      </details>
-    </div>
-  </div>`;
-  document.querySelector('footer').insertAdjacentHTML('beforebegin', PROFILE_HTML);
-
-  function updateProfileStats(){
-    const s = loadStats();
-    const watchedEl = document.getElementById('mfxStatWatched');
-    const minEl = document.getElementById('mfxStatMin');
-    const histEl = document.getElementById('mfxHistoryList');
-    if(!watchedEl) return;
-    watchedEl.textContent = formatViewCount(s.watchedCount || 0);
-    minEl.textContent = formatViewCount(Math.round((s.watchedMs || 0) / 60000));
-    const hist = (s.history || []).slice(0, 12);
-    histEl.innerHTML = hist.length
-      ? hist.map((h, i) => `<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;
-          border-bottom:1px solid var(--line);font-size:12.5px;">
-          <span style="color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${String(h.title).replace(/</g,'&lt;')}</span>
-          <span style="color:var(--ink-faint);flex-shrink:0;">${escDate(h.at)}</span>
-        </div>`).join('')
-        + `<button class="link-btn" id="mfxClearHistory" style="margin-top:10px;">🧹 မှတ်တမ်း ရှင်းလင်းမည်</button>`
-      : 'မရှိသေးပါ';
-    document.getElementById('mfxClearHistory')?.addEventListener('click', () => {
-      const st = loadStats(); st.history = []; saveStats(st);
-      updateProfileStats(); showToast('Watch history ရှင်းလင်းပြီးပါပြီ', 'ok');
-    });
-    const sub = document.getElementById('mfxProfileSub');
-    if(sub){
-      if(currentUser){ sub.textContent = (currentUser.email || '') + (isPremiumActive() ? ' • ⭐ Premium Active' : ' • Free member'); }
-      else { sub.textContent = 'Login ဝင်ထားခြင်း မရှိပါ'; }
-    }
-  }
-  function escDate(ms){ try{ return new Date(ms).toLocaleDateString('en-GB'); }catch(e){ return ''; } }
-
-  /* Track watch time + history: hook openPlayer (after gates pass). */
-  window.openPlayer = (function(prev){
-    return function(id){
-      prev.apply(this, arguments);
-      trackWatch(id);
-    };
-  })(window.openPlayer);
-  function trackWatch(id){
-    const m = (window.movies || []).find(x => x.id === id);
-    if(!m || m.category === 'adult') return;
-    const s = loadStats();
-    s.watchedCount = (s.watchedCount || 0) + 1;
-    s.history = (s.history || []).filter(h => h.title !== m.title).slice(0, 23);
-    s.history.unshift({ title: m.title, at: Date.now() });
-    saveStats(s);
-  }
-  // Watch-time (ms) tracking: poll the player's <video> every 5s while open.
-  let watchTick = setInterval(() => {
-    const v = document.querySelector('#modalVideoWrap video');
-    if(v && !v.paused && !v.ended){
-      const s = loadStats();
-      s.watchedMs = (s.watchedMs || 0) + 5000;
-      saveStats(s);
-    }
-  }, 5000);
-
-  /* Profile nav entry: add tab to account dropdown + mobile menu + desktop nav. */
-  function addProfileNav(){
-    // account dropdown (logged in)
-    const dd = document.getElementById('accountDropdown');
-    if(dd && !dd.querySelector('[data-view="profile"]')){
-      const b = document.createElement('button');
-      b.className = 'account-dropdown-item';
-      b.dataset.view = 'profile';
-      b.innerHTML = '👤 Profile';
-      b.addEventListener('click', () => { dd.classList.remove('open'); openProfile(); });
-      dd.insertBefore(b, dd.firstChild);
-    }
-    // mobile bottom menu
-    const menu = document.getElementById('mobileMenu');
-    if(menu && !menu.querySelector('[data-view="profile"]')){
-      const b = document.createElement('button');
-      b.className = 'nav-tab';
-      b.dataset.view = 'profile';
-      b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4  rebase placeholder"/><circle cx="12" cy="7" r="4"/></svg> <span>Profile</span>`;
-      b.addEventListener('click', () => { openProfile(); });
-      menu.insertBefore(b, menu.lastElementChild);
-    }
-    // desktop nav (once)
-    const nav = document.querySelector('.site-nav');
-    if(nav && !nav.querySelector('[data-view="profile"]')){
-      const b = document.createElement('button');
-      b.className = 'nav-tab';
-      b.dataset.view = 'profile';
-      b.innerHTML = '<span class="nav-tab-icon">👤</span>Profile';
-      b.addEventListener('click', () => openProfile());
-      const supportBtn = nav.querySelector('[data-view="support"]');
-      supportBtn ? supportBtn.parentNode.insertBefore(b, supportBtn) : nav.appendChild(b);
-    }
-  }
-  const origRenderAccount = window.renderAccountArea;
-  window.renderAccountArea = function(){
-    origRenderAccount.apply(this, arguments);
-    addProfileNav();
-  };
-  function openProfile(){
-    updateProfileStats();
-    showView('profile');
-    document.getElementById('view-profile').classList.add('open');
-  }
-  // showView only toggles .open on known page divs; view-profile is created
-  // after the original wiring, so handle it manually here.
-  const origShowView = window.showView;
-  window.showView = function(view){
-    origShowView.apply(this, arguments);
-    const p = document.getElementById('view-profile');
-    if(p){
-      const isProfile = view === 'profile';
-      p.classList.toggle('open', isProfile);
-      p.style.display = isProfile ? '' : 'none';
-    }
-    if(isProfile) updateProfileStats();
-  };
-
-  /* ---------- 7) Keyboard shortcuts ---------- */
-  document.addEventListener('keydown', e => {
-    if(e.target.matches('input, textarea, select')) return;
-    if(document.querySelector('.sm-overlay.open, .modal-overlay.open')) return;
-    if(e.key === '/'){ e.preventDefault(); (document.getElementById('searchBox').offsetParent ? document.getElementById('searchInput') : document.getElementById('searchInputMobile')).focus(); }
-    if(e.key === 'Escape'){ closeMobileMenu(); }
-  });
-
-  /* ---------- 8) Premium expiry warning toast ---------- */
-  function checkPremiumExpiry(){
-    if(!currentUserDoc || !currentUserDoc.isPremium || !currentUserDoc.premiumExpiresAt) return;
-    let ms = 0;
-    try{ ms = currentUserDoc.premiumExpiresAt.toMillis ? currentUserDoc.premiumExpiresAt.toMillis() : currentUserDoc.premiumExpiresAt; }catch(e){}
-    const daysLeft = Math.ceil((ms - Date.now()) / 86400000);
-    const WARN_KEY = 'mfxPremWarn_' + Math.floor(ms / 86400000);
-    if(daysLeft > 0 && daysLeft <= 3){
-      try{ if(!localStorage.getItem(WARN_KEY)){ showToast(`⭐ Premium သက်တမ်း ${daysLeft} ရက်သာ ကျန်တော့ပါပြီ — အသစ် ဝယ်ယူထားပါ`, 'ok'); localStorage.setItem(WARN_KEY, '1'); } }catch(e){}
-    }
-  }
-  setInterval(checkPremiumExpiry, 60 * 60 * 1000);
-  // Run once shortly after page load, once auth data is likely ready.
-  setTimeout(checkPremiumExpiry, 4000);
-
-  /* ---------- 9) PWA offline toast ---------- */
-  window.addEventListener('offline', () => showToast('📡 Internet connection ပြတ်နေပါသည် — အချို့ content များ မမြင်ရနိုင်ပါ'));
-  window.addEventListener('online', () => showToast('📡 Internet ပြန်လည် ချိတ်ဆက်ပြီးပါပြီ', 'ok'));
-
-  /* ---------- 10) Performance: image decoding + preconnect ---------- */
-  // Hint browsers to preconnect to common thumbnail/video hosts (helps first paint).
-  ['https://fonts.gstatic.com', 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'].forEach(h => {
-    if(document.querySelector(`link[href="${h}"]`)) return;
-    const l = document.createElement('link');
-    l.rel = 'preconnect'; l.href = h; l.crossOrigin = '';
-    document.head.appendChild(l);
-  });
-  // All card images decode off the main thread once they're in the DOM.
-  new MutationObserver(() => {
-    document.querySelectorAll('img.card-thumb:not([decoding])').forEach(img => {
-      img.setAttribute('decoding', 'async');
-    });
-  }).observe(document.body, { childList: true, subtree: true });
-
-  /* ---------- 11) Auto re-try Firestore listener init if offline at load ---------- */
-  window.addEventListener('online', () => {
-    // Re-render from cache; the original live listeners auto-resume on reconnect.
-    try{ if(typeof render === 'function' && (window.movies || []).length) render(); }catch(e){}
-  });
-
-  decorateCards(); // initial pass (in case data arrived before this script ran)
-  buildSearchChips();
-})();
-</script>
