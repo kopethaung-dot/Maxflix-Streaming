@@ -3,6 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+  // Applied to <html> (not <body>, which doesn't exist yet at this point in
+  // parsing) as early as possible, before any CSS renders, so a saved "light"
+  // preference doesn't flash dark-then-light on every load. See the
+  // Dark/Light theme toggle section near the bottom of the page for the
+  // rest of this logic (applyTheme(), the toggle button).
+  try{
+    if(localStorage.getItem('maxflixTheme') === 'light') document.documentElement.dataset.theme = 'light';
+  }catch(e){}
+</script>
 <title>Maxflix Streaming — ဇာတ်ကားနှင့် Short Drama များကို အွန်လိုင်းတွင် ကြည့်ရှုပါ</title>
 <meta name="description" content="Maxflix Streaming တွင် ဇာတ်ကား၊ Short Drama နှင့် ဇာတ်လမ်းအမျိုးမျိုးကို အွန်လိုင်းတွင် အခမဲ့နှင့် Premium အနေဖြင့် ကြည့်ရှုနိုင်ပါသည်။">
 <meta name="keywords" content="maxflix, movie, drama, myanmar drama, online streaming, short drama, ဇာတ်ကား, ဇာတ်လမ်း">
@@ -52,11 +62,12 @@
     --header-grad-1:rgba(16,11,12,.75); --header-grad-2:rgba(16,11,12,.55);
   }
   /* ---------- Light theme override ----------
-     Toggled via body[data-theme="light"] (see themeToggleBtn JS). Since
+     Toggled via html[data-theme="light"] (see the early script in <head>,
+     and the Dark/Light theme toggle JS near the bottom of the page). Since
      nearly every surface in this file already reads its color from a
      CSS variable, redefining them here re-themes the whole site without
      needing per-selector overrides. */
-  body[data-theme="light"]{
+  html[data-theme="light"]{
     --bg:#FFF3F1;
     --bg-elev:rgba(255,255,255,.68); --bg-card:rgba(255,255,255,.60);
     --ink:#241417; --ink-dim:#6E5B5D; --ink-faint:#8F7B7D;
@@ -143,15 +154,29 @@
   .theme-toggle-btn:hover{background:rgba(255,255,255,.08);color:var(--ink);}
   .theme-toggle-btn svg{width:18px;height:18px;}
   .theme-toggle-btn .icon-sun{display:none;}
-  body[data-theme="light"] .theme-toggle-btn .icon-moon{display:none;}
-  body[data-theme="light"] .theme-toggle-btn .icon-sun{display:block;}
-  body[data-theme="light"] .theme-toggle-btn:hover{background:rgba(0,0,0,.06);}
+  html[data-theme="light"] .theme-toggle-btn .icon-moon{display:none;}
+  html[data-theme="light"] .theme-toggle-btn .icon-sun{display:block;}
+  html[data-theme="light"] .theme-toggle-btn:hover{background:rgba(0,0,0,.06);}
   .account-btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;background:var(--accent-grad);color:#fff;white-space:nowrap;flex-shrink:0;}
   .account-menu-wrap{position:relative;min-width:0;}
   .account-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim);cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:20px;min-width:0;max-width:100%;}
   .account-chip:hover{border-color:var(--accent-dim);}
   .account-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:150px;}
   .premium-pill{font-size:10px;font-weight:700;letter-spacing:.5px;color:#0a0a0d;background:var(--gold);padding:2px 8px;border-radius:10px;}
+
+  /* ---------- Profile avatar ----------
+     A small circular avatar next to the account email: the user's Google
+     photo when signed in with Google, a chosen preset icon (picked in
+     Settings), or — with neither — a colored initial-letter circle. */
+  .avatar-circle{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;
+    color:#fff;font-weight:700;flex:0 0 auto;line-height:1;user-select:none;overflow:hidden;}
+  .avatar-settings-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
+  .avatar-picker-grid{display:flex;flex-wrap:wrap;gap:8px;flex:1;min-width:0;}
+  .avatar-pick-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;font-size:18px;padding:0;background:var(--bg-card);
+    box-shadow:0 0 0 1px var(--line);transition:transform .15s ease,box-shadow .15s ease;}
+  .avatar-pick-btn:hover{transform:scale(1.08);}
+  .avatar-pick-btn.selected{box-shadow:0 0 0 2px var(--bg-elev),0 0 0 4px var(--accent);}
   .account-dropdown{position:absolute;top:calc(100% + 8px);right:0;z-index:56;min-width:170px;
     background:var(--bg-elev);border:1px solid var(--line);border-radius:10px;padding:6px;
     box-shadow:0 12px 28px rgba(0,0,0,.45);display:none;flex-direction:column;gap:2px;}
@@ -229,6 +254,19 @@
     cursor:pointer;padding:2px 6px;opacity:.7;}
   .vpn-notice .close-btn:hover{opacity:1;}
   @media(max-width:700px){ .vpn-notice{padding:8px 14px;font-size:12.5px;} }
+
+  /* ---------- Offline / connection-lost banner ----------
+     Fixed so it stays visible on any view (and above modals, below toasts),
+     toggled purely by JS listening to the browser's online/offline events —
+     see near the end of the script. Without this, a dropped connection just
+     looks like the app silently stopped working. */
+  .connection-banner{position:fixed;top:0;left:0;right:0;z-index:150;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    padding:10px 16px;font-size:13px;font-weight:600;text-align:center;
+    background:var(--danger);color:#fff;
+    transform:translateY(-100%);transition:transform .3s ease;
+    padding-top:calc(10px + env(safe-area-inset-top, 0px));}
+  .connection-banner.show{transform:translateY(0);}
 
   /* ---------- Continue Watching (top strip) ---------- */
   .row-continue-top{padding:14px clamp(16px,4vw,56px) 4px;}
@@ -431,6 +469,12 @@
   .card-bookmark:hover{background:rgba(0,0,0,.8);transform:scale(1.08);}
   .card-bookmark.active{background:var(--accent);border-color:var(--accent);}
   @media(max-width:520px){ .card-bookmark{bottom:44px;width:24px;height:24px;font-size:11px;} }
+  /* Always visible (not hover-reveal) so it's reachable on touch, not just mouse */
+  .card-remove-btn{position:absolute;top:8px;right:8px;z-index:3;width:24px;height:24px;border-radius:50%;
+    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,transform .15s;}
+  .card-remove-btn:hover{background:var(--accent);transform:scale(1.08);}
+  .card-remove-btn:active{transform:scale(.94);}
   .card-hover-preview{position:absolute;top:0;left:0;right:0;bottom:52px;width:100%;height:auto;object-fit:cover;z-index:2;
     background:#000;pointer-events:none;}
   @media(max-width:520px){ .card-hover-preview{bottom:44px;} }
@@ -663,6 +707,7 @@
 </style>
 </head>
 <body style="position:relative;">
+<div class="connection-banner" id="connectionBanner" role="status" aria-live="polite">📡 Internet connection ပြတ်တောက်နေပါတယ် — ပြန်ချိတ်ဆက်ပေးနေပါသည်...</div>
 
 <div id="splashScreen" class="splash-screen">
   <div class="splash-inner">
@@ -1168,6 +1213,12 @@
     <div class="field"><label>Email</label>
       <input type="text" id="settingsEmail" disabled>
     </div>
+    <div class="field"><label>Avatar</label>
+      <div class="avatar-settings-row">
+        <div class="avatar-circle" id="settingsAvatarPreview" style="width:56px;height:56px;font-size:28px;"></div>
+        <div class="avatar-picker-grid" id="avatarPickerGrid"></div>
+      </div>
+    </div>
     <div class="field"><label>Premium အခြေအနေ</label>
       <div class="pay-info" id="settingsPremiumBox"></div>
     </div>
@@ -1438,19 +1489,17 @@ document.addEventListener('keydown', e => {
   else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
 });
 
-/* ---------- Dark / Light theme toggle ---------- */
+/* ---------- Dark / Light theme toggle ----------
+   The initial theme is already applied by the early inline script in <head>
+   (before body/CSS render, to avoid a flash) — this just handles toggling it
+   afterwards, so there's no need to re-read localStorage and re-apply here. */
 function applyTheme(theme){
-  document.body.dataset.theme = theme;
+  document.documentElement.dataset.theme = theme;
   try{ localStorage.setItem('maxflixTheme', theme); }catch(e){}
 }
-(function initTheme(){
-  let saved = null;
-  try{ saved = localStorage.getItem('maxflixTheme'); }catch(e){}
-  applyTheme(saved === 'light' ? 'light' : 'dark');
-})();
 document.getElementById('themeToggleBtn').addEventListener('click', (e) => {
   playNavPop(e.currentTarget);
-  applyTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light');
+  applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
 });
 
 /* ---------- Support page: Telegram deep-link (tg:// app first, t.me fallback) ---------- */
@@ -1782,6 +1831,72 @@ db.collection('stats').doc('counts').onSnapshot(doc => {
   row.style.display = 'flex';
 }, () => {}); // if rules aren't published yet, just keep the box hidden instead of erroring
 
+/* ---------- Profile avatar ----------
+   Preference order: a preset the user picked in Settings > their Google
+   sign-in photo > a colored circle with their email's first letter. The
+   picked preset is stored on users/{uid}.avatarIcon, which the live
+   onSnapshot listener above already refreshes renderAccountArea() for, so
+   selecting one updates the UI immediately with no extra wiring. */
+const AVATAR_PRESETS = [
+  { id: 'red',    emoji: '🎬', color: '#E50914', label: 'Cinema (အနီရောင်)' },
+  { id: 'gold',   emoji: '🍿', color: '#C89B2C', label: 'Popcorn (ရွှေရောင်)' },
+  { id: 'blue',   emoji: '👾', color: '#2563EB', label: 'Gamer (အပြာရောင်)' },
+  { id: 'green',  emoji: '🐸', color: '#16A34A', label: 'Frog (အစိမ်းရောင်)' },
+  { id: 'purple', emoji: '🎭', color: '#7C3AED', label: 'Drama (ခရမ်းရောင်)' },
+  { id: 'orange', emoji: '🦊', color: '#EA580C', label: 'Fox (လိမ္မော်ရောင်)' },
+  { id: 'pink',   emoji: '🐙', color: '#DB2777', label: 'Octopus (ပန်းရောင်)' },
+  { id: 'teal',   emoji: '🦖', color: '#0D9488', label: 'Dino (ရေညိုရောင်)' }
+];
+function getAvatarPreset(id){ return AVATAR_PRESETS.find(p => p.id === id); }
+// Deterministic color from a string so two users with no chosen avatar still
+// get visually distinct initial-letter circles instead of all matching.
+function colorFromString(str){
+  let hash = 0;
+  for(let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return `hsl(${Math.abs(hash) % 360}, 60%, 40%)`;
+}
+function avatarHtml(size){
+  size = size || 30;
+  const style = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.52)}px;`;
+  const preset = currentUserDoc && currentUserDoc.avatarIcon ? getAvatarPreset(currentUserDoc.avatarIcon) : null;
+  if(preset) return `<span class="avatar-circle" style="${style}background:${preset.color};">${preset.emoji}</span>`;
+  if(currentUser && currentUser.photoURL){
+    const letter = currentUser.email ? esc(currentUser.email.charAt(0).toUpperCase()) : '?';
+    const bg = colorFromString(currentUser.email || currentUser.uid);
+    // If the Google photo URL fails to load, fall back to the same initial-letter
+    // circle used when there's no photo at all, instead of a broken-image icon.
+    return `<img class="avatar-circle" style="${style}object-fit:cover;" src="${esc(currentUser.photoURL)}" alt=""
+      referrerpolicy="no-referrer" data-fallback-letter="${letter}" data-fallback-bg="${bg}" onerror="avatarImgFallback(this)">`;
+  }
+  const letter = currentUser && currentUser.email ? currentUser.email.charAt(0).toUpperCase() : '?';
+  const bg = currentUser ? colorFromString(currentUser.email || currentUser.uid) : '#555';
+  return `<span class="avatar-circle" style="${style}background:${bg};">${esc(letter)}</span>`;
+}
+function avatarImgFallback(img){
+  const span = document.createElement('span');
+  span.className = 'avatar-circle';
+  span.style.cssText = img.style.cssText.replace('object-fit:cover;', '');
+  span.style.background = img.dataset.fallbackBg;
+  span.textContent = img.dataset.fallbackLetter;
+  img.replaceWith(span);
+}
+function renderAvatarPicker(){
+  const grid = document.getElementById('avatarPickerGrid');
+  const selectedId = currentUserDoc && currentUserDoc.avatarIcon;
+  const resetBtn = `<button type="button" class="avatar-pick-btn${!selectedId ? ' selected' : ''}" data-avatar-id="" title="မူလ Avatar အသုံးပြုရန်">↺</button>`;
+  grid.innerHTML = resetBtn + AVATAR_PRESETS.map(p =>
+    `<button type="button" class="avatar-pick-btn${selectedId === p.id ? ' selected' : ''}" data-avatar-id="${p.id}" style="background:${p.color};" title="${esc(p.label)}">${p.emoji}</button>`
+  ).join('');
+}
+document.getElementById('avatarPickerGrid').addEventListener('click', e => {
+  const btn = e.target.closest('.avatar-pick-btn');
+  if(!btn || !currentUser) return;
+  const id = btn.dataset.avatarId;
+  const value = id ? id : firebase.firestore.FieldValue.delete();
+  db.collection('users').doc(currentUser.uid).set({ avatarIcon: value }, { merge: true })
+    .catch(err => showToast(err.message, 'err'));
+});
+
 function renderAccountArea(){
   const area = document.getElementById('accountArea');
   if(currentUser){
@@ -1789,6 +1904,7 @@ function renderAccountArea(){
     area.innerHTML = `
       <div class="account-menu-wrap" id="accountMenuWrap">
         <div class="account-chip" id="accountChip">
+          ${avatarHtml(26)}
           <span class="account-email">${esc(currentUser.email)}</span>
           ${isPrem ? '<span class="premium-pill">PREMIUM</span>' : ''}
         </div>
@@ -1823,9 +1939,16 @@ document.addEventListener('click', (e) => {
 });
 
 /* ---------- Settings modal ---------- */
+function refreshSettingsAvatarUI(){
+  const preview = document.getElementById('settingsAvatarPreview');
+  if(!preview) return;
+  preview.outerHTML = avatarHtml(56).replace('class="avatar-circle"', 'id="settingsAvatarPreview" class="avatar-circle"');
+  renderAvatarPicker();
+}
 function openSettingsModal(){
   if(!currentUser){ openAuthModal(); return; }
   document.getElementById('settingsEmail').value = currentUser.email;
+  refreshSettingsAvatarUI();
   const box = document.getElementById('settingsPremiumBox');
   const isPrem = isPremiumActive();
   if(isPrem){
@@ -1924,6 +2047,7 @@ auth.onAuthStateChanged(user => {
     userDocUnsub = db.collection('users').doc(user.uid).onSnapshot(doc => {
       currentUserDoc = doc.exists ? doc.data() : null;
       renderAccountArea();
+      if(document.getElementById('settingsOverlay').classList.contains('open')) refreshSettingsAvatarUI();
       render();
     });
     pendingReqUnsub = db.collection('premiumRequests')
@@ -2080,7 +2204,7 @@ function movieCardHtml(m){
   const ratioStyle = m.category === 'adult' ? ' style="aspect-ratio:16/9;"' : (m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '');
   const inList = myList.includes(m.id);
   return `<div class="card${m.isPremium ? ' is-premium' : ''}" data-type="movie" data-id="${m.id}">
-    <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" alt="${esc(m.title)}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <button class="card-bookmark${inList ? ' active' : ''}" data-id="${m.id}" aria-label="My List" title="My List">${inList ? '🔖' : '🏷️'}</button>
     ${m.category === 'adult' ? `<div class="card-adult-badge">18+</div>` : ''}
     ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
@@ -2094,7 +2218,7 @@ function seriesCardHtml(s){
   const thumb = s.thumb ? esc(s.thumb) : PLACEHOLDER_THUMB;
   const ratioStyle = s.thumbAspectRatio ? ` style="aspect-ratio:${esc(s.thumbAspectRatio)};"` : '';
   return `<div class="card${s.hasPremium ? ' is-premium' : ''}" data-type="series" data-name="${esc(s.name)}">
-    <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" alt="${esc(s.name)}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <div class="card-badge">${s.count} Ep</div>
     ${s.hasPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
     <div class="card-body">
@@ -2107,7 +2231,8 @@ function continueCardHtml(m, c){
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
   const ratioStyle = m.category === 'adult' ? ' style="aspect-ratio:16/9;"' : (m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '');
   return `<div class="card" data-type="movie" data-id="${m.id}">
-    <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" alt="${esc(m.title)}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <button class="card-remove-btn" data-id="${m.id}" aria-label="ဆက်ကြည့်ရန်မှ ဖယ်ရှားမည်" title="ဆက်ကြည့်ရန်မှ ဖယ်ရှားမည်">✕</button>
     <div class="continue-bar"><div class="continue-bar-fill" style="width:${pct}%;"></div></div>
     <div class="card-body">
       <div class="card-title">${esc(m.title)}</div>
@@ -2121,6 +2246,13 @@ function wireCards(container){
     btn.addEventListener('click', e => {
       e.stopPropagation();
       toggleMyList(btn.dataset.id);
+    });
+  });
+  container.querySelectorAll('.card-remove-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if(!currentUser) return;
+      db.collection('users').doc(currentUser.uid).collection('continueWatching').doc(btn.dataset.id).delete().catch(() => {});
     });
   });
   // Keyboard/screen-reader access — cards are clickable <div>s, so Tab + Enter/Space
@@ -2224,8 +2356,19 @@ document.getElementById('searchGenreSelect').addEventListener('change', e => {
   performSearch(document.getElementById('searchInput').value || document.getElementById('searchInputMobile').value);
 });
 
+// Normalizes text before comparing it in search: Unicode NFC composition +
+// stripping zero-width characters, which Myanmar text input methods
+// inconsistently insert/omit — a real, common cause of "the title looks
+// identical but search doesn't find it" for Myanmar script. Note: this does
+// NOT convert between the Zawgyi and Unicode *encodings* themselves (a movie
+// title saved in one and a search typed in the other still won't match) —
+// that needs a dedicated, properly-tested conversion table rather than a
+// quick heuristic, so it's intentionally left for a separate follow-up.
+function normalizeSearchText(str){
+  return (str || '').normalize('NFC').replace(/[\u200B\u200C\u200D]/g, '').trim().toLowerCase();
+}
 function performSearch(query){
-  query = query.trim().toLowerCase();
+  query = normalizeSearchText(query);
   if(!query && !searchGenreFilter){ showView('home'); return; }
   const results = [];
   const seenSeries = new Set();
@@ -2233,10 +2376,10 @@ function performSearch(query){
     if(searchGenreFilter && !(m.genres || []).includes(searchGenreFilter)) return;
     if(m.category === 'drama'){
       const key = (m.seriesName && m.seriesName.trim()) || m.title;
-      const nameMatches = !query || key.toLowerCase().includes(query);
-      const titleMatches = !query || m.title.toLowerCase().includes(query);
+      const nameMatches = !query || normalizeSearchText(key).includes(query);
+      const titleMatches = !query || normalizeSearchText(m.title).includes(query);
       if((nameMatches || titleMatches) && !seenSeries.has(key)) seenSeries.add(key);
-    } else if(!query || (m.title && m.title.toLowerCase().includes(query))){
+    } else if(!query || (m.title && normalizeSearchText(m.title).includes(query))){
       results.push({ type: 'movie', data: m });
     }
   });
@@ -2437,6 +2580,7 @@ async function openSeries(name, silentRefresh){
   if(!series) return;
   currentSeries = name;
   document.getElementById('seriesPoster').src = series.thumb ? esc(series.thumb) : PLACEHOLDER_THUMB;
+  document.getElementById('seriesPoster').alt = series.name || '';
   document.getElementById('seriesPoster').onerror = function(){ this.src = PLACEHOLDER_THUMB; };
   document.getElementById('seriesTitle').textContent = series.name;
   document.getElementById('seriesCount').textContent = series.count + ' Episodes';
@@ -2612,11 +2756,31 @@ function openPlayer(id){
   const videoEl = document.createElement('video');
   videoEl.controls = true;
   videoEl.autoplay = true;
-  videoEl.muted = true; // required by most browsers for reliable autoplay; user can unmute via controls
+  videoEl.muted = true; // required by most browsers for reliable autoplay; restored below once playing
   videoEl.playsInline = true; // keeps video inline on iOS instead of forcing fullscreen
   videoEl.setAttribute('playsinline', '');
   videoEl.setAttribute('webkit-playsinline', '');
+  // Remember volume/mute across videos instead of resetting every time — but
+  // always START muted (above) since that's required for autoplay to reliably
+  // work, then restore the user's real preference right as playback begins.
+  try{
+    const savedVol = parseFloat(localStorage.getItem('maxflixVolume'));
+    if(!isNaN(savedVol)) videoEl.volume = Math.min(1, Math.max(0, savedVol));
+  }catch(e){}
+  videoEl.addEventListener('playing', function restoreMuteOnce(){
+    try{ videoEl.muted = localStorage.getItem('maxflixMuted') === '1'; }catch(e){}
+    videoEl.removeEventListener('playing', restoreMuteOnce);
+  }, { once: true });
+  videoEl.addEventListener('volumechange', () => {
+    try{
+      localStorage.setItem('maxflixVolume', String(videoEl.volume));
+      localStorage.setItem('maxflixMuted', videoEl.muted ? '1' : '0');
+    }catch(e){}
+  });
   wrap.appendChild(videoEl);
+  // So Space/arrow-key native player shortcuts work immediately, without the
+  // person needing to click the video first.
+  videoEl.focus({ preventScroll: true });
 
   const srcUrl = pickVideoUrl(m);
   playVideoSrc(videoEl, srcUrl, m, wrap);
@@ -3074,6 +3238,15 @@ subscribeVideoAds();
     notice.style.display = 'none';
     try{ localStorage.setItem(NOTICE_KEY, '1'); }catch(e){}
   });
+})();
+
+/* ---------- Offline / connection-lost banner ---------- */
+(function initConnectionBanner(){
+  const banner = document.getElementById('connectionBanner');
+  const update = () => banner.classList.toggle('show', !navigator.onLine);
+  window.addEventListener('online', update);
+  window.addEventListener('offline', update);
+  update(); // in case the page loaded while already offline
 })();
 
 /* ---------- PWA: service worker registration ---------- */
