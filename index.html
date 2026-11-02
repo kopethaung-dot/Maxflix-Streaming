@@ -526,6 +526,11 @@
   .modal-related{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
   .modal-related-title{font-family:var(--font-display);font-size:16px;letter-spacing:.5px;margin-bottom:12px;}
   .modal-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
+  /* Cards carry a fixed width for the horizontal rows (210px, or 150/118/104px on smaller screens).
+     Only ".grid" resets that to "fill the column", and this grid isn't a ".grid" — so its cards kept the
+     fixed width inside wider columns: hugging the left with empty space on the right on phones, and
+     overlapping each other on desktop. */
+  .modal-related-grid .card{width:100%;}
   .modal-ep-list-stack{display:flex;flex-direction:column;gap:10px;}
   .modal-ep-list-stack .ep-item.current{border-color:var(--accent);background:rgba(229,9,20,.1);cursor:default;}
   .modal-ep-list-stack .ep-item:not(.current):hover{border-color:var(--ink-dim);}
@@ -677,6 +682,7 @@
   @media (max-width:360px){
     .card{width:104px;}
     .grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));}
+    .modal-related-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;} /* 2 columns on the smallest phones, not 1 */
   }
 
   /* ---------- Search ---------- */
@@ -2785,7 +2791,7 @@ function openPlayer(id){
   const srcUrl = pickVideoUrl(m);
   playVideoSrc(videoEl, srcUrl, m, wrap);
   attachProgressTracking(videoEl, m);
-  db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
+  trackViewCount(videoEl, m);
   wireAutoPlayNext(videoEl, m, wrap);
 
   document.getElementById('modalTitle').textContent = m.title;
@@ -2959,6 +2965,32 @@ function wireAutoPlayNext(videoEl, m, wrap){
 
 /* Save/resume watch position for logged-in users so it can show up in
    the "Continue Watching" row. Adult content is intentionally excluded. */
+/* ---------- View counter ----------
+   A view is counted once the person has really watched about 15 seconds (or half of a
+   very short clip) — not the moment the player opens — and at most once per video per
+   browser session, so refreshing or re-opening the same video can't pump the number.
+   Seeking forward doesn't count as watching: only normal playback time adds up.
+   The write is a +1 on movies/{id}.viewCount, which Firestore's rules must allow (they
+   allow exactly that, and nothing else, for visitors). If a write is ever refused it is
+   now reported in the browser console instead of being silently swallowed. */
+function trackViewCount(videoEl, m){
+  const key = 'viewed_' + m.id;
+  try{ if(sessionStorage.getItem(key) === '1') return; }catch(e){}
+  let watched = 0, last = null, done = false;
+  videoEl.addEventListener('seeking', () => { last = null; });
+  videoEl.addEventListener('timeupdate', () => {
+    if(done) return;
+    const t = videoEl.currentTime;
+    if(last !== null){ const d = t - last; if(d > 0 && d < 1.5) watched += d; } // normal playback only
+    last = t;
+    const need = isFinite(videoEl.duration) && videoEl.duration > 0 ? Math.min(15, videoEl.duration / 2) : 15;
+    if(watched < need) return;
+    done = true; // never fire twice from this player, whatever the outcome
+    db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) })
+      .then(() => { try{ sessionStorage.setItem(key, '1'); }catch(e){} })
+      .catch(err => console.warn('view count write failed:', err && err.code ? err.code : err));
+  });
+}
 function attachProgressTracking(videoEl, m){
   if(!currentUser || m.category === 'adult') return;
   const ref = db.collection('users').doc(currentUser.uid).collection('continueWatching').doc(m.id);
