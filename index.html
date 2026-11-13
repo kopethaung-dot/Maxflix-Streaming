@@ -1090,8 +1090,8 @@
         <span style="font-size:13.5px;color:var(--ink-dim);"><b style="color:var(--ink);">18+</b> content ကို PIN နံပါတ်နဲ့ ကာကွယ်ထားပါတယ် — PIN ကို admin ဆီကနေ တောင်းယူရပါမယ်</span>
       </div>
       <div style="display:flex;gap:10px;align-items:flex-start;">
-        <span style="font-size:18px;">↩️</span>
-        <span style="font-size:13.5px;color:var(--ink-dim);">Video ကြည့်နေရင်း <b style="color:var(--ink);">"← ပြန်သွားမည်"</b> button ဒါမှမဟုတ် phone ရဲ့ back gesture နဲ့ ပြန်ထွက်လို့ရပါတယ်</span>
+        <span style="font-size:18px;">Google</span>
+        <span style="font-size:13.5px;color:var(--ink-dim);">Google account <b style="color:var(--ink);">"နှင့်"</b> ချိတ်ဆက်ရန် အကြံပြုလိုပါသည်။</span>
       </div>
     </div>
     <button class="btn btn-accent btn-block" id="onboardCloseBtn">စတင်ကြည့်ရှုမည်</button>
@@ -1195,7 +1195,7 @@
       <div class="field"><label>ပေးချေမှု နည်းလမ်း</label>
         <select id="fPayMethod"><option value="KBZPay">KBZPay</option><option value="WavePay">WavePay</option></select>
       </div>
-      <div class="field"><label>Transaction ID / ငွေလွှဲအမှတ် *</label><input type="text" id="fTxnId" placeholder="ငွေလွှဲပြီးရင် Transaction ID ကူးထည့်ပါ"></div>
+      <div class="field"><label>Transaction ID / ငွေလွှဲအမှတ် *</label><input type="text" id="fTxnId" placeholder="ငွေလွှဲပြီး Transaction ID နောက်ဆုံး ၆ လုံးထည့်ရန်"></div>
       <div class="sm-err" id="premiumErr"></div>
       <button class="btn btn-accent btn-block" id="premiumSubmitBtn">တင်သွင်းမည်</button>
     </div>
@@ -1275,10 +1275,11 @@ const PAYMENT_CONFIG = {
 // Premium plans — ကာလအလိုက် ဈေးနှုန်း (dropdown ထဲ ဒီစီစဉ်အတိုင်း ပေါ်ပါမယ်)
 // ပြောင်းချင်ရင် ဒီ list ကိုပဲ ပြင်ပါ — admin.html ထဲမှာ ပြင်စရာ မလိုပါ (planDays/planId ကို request doc ထဲ save ထားလို့ admin ဘက်က auto ဖတ်ပါတယ်)
 const PREMIUM_PLANS = [
-  { id: '1m', label: '၁ လ', days: 30, price: 2000 },
-  { id: '3m', label: '၃ လ', days: 90, price: 5000 },
-  { id: '6m', label: '၆ လ', days: 180, price: 8000 },
-  { id: 'lifetime', label: 'Lifetime (တစ်သက်တာ)', days: null, price: 20000 }
+  { id: '1m', label: '၁ လ', days: 30, price: 3000 },
+  { id: '3m', label: '၃ လ', days: 90, price: 8000 },
+  { id: '6m', label: '၆ လ', days: 180, price: 12000 },
+  { id: '12m', label: '၁၂ လ', days: 365, price: 22000 },
+  { id: 'lifetime', label: 'Lifetime (တစ်သက်တာ)', days: null, price: 35000 }
 ];
 
 const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8," + encodeURIComponent(
