@@ -3,16 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script>
-  // Applied to <html> (not <body>, which doesn't exist yet at this point in
-  // parsing) as early as possible, before any CSS renders, so a saved "light"
-  // preference doesn't flash dark-then-light on every load. See the
-  // Dark/Light theme toggle section near the bottom of the page for the
-  // rest of this logic (applyTheme(), the toggle button).
-  try{
-    if(localStorage.getItem('maxflixTheme') === 'light') document.documentElement.dataset.theme = 'light';
-  }catch(e){}
-</script>
 <title>Maxflix Streaming — ဇာတ်ကားနှင့် Short Drama များကို အွန်လိုင်းတွင် ကြည့်ရှုပါ</title>
 <meta name="description" content="Maxflix Streaming တွင် ဇာတ်ကား၊ Short Drama နှင့် ဇာတ်လမ်းအမျိုးမျိုးကို အွန်လိုင်းတွင် အခမဲ့နှင့် Premium အနေဖြင့် ကြည့်ရှုနိုင်ပါသည်။">
 <meta name="keywords" content="maxflix, movie, drama, myanmar drama, online streaming, short drama, ဇာတ်ကား, ဇာတ်လမ်း">
@@ -62,12 +52,11 @@
     --header-grad-1:rgba(16,11,12,.75); --header-grad-2:rgba(16,11,12,.55);
   }
   /* ---------- Light theme override ----------
-     Toggled via html[data-theme="light"] (see the early script in <head>,
-     and the Dark/Light theme toggle JS near the bottom of the page). Since
+     Toggled via body[data-theme="light"] (see themeToggleBtn JS). Since
      nearly every surface in this file already reads its color from a
      CSS variable, redefining them here re-themes the whole site without
      needing per-selector overrides. */
-  html[data-theme="light"]{
+  body[data-theme="light"]{
     --bg:#FFF3F1;
     --bg-elev:rgba(255,255,255,.68); --bg-card:rgba(255,255,255,.60);
     --ink:#241417; --ink-dim:#6E5B5D; --ink-faint:#8F7B7D;
@@ -154,29 +143,15 @@
   .theme-toggle-btn:hover{background:rgba(255,255,255,.08);color:var(--ink);}
   .theme-toggle-btn svg{width:18px;height:18px;}
   .theme-toggle-btn .icon-sun{display:none;}
-  html[data-theme="light"] .theme-toggle-btn .icon-moon{display:none;}
-  html[data-theme="light"] .theme-toggle-btn .icon-sun{display:block;}
-  html[data-theme="light"] .theme-toggle-btn:hover{background:rgba(0,0,0,.06);}
+  body[data-theme="light"] .theme-toggle-btn .icon-moon{display:none;}
+  body[data-theme="light"] .theme-toggle-btn .icon-sun{display:block;}
+  body[data-theme="light"] .theme-toggle-btn:hover{background:rgba(0,0,0,.06);}
   .account-btn{font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;background:var(--accent-grad);color:#fff;white-space:nowrap;flex-shrink:0;}
   .account-menu-wrap{position:relative;min-width:0;}
   .account-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-dim);cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:20px;min-width:0;max-width:100%;}
   .account-chip:hover{border-color:var(--accent-dim);}
   .account-email{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:150px;}
   .premium-pill{font-size:10px;font-weight:700;letter-spacing:.5px;color:#0a0a0d;background:var(--gold);padding:2px 8px;border-radius:10px;}
-
-  /* ---------- Profile avatar ----------
-     A small circular avatar next to the account email: the user's Google
-     photo when signed in with Google, a chosen preset icon (picked in
-     Settings), or — with neither — a colored initial-letter circle. */
-  .avatar-circle{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;
-    color:#fff;font-weight:700;flex:0 0 auto;line-height:1;user-select:none;overflow:hidden;}
-  .avatar-settings-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:4px;}
-  .avatar-picker-grid{display:flex;flex-wrap:wrap;gap:8px;flex:1;min-width:0;}
-  .avatar-pick-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;font-size:18px;padding:0;background:var(--bg-card);
-    box-shadow:0 0 0 1px var(--line);transition:transform .15s ease,box-shadow .15s ease;}
-  .avatar-pick-btn:hover{transform:scale(1.08);}
-  .avatar-pick-btn.selected{box-shadow:0 0 0 2px var(--bg-elev),0 0 0 4px var(--accent);}
   .account-dropdown{position:absolute;top:calc(100% + 8px);right:0;z-index:56;min-width:170px;
     background:var(--bg-elev);border:1px solid var(--line);border-radius:10px;padding:6px;
     box-shadow:0 12px 28px rgba(0,0,0,.45);display:none;flex-direction:column;gap:2px;}
@@ -255,27 +230,12 @@
   .vpn-notice .close-btn:hover{opacity:1;}
   @media(max-width:700px){ .vpn-notice{padding:8px 14px;font-size:12.5px;} }
 
-  /* ---------- Offline / connection-lost banner ----------
-     Fixed so it stays visible on any view (and above modals, below toasts),
-     toggled purely by JS listening to the browser's online/offline events —
-     see near the end of the script. Without this, a dropped connection just
-     looks like the app silently stopped working. */
-  .connection-banner{position:fixed;top:0;left:0;right:0;z-index:150;
-    display:flex;align-items:center;justify-content:center;gap:8px;
-    padding:10px 16px;font-size:13px;font-weight:600;text-align:center;
-    background:var(--danger);color:#fff;
-    transform:translateY(-100%);transition:transform .3s ease;
-    padding-top:calc(10px + env(safe-area-inset-top, 0px));}
-  .connection-banner.show{transform:translateY(0);}
-
   /* ---------- Continue Watching (top strip) ---------- */
   .row-continue-top{padding:14px clamp(16px,4vw,56px) 4px;}
   .row-continue-top .row-track{gap:12px;}
 
   .hero{position:relative;min-height:70vh;display:flex;align-items:flex-end;
-    padding:0 clamp(16px,4vw,56px) 60px;background-size:cover;background-position:center;background-color:var(--bg-elev);
-    transition:opacity .22s ease;}
-  .hero.hero-swap{opacity:0;}
+    padding:0 clamp(16px,4vw,56px) 60px;background-size:cover;background-position:center;background-color:var(--bg-elev);}
   .hero::before{content:'';position:absolute;inset:0;
     background:linear-gradient(to top,var(--bg) 5%,transparent 55%),linear-gradient(to right,rgba(10,10,13,.85),transparent 55%);}
   .hero-content{position:relative;max-width:600px;}
@@ -288,35 +248,6 @@
   .btn-ghost{background:rgba(255,255,255,.12);color:var(--ink);}
   .btn-accent{background:var(--accent);color:#fff;}
   .btn-block{width:100%;justify-content:center;}
-
-  /* ---------- Google auth button (premium look) ----------
-     Soft depth shadow + subtle gold/red accent ring on hover so it reads
-     as a premium action rather than a flat stock "Sign in with Google" button. */
-  .google-auth-btn{position:relative;background:linear-gradient(180deg,#ffffff,#f2f2f2);
-    color:#1f1f1f;border:1px solid rgba(0,0,0,.08);border-radius:8px;
-    box-shadow:0 1px 2px rgba(0,0,0,.10),0 8px 20px -6px rgba(0,0,0,.35);
-    transition:transform .18s ease,box-shadow .25s ease,background .25s ease;}
-  .google-auth-btn::after{content:'';position:absolute;inset:-1px;border-radius:inherit;
-    padding:1px;pointer-events:none;opacity:0;transition:opacity .25s ease;
-    background:linear-gradient(120deg,var(--gold),transparent 40%,transparent 60%,var(--accent));
-    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-    -webkit-mask-composite:xor;mask-composite:exclude;}
-  .google-auth-btn:hover{background:linear-gradient(180deg,#ffffff,#eaeaea);
-    transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,.12),0 12px 26px -6px rgba(0,0,0,.45);}
-  .google-auth-btn:hover::after{opacity:.55;}
-  .google-auth-btn:active{transform:translateY(0) scale(.98);
-    box-shadow:0 1px 2px rgba(0,0,0,.12);}
-
-  /* ---------- Loading spinner for async buttons (login/signup/premium/promo) ----------
-     Mobile connections here are often slow/patchy (see the VPN notice), so every button
-     that fires a network request gets a visible spinner + becomes unclickable while the
-     request is in flight, instead of looking like the tap did nothing. */
-  .btn.is-loading{position:relative;color:transparent!important;pointer-events:none;}
-  .btn.is-loading::after{content:'';position:absolute;left:50%;top:50%;width:16px;height:16px;
-    margin:-8px 0 0 -8px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
-    animation:btn-spin .6s linear infinite;}
-  .google-auth-btn.is-loading::after{border-color:rgba(0,0,0,.2);border-top-color:#1f1f1f;}
-  @keyframes btn-spin{ to{ transform:rotate(360deg); } }
 
   /* ---------- Promo banner ---------- */
   .promo-banner{padding:0 clamp(16px,4vw,56px);margin:18px 0 0;}
@@ -362,27 +293,6 @@
   .row-title{font-family:var(--font-display);font-size:22px;letter-spacing:1px;}
   .row-count{font-size:12px;color:var(--ink-faint);}
   .row-track{display:flex;gap:14px;overflow-x:auto;padding-bottom:10px;}
-  .row{position:relative;}
-
-  /* Hover-revealed row arrows — desktop/mouse only (injected in JS only when
-     `supportsHoverPreview` is true), so touch/mobile keeps plain native swipe
-     with zero extra DOM or visual clutter. */
-  .row-arrow{position:absolute;top:38px;bottom:10px;width:44px;display:flex;align-items:center;justify-content:center;
-    border:none;border-radius:6px;background:rgba(10,10,13,.55);color:#fff;font-size:20px;z-index:5;
-    opacity:0;transition:opacity .2s ease,background .2s ease;cursor:pointer;}
-  .row-arrow:hover{background:rgba(10,10,13,.82);}
-  .row:hover .row-arrow{opacity:1;}
-  .row-arrow.prev{left:-4px;}
-  .row-arrow.next{right:-4px;}
-  .row-arrow.at-edge{opacity:0!important;pointer-events:none;}
-
-  /* ---------- Page/view transition ----------
-     A plain fade+slide-up on whichever view becomes visible, so switching
-     tabs feels like an app rather than an instant, jarring content swap. */
-  @media (prefers-reduced-motion: no-preference){
-    .view-transition-in{animation:view-fade-in .32s cubic-bezier(.16,.8,.3,1) both;}
-  }
-  @keyframes view-fade-in{0%{opacity:0;transform:translateY(10px);}100%{opacity:1;transform:translateY(0);}}
 
   .page{display:none;padding:100px clamp(16px,4vw,56px) 60px;}
   .page.open{display:block;}
@@ -397,41 +307,14 @@
   .rating-btn:hover{border-color:var(--ink-dim);color:var(--ink);}
   .rating-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
 
-  /* ---------- Splash screen (logo animation) ----------
-     Sequence: mark icon pops in with a glow -> MAXFLIX letters cascade in
-     one by one -> a thin gold/red underline draws itself -> brief hold ->
-     the whole screen fades + zooms out to reveal the site underneath. */
+  /* ---------- Splash screen ---------- */
   .splash-screen{position:fixed;inset:0;z-index:9999;background:#0B0B0F;
-    display:flex;align-items:center;justify-content:center;overflow:hidden;
-    animation:splash-fade-out .55s ease 1.55s forwards;}
-  .splash-screen::before{content:'';position:absolute;inset:0;pointer-events:none;
-    background:radial-gradient(circle at 50% 50%, rgba(229,9,20,.28), transparent 60%);
-    opacity:0;animation:splash-glow-pulse 1.5s ease .05s forwards;}
-  .splash-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;}
-  .splash-logo-icon{width:54px;height:54px;margin-bottom:16px;
-    opacity:0;transform:scale(.4) rotate(-10deg);
-    filter:drop-shadow(0 0 0 rgba(229,9,20,0));
-    animation:splash-icon-in .6s cubic-bezier(.2,.85,.25,1.4) .1s forwards;}
+    display:flex;align-items:center;justify-content:center;
+    animation:splash-fade-out .5s ease .9s forwards;}
   .splash-mark{font-family:var(--font-display);font-size:clamp(40px,10vw,72px);letter-spacing:6px;
-    color:var(--accent);display:flex;}
-  .splash-mark span{display:inline-block;opacity:0;transform:translateY(18px);
-    animation:splash-letter-in .45s cubic-bezier(.2,.85,.3,1.2) forwards;
-    animation-delay:calc(.42s + var(--i) * .045s);}
-  .splash-underline{width:0;height:2px;margin-top:12px;border-radius:2px;
-    background:var(--accent-grad);
-    animation:splash-underline-draw .4s ease .85s forwards;}
-  @keyframes splash-icon-in{
-    0%{opacity:0;transform:scale(.4) rotate(-10deg);filter:drop-shadow(0 0 0 rgba(229,9,20,0));}
-    65%{opacity:1;transform:scale(1.1) rotate(3deg);filter:drop-shadow(0 0 16px rgba(229,9,20,.6));}
-    100%{opacity:1;transform:scale(1) rotate(0deg);filter:drop-shadow(0 0 9px rgba(229,9,20,.35));}
-  }
-  @keyframes splash-letter-in{ to{opacity:1;transform:translateY(0);} }
-  @keyframes splash-underline-draw{ to{width:130px;} }
-  @keyframes splash-glow-pulse{ 0%{opacity:0;} 55%{opacity:1;} 100%{opacity:.45;} }
-  @keyframes splash-fade-out{
-    0%{opacity:1;pointer-events:auto;transform:scale(1);}
-    100%{opacity:0;pointer-events:none;visibility:hidden;transform:scale(1.04);}
-  }
+    color:var(--accent);animation:splash-mark-in .7s cubic-bezier(.2,.9,.3,1.2) both;}
+  @keyframes splash-mark-in{0%{opacity:0;transform:scale(.85);letter-spacing:2px;}100%{opacity:1;transform:scale(1);letter-spacing:6px;}}
+  @keyframes splash-fade-out{0%{opacity:1;pointer-events:auto;}100%{opacity:0;pointer-events:none;visibility:hidden;}}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
 
   /* ---------- Skeleton loading (initial rows load, before Firebase responds) ---------- */
@@ -469,12 +352,6 @@
   .card-bookmark:hover{background:rgba(0,0,0,.8);transform:scale(1.08);}
   .card-bookmark.active{background:var(--accent);border-color:var(--accent);}
   @media(max-width:520px){ .card-bookmark{bottom:44px;width:24px;height:24px;font-size:11px;} }
-  /* Always visible (not hover-reveal) so it's reachable on touch, not just mouse */
-  .card-remove-btn{position:absolute;top:8px;right:8px;z-index:3;width:24px;height:24px;border-radius:50%;
-    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;
-    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,transform .15s;}
-  .card-remove-btn:hover{background:var(--accent);transform:scale(1.08);}
-  .card-remove-btn:active{transform:scale(.94);}
   .card-hover-preview{position:absolute;top:0;left:0;right:0;bottom:52px;width:100%;height:auto;object-fit:cover;z-index:2;
     background:#000;pointer-events:none;}
   @media(max-width:520px){ .card-hover-preview{bottom:44px;} }
@@ -526,11 +403,6 @@
   .modal-related{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
   .modal-related-title{font-family:var(--font-display);font-size:16px;letter-spacing:.5px;margin-bottom:12px;}
   .modal-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
-  /* Cards carry a fixed width for the horizontal rows (210px, or 150/118/104px on smaller screens).
-     Only ".grid" resets that to "fill the column", and this grid isn't a ".grid" — so its cards kept the
-     fixed width inside wider columns: hugging the left with empty space on the right on phones, and
-     overlapping each other on desktop. */
-  .modal-related-grid .card{width:100%;}
   .modal-ep-list-stack{display:flex;flex-direction:column;gap:10px;}
   .modal-ep-list-stack .ep-item.current{border-color:var(--accent);background:rgba(229,9,20,.1);cursor:default;}
   .modal-ep-list-stack .ep-item:not(.current):hover{border-color:var(--ink-dim);}
@@ -682,7 +554,6 @@
   @media (max-width:360px){
     .card{width:104px;}
     .grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));}
-    .modal-related-grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;} /* 2 columns on the smallest phones, not 1 */
   }
 
   /* ---------- Search ---------- */
@@ -713,23 +584,9 @@
 </style>
 </head>
 <body style="position:relative;">
-<div class="connection-banner" id="connectionBanner" role="status" aria-live="polite">📡 Internet connection ပြတ်တောက်နေပါတယ် — ပြန်ချိတ်ဆက်ပေးနေပါသည်...</div>
 
 <div id="splashScreen" class="splash-screen">
-  <div class="splash-inner">
-    <svg class="splash-logo-icon" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-      <defs><linearGradient id="splashGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#A30712"/><stop offset="55%" stop-color="#E50914"/><stop offset="100%" stop-color="#d4a62a"/>
-      </linearGradient></defs>
-      <rect x="1" y="1" width="38" height="38" rx="10" fill="url(#splashGrad)"/>
-      <rect x="1" y="1" width="38" height="38" rx="10" fill="none" stroke="rgba(255,255,255,.15)"/>
-      <path d="M15 12 L28 20 L15 28 Z" fill="#f3ece6"/>
-    </svg>
-    <div class="splash-mark">
-      <span style="--i:0">M</span><span style="--i:1">A</span><span style="--i:2">X</span><span style="--i:3">F</span><span style="--i:4">L</span><span style="--i:5">I</span><span style="--i:6">X</span>
-    </div>
-    <div class="splash-underline"></div>
-  </div>
+  <div class="splash-mark">MAXFLIX</div>
 </div>
 
 <header>
@@ -755,7 +612,7 @@
     <button class="nav-tab" data-view="support" id="supportNavBtn"><span class="nav-tab-icon">💬</span>Support</button>
     <div class="search-box" id="searchBox">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
+      <input type="text" id="searchInput" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
     </div>
   </nav>
 
@@ -804,7 +661,7 @@
   <div class="mobile-menu-handle"></div>
   <div class="search-box search-box-mobile" id="searchBoxMobile">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="searchInputMobile" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
+    <input type="text" id="searchInputMobile" placeholder="ဇာတ်ကား/Series ရှာဖွေမည်..." autocomplete="off">
   </div>
   <button class="nav-tab" data-view="shop">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -1040,7 +897,7 @@
 
 <!-- ================= PLAYER MODAL ================= -->
 <div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-box">
     <div class="modal-video-wrap" id="modalVideoWrap">
       <button class="modal-close" id="modalClose" aria-label="ပိတ်မည်">✕</button>
     </div>
@@ -1062,7 +919,7 @@
 
 <!-- ================= 18+ AGE CONFIRMATION GATE ================= -->
 <div class="sm-overlay" id="ageGateOverlay">
-  <div class="sm-box" role="dialog" aria-modal="true" aria-label="အသက် အတည်ပြုချက်" style="max-width:360px;text-align:center;">
+  <div class="sm-box" style="max-width:360px;text-align:center;">
     <div style="font-size:36px;margin-bottom:10px;">🔞</div>
     <h3>အသက် အတည်ပြုချက်</h3>
     <p style="margin-bottom:18px;">ဒီ content က လူကြီးများအတွက်သာ ရည်ရွယ်ပါသည်။<br>သင့်အသက် ၁၈ နှစ် ပြည့်ပြီးပါသလား?</p>
@@ -1076,7 +933,7 @@
 <!-- ================= 18+ PIN LOCK MODAL ================= -->
 <!-- ================= FIRST-VISIT ONBOARDING ================= -->
 <div class="sm-overlay" id="onboardOverlay">
-  <div class="sm-box" role="dialog" aria-modal="true" aria-label="Maxflix Streaming မှ ကြိုဆိုပါတယ်" style="max-width:420px;text-align:left;">
+  <div class="sm-box" style="max-width:420px;text-align:left;">
     <div style="font-size:32px;margin-bottom:10px;text-align:center;">🎬</div>
     <h3 style="text-align:center;">Maxflix Streaming မှ ကြိုဆိုပါတယ်</h3>
     <p style="text-align:center;margin-bottom:16px;">စတင်ခင် ဒီ ၃ ချက်ကို သိထားပါ —</p>
@@ -1099,13 +956,13 @@
 </div>
 
 <div class="sm-overlay" id="pinOverlay">
-  <div class="sm-box" role="dialog" aria-modal="true" aria-label="18+ Content PIN">
+  <div class="sm-box">
     <div style="font-size:28px;margin-bottom:8px;">🔒</div>
     <h3>18+ Content</h3>
     <p>ဆက်ကြည့်ရန် PIN နံပါတ် ရိုက်ထည့်ပါ</p>
     <div class="field">
       <div class="pw-field-wrap">
-        <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="••••" autocomplete="off">
+        <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="••••">
         <button type="button" class="pw-toggle-btn" data-target="pinInput" aria-label="PIN ပြသရန်/ဖျောက်ရန်">
           <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
           <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a20.3 20.3 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
@@ -1122,7 +979,7 @@
 
 <!-- ================= AUTH MODAL (Login / Sign up) ================= -->
 <div class="sm-overlay" id="authOverlay">
-  <div class="sm-box" role="dialog" aria-modal="true" aria-labelledby="authTitle" style="position:relative;">
+  <div class="sm-box" style="position:relative;">
     <button class="sm-close-x" id="authCloseBtn" aria-label="ပိတ်မည်">✕</button>
     <h3 style="margin-top:6px;" id="authTitle">Account</h3>
     <p id="authSubtitle">Login သို့မဟုတ် Sign up ဝင်ပါ</p>
@@ -1130,7 +987,7 @@
       <button class="sm-tab active" id="tabLogin">Login</button>
       <button class="sm-tab" id="tabSignup">Sign up</button>
     </div>
-    <button type="button" class="btn btn-block google-auth-btn" id="authGoogleBtn" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;">
+    <button type="button" class="btn btn-block" id="authGoogleBtn" style="background:#fff;color:#1f1f1f;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;">
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.9 5.1 29.7 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.8-.4-4.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.9 5.1 29.7 3 24 3c-7.6 0-14.1 4.3-17.4 10.6z"/><path fill="#4CAF50" d="M24 45c5.6 0 10.7-1.9 14.6-5.2l-6.7-5.7C29.8 35.7 27 36.8 24 36.8c-5.3 0-9.7-3.4-11.3-8l-6.6 5.1C9.8 40.6 16.3 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.7 5.7C41.9 36.6 45 30.9 45 24c0-1.4-.1-2.8-.4-3.5z"/></svg>
       Google နဲ့ ဆက်လက်လုပ်ဆောင်မည်
     </button>
@@ -1138,18 +995,16 @@
       <div style="position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line);z-index:0;"></div>
       <span style="background:var(--bg-elev);padding:0 10px;position:relative;z-index:1;">သို့မဟုတ်</span>
     </div>
-    <form id="authForm" autocomplete="on" onsubmit="return false;">
-      <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com" autocomplete="username" inputmode="email"></div>
-      <div class="field" id="authPassField"><label>Password</label>
-        <div class="pw-field-wrap">
-          <input type="password" id="authPass" placeholder="••••••••" autocomplete="current-password">
-          <button type="button" class="pw-toggle-btn" data-target="authPass" aria-label="Password ပြသရန်/ဖျောက်ရန်">
-            <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
-            <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a20.3 20.3 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
-          </button>
-        </div>
+    <div class="field"><label>Email</label><input type="email" id="authEmail" placeholder="you@example.com"></div>
+    <div class="field" id="authPassField"><label>Password</label>
+      <div class="pw-field-wrap">
+        <input type="password" id="authPass" placeholder="••••••••">
+        <button type="button" class="pw-toggle-btn" data-target="authPass" aria-label="Password ပြသရန်/ဖျောက်ရန်">
+          <svg class="eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a20.3 20.3 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a20.3 20.3 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+        </button>
       </div>
-    </form>
+    </div>
     <button class="link-btn" id="forgotPassBtn" style="display:block;margin:-6px 0 12px;">Password မေ့နေပါသလား?</button>
     <div class="sm-err" id="authErr"></div>
     <div class="sm-ok" id="authOk"></div>
@@ -1160,7 +1015,7 @@
 
 <!-- ================= PREMIUM GATE MODAL ================= -->
 <div class="sm-overlay" id="premiumOverlay">
-  <div class="sm-box" role="dialog" aria-modal="true" aria-label="Premium" style="position:relative;max-width:420px;">
+  <div class="sm-box" style="position:relative;max-width:420px;">
     <button class="sm-close-x" id="premiumCloseBtn" aria-label="ပိတ်မည်">✕</button>
 
     <!-- State: not logged in -->
@@ -1212,18 +1067,12 @@
 
 <!-- ================= SETTINGS MODAL ================= -->
 <div class="sm-overlay" id="settingsOverlay">
-  <div class="sm-box" role="dialog" aria-modal="true" aria-label="Settings" style="position:relative;max-width:420px;">
+  <div class="sm-box" style="position:relative;max-width:420px;">
     <button class="sm-close-x" id="settingsCloseBtn" aria-label="ပိတ်မည်">✕</button>
     <div style="font-size:28px;margin-bottom:8px;">⚙️</div>
     <h3>Settings</h3>
     <div class="field"><label>Email</label>
       <input type="text" id="settingsEmail" disabled>
-    </div>
-    <div class="field"><label>Avatar</label>
-      <div class="avatar-settings-row">
-        <div class="avatar-circle" id="settingsAvatarPreview" style="width:56px;height:56px;font-size:28px;"></div>
-        <div class="avatar-picker-grid" id="avatarPickerGrid"></div>
-      </div>
     </div>
     <div class="field"><label>Premium အခြေအနေ</label>
       <div class="pay-info" id="settingsPremiumBox"></div>
@@ -1372,16 +1221,9 @@ function showView(view){
     el.classList.remove('open');
     if(el.id === 'view-home') el.style.display = (view === 'home') ? '' : 'none';
   });
-  let enteringEl = document.getElementById('view-home');
   if(view !== 'home'){
     const el = document.getElementById('view-' + view);
-    if(el){ el.classList.add('open'); enteringEl = el; }
-  }
-  if(enteringEl){
-    // Restart the fade-in every time, even when re-selecting the same tab.
-    enteringEl.classList.remove('view-transition-in');
-    void enteringEl.offsetWidth; // force reflow
-    enteringEl.classList.add('view-transition-in');
+    if(el) el.classList.add('open');
   }
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
   closeMobileMenu();
@@ -1417,7 +1259,6 @@ function openMobileMenu(){
   menu.style.display = 'flex';
   document.getElementById('bottomAdBar').style.display = 'none';
   requestAnimationFrame(() => { overlay.classList.add('show'); menu.classList.add('show'); });
-  pushOverlayHistory('mobileMenu');
 }
 function closeMobileMenu(){
   const menu = document.getElementById('mobileMenu');
@@ -1427,7 +1268,6 @@ function closeMobileMenu(){
   overlay.classList.remove('show');
   menu.classList.remove('show');
   setTimeout(() => { overlay.classList.remove('open'); menu.style.display = 'none'; }, 300);
-  popOverlayHistory('mobileMenu');
 }
 document.getElementById('moreTabBtn').addEventListener('click', (e) => {
   e.stopPropagation();
@@ -1436,76 +1276,19 @@ document.getElementById('moreTabBtn').addEventListener('click', (e) => {
 });
 document.getElementById('mobileMenuOverlay').addEventListener('click', closeMobileMenu);
 
-/* ---------- Small-modal <-> browser history bridge (Android/iOS back gesture) ----------
-   The player + series view already close on the phone's back action via
-   history.pushState/popstate (see the listener near the end of section 9).
-   These two helpers extend the same idea to the smaller modals — mobile menu,
-   auth, premium, settings, PIN, age-gate: one call where each one opens, one
-   call at every place it can close, so the phone's back gesture always
-   dismisses whichever is open instead of leaving the page. */
-let overlayHistoryStack = [];
-let closingOverlayViaPopstate = false;
-function pushOverlayHistory(id){
-  if(overlayHistoryStack.includes(id)) return;
-  overlayHistoryStack.push(id);
-  if(!closingOverlayViaPopstate) history.pushState({ maxflixOverlay: id }, '');
-}
-function popOverlayHistory(id){
-  const idx = overlayHistoryStack.lastIndexOf(id);
-  if(idx === -1) return;
-  overlayHistoryStack.splice(idx, 1);
-  if(!closingOverlayViaPopstate) history.back();
-}
-// Maps each overlay id to the action that closes it exactly the way its own
-// close/cancel button would — reused by Escape, Tab-trap and the back-gesture
-// popstate handler so none of them need to duplicate an overlay's own logic.
-const OVERLAY_CLOSERS = {
-  mobileMenu: () => closeMobileMenu(),
-  ageGateOverlay: () => document.getElementById('ageGateNoBtn').click(),
-  pinOverlay: () => document.getElementById('pinCancelBtn').click(),
-  authOverlay: () => document.getElementById('authCloseBtn').click(),
-  premiumOverlay: () => document.getElementById('premiumCloseBtn').click(),
-  settingsOverlay: () => document.getElementById('settingsCloseBtn').click()
-};
-/* ---------- Escape key + Tab focus-trap for whichever modal is open ----------
-   Keyboard users (and phones with a keyboard attached) can dismiss any open
-   modal with Escape, and Tab cycles only within it instead of leaking focus
-   into the page underneath. */
-document.addEventListener('keydown', e => {
-  if(e.key === 'Escape'){
-    if(document.getElementById('mobileMenu').classList.contains('show')){ closeMobileMenu(); return; }
-    const openOverlay = document.querySelector('.sm-overlay.open, .modal-overlay.open');
-    if(!openOverlay) return;
-    const closer = OVERLAY_CLOSERS[openOverlay.id];
-    if(closer) closer();
-    else if(openOverlay.id === 'modalOverlay') history.back();
-    return;
-  }
-  if(e.key !== 'Tab') return;
-  const menuOpen = document.getElementById('mobileMenu').classList.contains('show');
-  const openOverlay = menuOpen ? document.getElementById('mobileMenu') : document.querySelector('.sm-overlay.open, .modal-overlay.open');
-  if(!openOverlay) return;
-  const box = openOverlay.querySelector('.sm-box, .modal-box') || openOverlay;
-  const focusables = Array.from(box.querySelectorAll(
-    'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
-  )).filter(el => el.offsetParent !== null);
-  if(!focusables.length) return;
-  const first = focusables[0], last = focusables[focusables.length - 1];
-  if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
-  else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
-});
-
-/* ---------- Dark / Light theme toggle ----------
-   The initial theme is already applied by the early inline script in <head>
-   (before body/CSS render, to avoid a flash) — this just handles toggling it
-   afterwards, so there's no need to re-read localStorage and re-apply here. */
+/* ---------- Dark / Light theme toggle ---------- */
 function applyTheme(theme){
-  document.documentElement.dataset.theme = theme;
+  document.body.dataset.theme = theme;
   try{ localStorage.setItem('maxflixTheme', theme); }catch(e){}
 }
+(function initTheme(){
+  let saved = null;
+  try{ saved = localStorage.getItem('maxflixTheme'); }catch(e){}
+  applyTheme(saved === 'light' ? 'light' : 'dark');
+})();
 document.getElementById('themeToggleBtn').addEventListener('click', (e) => {
   playNavPop(e.currentTarget);
-  applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+  applyTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light');
 });
 
 /* ---------- Support page: Telegram deep-link (tg:// app first, t.me fallback) ---------- */
@@ -1544,35 +1327,31 @@ function requestAdultUnlock(onSuccess){
   let ageConfirmed = false;
   try{ ageConfirmed = !!sessionStorage.getItem('age18Confirmed'); }catch(e){}
   if(ageConfirmed) openPinModal();
-  else{ document.getElementById('ageGateOverlay').classList.add('open'); pushOverlayHistory('ageGateOverlay'); }
+  else document.getElementById('ageGateOverlay').classList.add('open');
 }
 function openPinModal(){
   document.getElementById('pinInput').value = '';
   document.getElementById('pinErr').classList.remove('show');
   document.getElementById('pinOverlay').classList.add('open');
-  pushOverlayHistory('pinOverlay');
   document.getElementById('pinInput').focus();
 }
 document.getElementById('ageGateYesBtn').addEventListener('click', () => {
   try{ sessionStorage.setItem('age18Confirmed', '1'); }catch(e){}
   document.getElementById('ageGateOverlay').classList.remove('open');
-  popOverlayHistory('ageGateOverlay');
   openPinModal();
 });
 document.getElementById('ageGateNoBtn').addEventListener('click', () => {
   document.getElementById('ageGateOverlay').classList.remove('open');
-  popOverlayHistory('ageGateOverlay');
   pendingUnlockCallback = null; // "No" ဆိုရင် PIN modal ကို ဆက်မဖွင့်ဘူး
 });
 document.getElementById('ageGateOverlay').addEventListener('click', e => {
   if(e.target.id === 'ageGateOverlay'){
     e.currentTarget.classList.remove('open');
-    popOverlayHistory('ageGateOverlay');
     pendingUnlockCallback = null;
   }
 });
 document.getElementById('pinCancelBtn').addEventListener('click', () => {
-  document.getElementById('pinOverlay').classList.remove('open'); popOverlayHistory('pinOverlay'); pendingUnlockCallback = null;
+  document.getElementById('pinOverlay').classList.remove('open'); pendingUnlockCallback = null;
 });
 document.getElementById('pinSubmitBtn').addEventListener('click', () => {
   const errEl = document.getElementById('pinErr');
@@ -1597,7 +1376,6 @@ document.getElementById('pinSubmitBtn').addEventListener('click', () => {
   if(document.getElementById('pinInput').value === myPin){
     adultUnlocked = true;
     document.getElementById('pinOverlay').classList.remove('open');
-    popOverlayHistory('pinOverlay');
     renderAdultSection();
     if(pendingUnlockCallback) pendingUnlockCallback();
     pendingUnlockCallback = null;
@@ -1609,36 +1387,6 @@ document.getElementById('pinInput').addEventListener('keydown', e => { if(e.key=
    5) AUTH (Login / Sign up)
    ========================================================= */
 let authMode = 'login';
-
-/* ---------- Reusable loading/disabled state for async buttons ----------
-   Mobile connections here are often slow/patchy (see the VPN notice), so
-   every button that fires a network request gets a visible spinner and
-   becomes unclickable while the request is in flight, instead of looking
-   like the tap did nothing. */
-function setBtnLoading(btn, isLoading){
-  btn.disabled = isLoading;
-  btn.classList.toggle('is-loading', isLoading);
-}
-
-/* ---------- Friendlier Firebase Auth error messages ----------
-   Firebase's raw error text is English/technical (e.g. "Firebase: Error
-   (auth/wrong-password)."). Map the common codes to the same short Burmese
-   style already used elsewhere in this modal; anything unmapped falls back
-   to the raw message so nothing is silently swallowed. */
-const AUTH_ERROR_MESSAGES = {
-  'auth/wrong-password': 'Password မှားနေပါတယ်',
-  'auth/user-not-found': 'ဒီ Email နဲ့ Account မရှိသေးပါ — Sign up လုပ်ကြည့်ပါ',
-  'auth/invalid-email': 'Email format မှားနေပါတယ်',
-  'auth/invalid-credential': 'Email/Password မှားနေပါတယ်',
-  'auth/email-already-in-use': 'ဒီ Email နဲ့ Account ရှိပြီးသားပါ — Login ဝင်ကြည့်ပါ',
-  'auth/weak-password': 'Password က အနည်းဆုံး ၆ လုံး ရှိရပါမယ်',
-  'auth/too-many-requests': 'ကြိုးစားမှု အကြိမ်များနေလို့ ခဏစောင့်ပြီး ထပ်ကြိုးစားပါ',
-  'auth/network-request-failed': 'Internet connection စစ်ကြည့်ပြီး ထပ်ကြိုးစားပါ',
-  'auth/popup-closed-by-user': 'Google login window ကို ပိတ်လိုက်ပါတယ် — ထပ်ကြိုးစားပါ'
-};
-function friendlyAuthError(err){
-  return AUTH_ERROR_MESSAGES[err.code] || err.message;
-}
 
 // Show/hide toggle for password & PIN fields — delegated so it also covers
 // any .pw-toggle-btn added later (e.g. inside a dynamically-built form).
@@ -1658,15 +1406,11 @@ function openAuthModal(){
   document.getElementById('authPass').value = '';
   setAuthMode('login');
   document.getElementById('authOverlay').classList.add('open');
-  pushOverlayHistory('authOverlay');
 }
 document.getElementById('loginNavBtn').addEventListener('click', () => {
   if(currentUser){ openAuthModal(); } else { openAuthModal(); }
 });
-document.getElementById('authCloseBtn').addEventListener('click', () => {
-  document.getElementById('authOverlay').classList.remove('open');
-  popOverlayHistory('authOverlay');
-});
+document.getElementById('authCloseBtn').addEventListener('click', () => document.getElementById('authOverlay').classList.remove('open'));
 document.getElementById('tabLogin').addEventListener('click', () => setAuthMode('login'));
 document.getElementById('tabSignup').addEventListener('click', () => setAuthMode('signup'));
 function setAuthMode(mode){
@@ -1687,34 +1431,21 @@ function setAuthMode(mode){
     document.getElementById('tabSignup').classList.toggle('active', mode==='signup');
   }
   document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'Login' : mode==='signup' ? 'Sign up' : 'Reset Link ပို့မည်';
-  document.getElementById('authEmail').autocomplete = isReset ? 'email' : (mode === 'signup' ? 'email' : 'username');
-  document.getElementById('authPass').autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
   document.getElementById('authErr').classList.remove('show');
   document.getElementById('authOk').classList.remove('show');
 }
 document.getElementById('forgotPassBtn').addEventListener('click', () => setAuthMode('reset'));
 document.getElementById('backToLoginBtn').addEventListener('click', () => setAuthMode('login'));
-// The form wrapper around email/password exists mainly so the browser scopes
-// autofill correctly (previously, with no form element anywhere on the page,
-// some browsers' saved-login autofill could misfire onto an unrelated field
-// like the search box). The HTML's onsubmit="return false" blocks the native
-// page-reload submit; this just routes Enter-to-submit into the button's logic.
-document.getElementById('authForm').addEventListener('submit', e => {
-  e.preventDefault();
-  document.getElementById('authSubmitBtn').click();
-});
 document.getElementById('authSubmitBtn').addEventListener('click', async () => {
   const email = document.getElementById('authEmail').value.trim().toLowerCase();
   const pass = document.getElementById('authPass').value;
   const errEl = document.getElementById('authErr');
   const okEl = document.getElementById('authOk');
-  const btn = document.getElementById('authSubmitBtn');
   errEl.classList.remove('show');
   okEl.classList.remove('show');
 
   if(authMode === 'reset'){
     if(!email){ errEl.textContent = 'Email ဖြည့်ပါ'; errEl.classList.add('show'); return; }
-    setBtnLoading(btn, true);
     try{
       await auth.sendPasswordResetEmail(email);
       // Firebase itself does not reveal whether the email is registered (this is
@@ -1723,16 +1454,13 @@ document.getElementById('authSubmitBtn').addEventListener('click', async () => {
       okEl.textContent = 'Reset link ကို Email ကို ပို့ပြီးပါပြီ — Inbox (Spam folder အပါအဝင်) ကို စစ်ကြည့်ပါ။';
       okEl.classList.add('show');
     }catch(err){
-      errEl.textContent = friendlyAuthError(err);
+      errEl.textContent = err.code === 'auth/invalid-email' ? 'Email format မှားနေပါတယ်' : err.message;
       errEl.classList.add('show');
-    } finally {
-      setBtnLoading(btn, false);
     }
     return;
   }
 
   if(!email || !pass){ errEl.textContent = 'Email/Password ဖြည့်ပါ'; errEl.classList.add('show'); return; }
-  setBtnLoading(btn, true);
   try{
     if(authMode === 'login'){
       await auth.signInWithEmailAndPassword(email, pass);
@@ -1746,12 +1474,9 @@ document.getElementById('authSubmitBtn').addEventListener('click', async () => {
       }, { merge: true }).catch(() => {}); // best-effort — never block signup if this fails
     }
     document.getElementById('authOverlay').classList.remove('open');
-    popOverlayHistory('authOverlay');
   }catch(err){
-    errEl.textContent = friendlyAuthError(err);
+    errEl.textContent = err.message;
     errEl.classList.add('show');
-  } finally {
-    setBtnLoading(btn, false);
   }
 });
 
@@ -1789,14 +1514,11 @@ function showGoogleAuthError(err){
   const errEl = document.getElementById('authErr');
   errEl.textContent = err.code === 'auth/account-exists-with-different-credential'
     ? `${err.email || 'ဒီ email'} ဟာ Password နဲ့ Sign up ဝင်ထားပြီးသားပါ — Password နဲ့ Login ဝင်ပါ`
-    : friendlyAuthError(err);
+    : err.message;
   errEl.classList.add('show');
 }
 document.getElementById('authGoogleBtn').addEventListener('click', async () => {
-  const errEl = document.getElementById('authErr');
-  const btn = document.getElementById('authGoogleBtn');
-  errEl.classList.remove('show');
-  setBtnLoading(btn, true);
+  document.getElementById('authErr').classList.remove('show');
   // Popups get blocked/flaky on most mobile BROWSER tabs, so those still use a full-page
   // redirect. But an installed standalone PWA needs the opposite fix (see comment above)
   // — for that case we try popup first regardless of hover support, since redirect is the
@@ -1806,18 +1528,15 @@ document.getElementById('authGoogleBtn').addEventListener('click', async () => {
       const result = await auth.signInWithPopup(googleProvider);
       await ensureGoogleUserDoc(result.user, result.additionalUserInfo && result.additionalUserInfo.isNewUser);
       document.getElementById('authOverlay').classList.remove('open');
-      popOverlayHistory('authOverlay');
     }catch(err){
       if(err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment'){
         auth.signInWithRedirect(googleProvider).catch(showGoogleAuthError);
       } else {
         showGoogleAuthError(err);
       }
-    } finally {
-      setBtnLoading(btn, false);
     }
   } else {
-    auth.signInWithRedirect(googleProvider).catch(err => { showGoogleAuthError(err); setBtnLoading(btn, false); });
+    auth.signInWithRedirect(googleProvider).catch(showGoogleAuthError);
   }
 });
 // Picks up the result after a mobile signInWithRedirect() round-trip.
@@ -1837,72 +1556,6 @@ db.collection('stats').doc('counts').onSnapshot(doc => {
   row.style.display = 'flex';
 }, () => {}); // if rules aren't published yet, just keep the box hidden instead of erroring
 
-/* ---------- Profile avatar ----------
-   Preference order: a preset the user picked in Settings > their Google
-   sign-in photo > a colored circle with their email's first letter. The
-   picked preset is stored on users/{uid}.avatarIcon, which the live
-   onSnapshot listener above already refreshes renderAccountArea() for, so
-   selecting one updates the UI immediately with no extra wiring. */
-const AVATAR_PRESETS = [
-  { id: 'red',    emoji: '🎬', color: '#E50914', label: 'Cinema (အနီရောင်)' },
-  { id: 'gold',   emoji: '🍿', color: '#C89B2C', label: 'Popcorn (ရွှေရောင်)' },
-  { id: 'blue',   emoji: '👾', color: '#2563EB', label: 'Gamer (အပြာရောင်)' },
-  { id: 'green',  emoji: '🐸', color: '#16A34A', label: 'Frog (အစိမ်းရောင်)' },
-  { id: 'purple', emoji: '🎭', color: '#7C3AED', label: 'Drama (ခရမ်းရောင်)' },
-  { id: 'orange', emoji: '🦊', color: '#EA580C', label: 'Fox (လိမ္မော်ရောင်)' },
-  { id: 'pink',   emoji: '🐙', color: '#DB2777', label: 'Octopus (ပန်းရောင်)' },
-  { id: 'teal',   emoji: '🦖', color: '#0D9488', label: 'Dino (ရေညိုရောင်)' }
-];
-function getAvatarPreset(id){ return AVATAR_PRESETS.find(p => p.id === id); }
-// Deterministic color from a string so two users with no chosen avatar still
-// get visually distinct initial-letter circles instead of all matching.
-function colorFromString(str){
-  let hash = 0;
-  for(let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  return `hsl(${Math.abs(hash) % 360}, 60%, 40%)`;
-}
-function avatarHtml(size){
-  size = size || 30;
-  const style = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.52)}px;`;
-  const preset = currentUserDoc && currentUserDoc.avatarIcon ? getAvatarPreset(currentUserDoc.avatarIcon) : null;
-  if(preset) return `<span class="avatar-circle" style="${style}background:${preset.color};">${preset.emoji}</span>`;
-  if(currentUser && currentUser.photoURL){
-    const letter = currentUser.email ? esc(currentUser.email.charAt(0).toUpperCase()) : '?';
-    const bg = colorFromString(currentUser.email || currentUser.uid);
-    // If the Google photo URL fails to load, fall back to the same initial-letter
-    // circle used when there's no photo at all, instead of a broken-image icon.
-    return `<img class="avatar-circle" style="${style}object-fit:cover;" src="${esc(currentUser.photoURL)}" alt=""
-      referrerpolicy="no-referrer" data-fallback-letter="${letter}" data-fallback-bg="${bg}" onerror="avatarImgFallback(this)">`;
-  }
-  const letter = currentUser && currentUser.email ? currentUser.email.charAt(0).toUpperCase() : '?';
-  const bg = currentUser ? colorFromString(currentUser.email || currentUser.uid) : '#555';
-  return `<span class="avatar-circle" style="${style}background:${bg};">${esc(letter)}</span>`;
-}
-function avatarImgFallback(img){
-  const span = document.createElement('span');
-  span.className = 'avatar-circle';
-  span.style.cssText = img.style.cssText.replace('object-fit:cover;', '');
-  span.style.background = img.dataset.fallbackBg;
-  span.textContent = img.dataset.fallbackLetter;
-  img.replaceWith(span);
-}
-function renderAvatarPicker(){
-  const grid = document.getElementById('avatarPickerGrid');
-  const selectedId = currentUserDoc && currentUserDoc.avatarIcon;
-  const resetBtn = `<button type="button" class="avatar-pick-btn${!selectedId ? ' selected' : ''}" data-avatar-id="" title="မူလ Avatar အသုံးပြုရန်">↺</button>`;
-  grid.innerHTML = resetBtn + AVATAR_PRESETS.map(p =>
-    `<button type="button" class="avatar-pick-btn${selectedId === p.id ? ' selected' : ''}" data-avatar-id="${p.id}" style="background:${p.color};" title="${esc(p.label)}">${p.emoji}</button>`
-  ).join('');
-}
-document.getElementById('avatarPickerGrid').addEventListener('click', e => {
-  const btn = e.target.closest('.avatar-pick-btn');
-  if(!btn || !currentUser) return;
-  const id = btn.dataset.avatarId;
-  const value = id ? id : firebase.firestore.FieldValue.delete();
-  db.collection('users').doc(currentUser.uid).set({ avatarIcon: value }, { merge: true })
-    .catch(err => showToast(err.message, 'err'));
-});
-
 function renderAccountArea(){
   const area = document.getElementById('accountArea');
   if(currentUser){
@@ -1910,7 +1563,6 @@ function renderAccountArea(){
     area.innerHTML = `
       <div class="account-menu-wrap" id="accountMenuWrap">
         <div class="account-chip" id="accountChip">
-          ${avatarHtml(26)}
           <span class="account-email">${esc(currentUser.email)}</span>
           ${isPrem ? '<span class="premium-pill">PREMIUM</span>' : ''}
         </div>
@@ -1945,16 +1597,9 @@ document.addEventListener('click', (e) => {
 });
 
 /* ---------- Settings modal ---------- */
-function refreshSettingsAvatarUI(){
-  const preview = document.getElementById('settingsAvatarPreview');
-  if(!preview) return;
-  preview.outerHTML = avatarHtml(56).replace('class="avatar-circle"', 'id="settingsAvatarPreview" class="avatar-circle"');
-  renderAvatarPicker();
-}
 function openSettingsModal(){
   if(!currentUser){ openAuthModal(); return; }
   document.getElementById('settingsEmail').value = currentUser.email;
-  refreshSettingsAvatarUI();
   const box = document.getElementById('settingsPremiumBox');
   const isPrem = isPremiumActive();
   if(isPrem){
@@ -1969,18 +1614,13 @@ function openSettingsModal(){
     box.innerHTML = `<div class="row"><span>အခြေအနေ</span><b style="color:var(--ink-dim);">Premium မဟုတ်ပါ</b></div>`;
   }
   document.getElementById('settingsOverlay').classList.add('open');
-  pushOverlayHistory('settingsOverlay');
 }
-document.getElementById('settingsCloseBtn').addEventListener('click', () => {
-  document.getElementById('settingsOverlay').classList.remove('open');
-  popOverlayHistory('settingsOverlay');
-});
+document.getElementById('settingsCloseBtn').addEventListener('click', () => document.getElementById('settingsOverlay').classList.remove('open'));
 document.getElementById('settingsOverlay').addEventListener('click', e => {
-  if(e.target.id === 'settingsOverlay'){ e.currentTarget.classList.remove('open'); popOverlayHistory('settingsOverlay'); }
+  if(e.target.id === 'settingsOverlay') e.currentTarget.classList.remove('open');
 });
 document.getElementById('settingsBuyPremiumBtn').addEventListener('click', () => {
   document.getElementById('settingsOverlay').classList.remove('open');
-  popOverlayHistory('settingsOverlay');
   openPremiumGate(null);
 });
 
@@ -2053,7 +1693,6 @@ auth.onAuthStateChanged(user => {
     userDocUnsub = db.collection('users').doc(user.uid).onSnapshot(doc => {
       currentUserDoc = doc.exists ? doc.data() : null;
       renderAccountArea();
-      if(document.getElementById('settingsOverlay').classList.contains('open')) refreshSettingsAvatarUI();
       render();
     });
     pendingReqUnsub = db.collection('premiumRequests')
@@ -2108,43 +1747,48 @@ function openPremiumGate(movieId){
     document.getElementById('premiumStatePay').style.display = 'block';
   }
   document.getElementById('premiumOverlay').classList.add('open');
-  pushOverlayHistory('premiumOverlay');
 }
-document.getElementById('premiumCloseBtn').addEventListener('click', () => {
-  document.getElementById('premiumOverlay').classList.remove('open');
-  popOverlayHistory('premiumOverlay');
-});
-document.getElementById('premiumPendingCloseBtn').addEventListener('click', () => {
-  document.getElementById('premiumOverlay').classList.remove('open');
-  popOverlayHistory('premiumOverlay');
-});
+document.getElementById('premiumCloseBtn').addEventListener('click', () => document.getElementById('premiumOverlay').classList.remove('open'));
+document.getElementById('premiumPendingCloseBtn').addEventListener('click', () => document.getElementById('premiumOverlay').classList.remove('open'));
 document.getElementById('premiumGoLoginBtn').addEventListener('click', () => {
   document.getElementById('premiumOverlay').classList.remove('open');
-  popOverlayHistory('premiumOverlay');
   openAuthModal();
 });
+/* Premium request တင်တာနဲ့ admin ရဲ့ Telegram ကို အကြောင်းကြားမယ့် Worker (premium-notify-worker.js) ။
+   Deploy ပြီးရင် ရလာတဲ့ Worker URL ကို ဒီမှာ ထည့်ပါ။ မထည့်ထားသရွေ့ (empty) notify မလုပ်ဘဲ
+   Premium request တင်တာကတော့ ပုံမှန်အတိုင်း အလုပ်လုပ်နေမှာပါ။ Bot token က Worker ထဲမှာပဲ ရှိပါတယ်။ */
+const PREMIUM_NOTIFY_URL = "https://tight-sound-80c6.kopethaung.workers.dev";
+async function notifyAdminTelegram(requestId){
+  if(!PREMIUM_NOTIFY_URL || !currentUser) return;
+  try{
+    const idToken = await currentUser.getIdToken();
+    const res = await fetch(PREMIUM_NOTIFY_URL, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + idToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestId })
+    });
+    // user ကို ဘာမှမပြဘူး — ပြဿနာရှာဖို့ browser console (F12) မှာပဲ မြင်ရမယ်
+    if(!res.ok) console.warn('Premium notify failed:', res.status, await res.text().catch(() => ''));
+  }catch(e){ console.warn('Premium notify error:', e); /* notify မအောင်မြင်လည်း user ရဲ့ request ကို မထိခိုက်စေရ */ }
+}
 document.getElementById('premiumSubmitBtn').addEventListener('click', async () => {
   const txnId = document.getElementById('fTxnId').value.trim();
   const method = document.getElementById('fPayMethod').value;
   const plan = PREMIUM_PLANS.find(p => p.id === document.getElementById('fPremiumPlan').value) || PREMIUM_PLANS[0];
   const errEl = document.getElementById('premiumErr');
-  const btn = document.getElementById('premiumSubmitBtn');
   if(!txnId){ errEl.textContent = 'Transaction ID ဖြည့်ပါ'; errEl.classList.add('show'); return; }
-  setBtnLoading(btn, true);
   try{
-    await db.collection('premiumRequests').add({
+    const reqRef = await db.collection('premiumRequests').add({
       uid: currentUser.uid, email: currentUser.email,
       paymentMethod: method, transactionId: txnId,
       planId: plan.id, planLabel: plan.label, planDays: plan.days, planPrice: plan.price,
       status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    notifyAdminTelegram(reqRef.id); // await မလုပ်ဘူး — user ကို မစောင့်ခိုင်းဘဲ နောက်ကွယ်မှာ ပို့
     document.getElementById('premiumOverlay').classList.remove('open');
-    popOverlayHistory('premiumOverlay');
     showToast('Premium request တင်သွင်းပြီးပါပြီ — admin မှ စစ်ဆေးနေပါမည်', 'ok');
   }catch(err){
     errEl.textContent = err.message; errEl.classList.add('show');
-  } finally {
-    setBtnLoading(btn, false);
   }
 });
 
@@ -2156,11 +1800,9 @@ document.getElementById('promoToggleBtn').addEventListener('click', () => {
 document.getElementById('promoRedeemBtn').addEventListener('click', async () => {
   const code = document.getElementById('fPromoRedeemCode').value.trim().toUpperCase();
   const errEl = document.getElementById('promoRedeemErr');
-  const btn = document.getElementById('promoRedeemBtn');
   errEl.classList.remove('show');
   if(!code){ errEl.textContent = 'Code ထည့်ပါ'; errEl.classList.add('show'); return; }
   if(!currentUser){ errEl.textContent = 'Login ဝင်ထားရပါမယ်'; errEl.classList.add('show'); return; }
-  setBtnLoading(btn, true);
   try{
     const codeRef = db.collection('inviteCodes').doc(code);
     const userRef = db.collection('users').doc(currentUser.uid);
@@ -2189,13 +1831,10 @@ document.getElementById('promoRedeemBtn').addEventListener('click', async () => 
       }
     });
     document.getElementById('premiumOverlay').classList.remove('open');
-    popOverlayHistory('premiumOverlay');
     showToast(`🎉 ${trialDays} ရက် Trial စတင်ပါပြီ! Premium content တွေကို ကြည့်လို့ရပါပြီ`, 'ok');
     if(pendingPlayId){ const id = pendingPlayId; pendingPlayId = null; openPlayer(id); }
   }catch(err){
     errEl.textContent = err.message; errEl.classList.add('show');
-  } finally {
-    setBtnLoading(btn, false);
   }
 });
 
@@ -2210,7 +1849,7 @@ function movieCardHtml(m){
   const ratioStyle = m.category === 'adult' ? ' style="aspect-ratio:16/9;"' : (m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '');
   const inList = myList.includes(m.id);
   return `<div class="card${m.isPremium ? ' is-premium' : ''}" data-type="movie" data-id="${m.id}">
-    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" alt="${esc(m.title)}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <button class="card-bookmark${inList ? ' active' : ''}" data-id="${m.id}" aria-label="My List" title="My List">${inList ? '🔖' : '🏷️'}</button>
     ${m.category === 'adult' ? `<div class="card-adult-badge">18+</div>` : ''}
     ${m.duration ? `<div class="card-duration">${esc(m.duration)}</div>` : ''}
@@ -2224,7 +1863,7 @@ function seriesCardHtml(s){
   const thumb = s.thumb ? esc(s.thumb) : PLACEHOLDER_THUMB;
   const ratioStyle = s.thumbAspectRatio ? ` style="aspect-ratio:${esc(s.thumbAspectRatio)};"` : '';
   return `<div class="card${s.hasPremium ? ' is-premium' : ''}" data-type="series" data-name="${esc(s.name)}">
-    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" alt="${esc(s.name)}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <div class="card-badge">${s.count} Ep</div>
     ${s.hasPremium ? `<div class="card-premium">★ PREMIUM</div>` : ''}
     <div class="card-body">
@@ -2237,8 +1876,7 @@ function continueCardHtml(m, c){
   const thumb = m.thumbUrl ? esc(m.thumbUrl) : PLACEHOLDER_THUMB;
   const ratioStyle = m.category === 'adult' ? ' style="aspect-ratio:16/9;"' : (m.thumbAspectRatio ? ` style="aspect-ratio:${esc(m.thumbAspectRatio)};"` : '');
   return `<div class="card" data-type="movie" data-id="${m.id}">
-    <img class="card-thumb img-loading" loading="lazy" src="${thumb}" alt="${esc(m.title)}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
-    <button class="card-remove-btn" data-id="${m.id}" aria-label="ဆက်ကြည့်ရန်မှ ဖယ်ရှားမည်" title="ဆက်ကြည့်ရန်မှ ဖယ်ရှားမည်">✕</button>
+    <img class="card-thumb img-loading" loading="lazy" src="${thumb}"${ratioStyle} onload="this.classList.remove('img-loading')" onerror="this.src='${PLACEHOLDER_THUMB}';this.classList.remove('img-loading')">
     <div class="continue-bar"><div class="continue-bar-fill" style="width:${pct}%;"></div></div>
     <div class="card-body">
       <div class="card-title">${esc(m.title)}</div>
@@ -2254,13 +1892,6 @@ function wireCards(container){
       toggleMyList(btn.dataset.id);
     });
   });
-  container.querySelectorAll('.card-remove-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      if(!currentUser) return;
-      db.collection('users').doc(currentUser.uid).collection('continueWatching').doc(btn.dataset.id).delete().catch(() => {});
-    });
-  });
   // Keyboard/screen-reader access — cards are clickable <div>s, so Tab + Enter/Space
   // needs to work the same as a click for anyone not using a mouse/touch.
   container.querySelectorAll('.card').forEach(card => {
@@ -2272,7 +1903,6 @@ function wireCards(container){
     });
   });
   wireHoverPreview(container);
-  wireRowArrows(container);
 }
 
 /* ---------- Hover preview (desktop only) ----------
@@ -2312,38 +1942,6 @@ function wireHoverPreview(container){
   });
 }
 
-/* ---------- Row carousel arrows (desktop/mouse only) ----------
-   Adds click-to-scroll ‹ › buttons to any .row-track found inside `container`
-   — only on hover-capable devices (same `supportsHoverPreview` check as
-   above), so touch/mobile keeps plain native swipe with zero extra buttons.
-   Arrows fade in on hover and hide themselves once a scroll end is reached. */
-function wireRowArrows(container){
-  if(!supportsHoverPreview) return;
-  container.querySelectorAll('.row-track').forEach(track => {
-    const row = track.closest('.row');
-    if(!row || row.querySelector('.row-arrow')) return; // no row wrapper, or already wired
-    if(track.scrollWidth <= track.clientWidth + 4) return; // nothing to scroll yet
-    const makeArrow = dir => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'row-arrow ' + (dir === -1 ? 'prev' : 'next');
-      btn.setAttribute('aria-label', dir === -1 ? 'ဘယ်ဘက်သို့ ရွှေ့မည်' : 'ညာဘက်သို့ ရွှေ့မည်');
-      btn.textContent = dir === -1 ? '‹' : '›';
-      btn.addEventListener('click', () => track.scrollBy({ left: dir * track.clientWidth * 0.85, behavior: 'smooth' }));
-      row.appendChild(btn);
-      return btn;
-    };
-    const prevBtn = makeArrow(-1);
-    const nextBtn = makeArrow(1);
-    const updateEdges = () => {
-      prevBtn.classList.toggle('at-edge', track.scrollLeft <= 4);
-      nextBtn.classList.toggle('at-edge', track.scrollLeft >= track.scrollWidth - track.clientWidth - 4);
-    };
-    track.addEventListener('scroll', updateEdges, { passive: true });
-    updateEdges();
-  });
-}
-
 /* =========================================================
    SEARCH — client-side over already-loaded movies (18+ always excluded)
    ========================================================= */
@@ -2362,19 +1960,8 @@ document.getElementById('searchGenreSelect').addEventListener('change', e => {
   performSearch(document.getElementById('searchInput').value || document.getElementById('searchInputMobile').value);
 });
 
-// Normalizes text before comparing it in search: Unicode NFC composition +
-// stripping zero-width characters, which Myanmar text input methods
-// inconsistently insert/omit — a real, common cause of "the title looks
-// identical but search doesn't find it" for Myanmar script. Note: this does
-// NOT convert between the Zawgyi and Unicode *encodings* themselves (a movie
-// title saved in one and a search typed in the other still won't match) —
-// that needs a dedicated, properly-tested conversion table rather than a
-// quick heuristic, so it's intentionally left for a separate follow-up.
-function normalizeSearchText(str){
-  return (str || '').normalize('NFC').replace(/[\u200B\u200C\u200D]/g, '').trim().toLowerCase();
-}
 function performSearch(query){
-  query = normalizeSearchText(query);
+  query = query.trim().toLowerCase();
   if(!query && !searchGenreFilter){ showView('home'); return; }
   const results = [];
   const seenSeries = new Set();
@@ -2382,10 +1969,10 @@ function performSearch(query){
     if(searchGenreFilter && !(m.genres || []).includes(searchGenreFilter)) return;
     if(m.category === 'drama'){
       const key = (m.seriesName && m.seriesName.trim()) || m.title;
-      const nameMatches = !query || normalizeSearchText(key).includes(query);
-      const titleMatches = !query || normalizeSearchText(m.title).includes(query);
+      const nameMatches = !query || key.toLowerCase().includes(query);
+      const titleMatches = !query || m.title.toLowerCase().includes(query);
       if((nameMatches || titleMatches) && !seenSeries.has(key)) seenSeries.add(key);
-    } else if(!query || (m.title && normalizeSearchText(m.title).includes(query))){
+    } else if(!query || (m.title && m.title.toLowerCase().includes(query))){
       results.push({ type: 'movie', data: m });
     }
   });
@@ -2401,29 +1988,14 @@ function performSearch(query){
 }
 let searchDebounceTimer = null;
 function wireSearchInput(input){
-  // Tracks a *real* keystroke/paste/IME event, as opposed to a value that just
-  // "appears" in the field — the latter means the browser or a password manager
-  // filled it in on its own (this is what caused a saved email to show up in the
-  // search box and trigger a search with nobody having typed anything). Until one
-  // of these real-interaction events has fired, any 'input' event is treated as
-  // autofill and ignored instead of acted on.
-  let userTyped = false;
-  input.addEventListener('keydown', () => { userTyped = true; });
-  input.addEventListener('compositionstart', () => { userTyped = true; }); // IME (e.g. Myanmar keyboards)
-  input.addEventListener('paste', () => { userTyped = true; });
   input.addEventListener('keydown', e => { if(e.key === 'Enter'){ clearTimeout(searchDebounceTimer); performSearch(input.value); } });
   input.addEventListener('input', () => {
-    if(!userTyped){ input.value = ''; return; }
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(() => performSearch(input.value), 300); // debounced instant search
   });
 }
 wireSearchInput(document.getElementById('searchInput'));
 wireSearchInput(document.getElementById('searchInputMobile'));
-// Belt-and-suspenders: explicitly clear both fields on load too, in case a
-// value was auto-filled in before this script even ran.
-document.getElementById('searchInput').value = '';
-document.getElementById('searchInputMobile').value = '';
 function clearSearchInputs(){
   document.getElementById('searchInput').value = '';
   document.getElementById('searchInputMobile').value = '';
@@ -2479,8 +2051,6 @@ function getDramaSeries(){
 /* =========================================================
    8) RENDER
    ========================================================= */
-let lastFeaturedId = null; // tracks the hero's current pick so a live admin
-                            // update crossfades instead of swapping instantly
 function render(){
   const originals = movies.filter(m => m.category === 'original');
   const series = getDramaSeries();
@@ -2540,25 +2110,12 @@ function render(){
 
   const featured = movies.find(m => m.featured && m.category !== 'adult') || movies.find(m => m.category !== 'adult');
   if(featured){
-    const heroEl = document.getElementById('heroSection');
-    const applyHero = () => {
-      heroEl.style.backgroundImage =
-        featured.thumbUrl ? `linear-gradient(to top, var(--bg), transparent 40%), url('${featured.thumbUrl}')` : '';
-      document.getElementById('heroBadge').textContent = CATEGORY_LABEL[featured.category] || '';
-      document.getElementById('heroTitle').textContent = featured.title;
-      document.getElementById('heroDesc').textContent = featured.desc || '';
-      document.getElementById('heroPlayBtn').onclick = () => openPlayer(featured.id);
-    };
-    if(lastFeaturedId !== null && lastFeaturedId !== featured.id){
-      // The featured pick changed under a returning viewer (e.g. admin updated
-      // it while the page was open) — fade out, swap, fade back in instead of
-      // an instant/jarring background-image swap.
-      heroEl.classList.add('hero-swap');
-      setTimeout(() => { applyHero(); heroEl.classList.remove('hero-swap'); }, 220);
-    } else {
-      applyHero();
-    }
-    lastFeaturedId = featured.id;
+    document.getElementById('heroSection').style.backgroundImage =
+      featured.thumbUrl ? `linear-gradient(to top, var(--bg), transparent 40%), url('${featured.thumbUrl}')` : '';
+    document.getElementById('heroBadge').textContent = CATEGORY_LABEL[featured.category] || '';
+    document.getElementById('heroTitle').textContent = featured.title;
+    document.getElementById('heroDesc').textContent = featured.desc || '';
+    document.getElementById('heroPlayBtn').onclick = () => openPlayer(featured.id);
   }
 
   if(currentSeries) openSeries(currentSeries, true);
@@ -2586,7 +2143,6 @@ async function openSeries(name, silentRefresh){
   if(!series) return;
   currentSeries = name;
   document.getElementById('seriesPoster').src = series.thumb ? esc(series.thumb) : PLACEHOLDER_THUMB;
-  document.getElementById('seriesPoster').alt = series.name || '';
   document.getElementById('seriesPoster').onerror = function(){ this.src = PLACEHOLDER_THUMB; };
   document.getElementById('seriesTitle').textContent = series.name;
   document.getElementById('seriesCount').textContent = series.count + ' Episodes';
@@ -2625,14 +2181,6 @@ document.getElementById('seriesBackBtn').addEventListener('click', () => history
 /* Hardware/gesture "back" ကို modal/series view ပိတ်ဖို့ပဲ သုံးမယ် — history entry
    ကနေ pop ဖြစ်တာနဲ့ site တစ်ခုလုံးကနေ ထွက်မသွားဘဲ ပြီးခဲ့တဲ့ view ကိုပဲ ပြန်ပြပေးမယ် */
 window.addEventListener('popstate', () => {
-  if(overlayHistoryStack.length){
-    const id = overlayHistoryStack[overlayHistoryStack.length - 1];
-    closingOverlayViaPopstate = true;
-    const closer = OVERLAY_CLOSERS[id];
-    if(closer) closer(); else overlayHistoryStack.pop();
-    closingOverlayViaPopstate = false;
-    return;
-  }
   if(document.getElementById('modalOverlay').classList.contains('open')){
     closePlayer();
     return;
@@ -2762,36 +2310,16 @@ function openPlayer(id){
   const videoEl = document.createElement('video');
   videoEl.controls = true;
   videoEl.autoplay = true;
-  videoEl.muted = true; // required by most browsers for reliable autoplay; restored below once playing
+  videoEl.muted = true; // required by most browsers for reliable autoplay; user can unmute via controls
   videoEl.playsInline = true; // keeps video inline on iOS instead of forcing fullscreen
   videoEl.setAttribute('playsinline', '');
   videoEl.setAttribute('webkit-playsinline', '');
-  // Remember volume/mute across videos instead of resetting every time — but
-  // always START muted (above) since that's required for autoplay to reliably
-  // work, then restore the user's real preference right as playback begins.
-  try{
-    const savedVol = parseFloat(localStorage.getItem('maxflixVolume'));
-    if(!isNaN(savedVol)) videoEl.volume = Math.min(1, Math.max(0, savedVol));
-  }catch(e){}
-  videoEl.addEventListener('playing', function restoreMuteOnce(){
-    try{ videoEl.muted = localStorage.getItem('maxflixMuted') === '1'; }catch(e){}
-    videoEl.removeEventListener('playing', restoreMuteOnce);
-  }, { once: true });
-  videoEl.addEventListener('volumechange', () => {
-    try{
-      localStorage.setItem('maxflixVolume', String(videoEl.volume));
-      localStorage.setItem('maxflixMuted', videoEl.muted ? '1' : '0');
-    }catch(e){}
-  });
   wrap.appendChild(videoEl);
-  // So Space/arrow-key native player shortcuts work immediately, without the
-  // person needing to click the video first.
-  videoEl.focus({ preventScroll: true });
 
   const srcUrl = pickVideoUrl(m);
   playVideoSrc(videoEl, srcUrl, m, wrap);
   attachProgressTracking(videoEl, m);
-  trackViewCount(videoEl, m);
+  db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
   wireAutoPlayNext(videoEl, m, wrap);
 
   document.getElementById('modalTitle').textContent = m.title;
@@ -2965,32 +2493,6 @@ function wireAutoPlayNext(videoEl, m, wrap){
 
 /* Save/resume watch position for logged-in users so it can show up in
    the "Continue Watching" row. Adult content is intentionally excluded. */
-/* ---------- View counter ----------
-   A view is counted once the person has really watched about 15 seconds (or half of a
-   very short clip) — not the moment the player opens — and at most once per video per
-   browser session, so refreshing or re-opening the same video can't pump the number.
-   Seeking forward doesn't count as watching: only normal playback time adds up.
-   The write is a +1 on movies/{id}.viewCount, which Firestore's rules must allow (they
-   allow exactly that, and nothing else, for visitors). If a write is ever refused it is
-   now reported in the browser console instead of being silently swallowed. */
-function trackViewCount(videoEl, m){
-  const key = 'viewed_' + m.id;
-  try{ if(sessionStorage.getItem(key) === '1') return; }catch(e){}
-  let watched = 0, last = null, done = false;
-  videoEl.addEventListener('seeking', () => { last = null; });
-  videoEl.addEventListener('timeupdate', () => {
-    if(done) return;
-    const t = videoEl.currentTime;
-    if(last !== null){ const d = t - last; if(d > 0 && d < 1.5) watched += d; } // normal playback only
-    last = t;
-    const need = isFinite(videoEl.duration) && videoEl.duration > 0 ? Math.min(15, videoEl.duration / 2) : 15;
-    if(watched < need) return;
-    done = true; // never fire twice from this player, whatever the outcome
-    db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) })
-      .then(() => { try{ sessionStorage.setItem(key, '1'); }catch(e){} })
-      .catch(err => console.warn('view count write failed:', err && err.code ? err.code : err));
-  });
-}
 function attachProgressTracking(videoEl, m){
   if(!currentUser || m.category === 'adult') return;
   const ref = db.collection('users').doc(currentUser.uid).collection('continueWatching').doc(m.id);
@@ -3020,13 +2522,13 @@ function attachProgressTracking(videoEl, m){
 document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') history.back(); });
 document.getElementById('modalBackBtn').addEventListener('click', () => history.back());
 document.getElementById('pinOverlay').addEventListener('click', e => {
-  if(e.target.id==='pinOverlay'){ e.currentTarget.classList.remove('open'); popOverlayHistory('pinOverlay'); pendingUnlockCallback = null; }
+  if(e.target.id==='pinOverlay'){ e.currentTarget.classList.remove('open'); pendingUnlockCallback = null; }
 });
 document.getElementById('authOverlay').addEventListener('click', e => {
-  if(e.target.id==='authOverlay'){ e.currentTarget.classList.remove('open'); popOverlayHistory('authOverlay'); }
+  if(e.target.id==='authOverlay') e.currentTarget.classList.remove('open');
 });
 document.getElementById('premiumOverlay').addEventListener('click', e => {
-  if(e.target.id==='premiumOverlay'){ e.currentTarget.classList.remove('open'); popOverlayHistory('premiumOverlay'); }
+  if(e.target.id==='premiumOverlay') e.currentTarget.classList.remove('open');
 });
 
 /* =========================================================
@@ -3270,15 +2772,6 @@ subscribeVideoAds();
     notice.style.display = 'none';
     try{ localStorage.setItem(NOTICE_KEY, '1'); }catch(e){}
   });
-})();
-
-/* ---------- Offline / connection-lost banner ---------- */
-(function initConnectionBanner(){
-  const banner = document.getElementById('connectionBanner');
-  const update = () => banner.classList.toggle('show', !navigator.onLine);
-  window.addEventListener('online', update);
-  window.addEventListener('offline', update);
-  update(); // in case the page loaded while already offline
 })();
 
 /* ---------- PWA: service worker registration ---------- */
