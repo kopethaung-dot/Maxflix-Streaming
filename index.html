@@ -1076,6 +1076,18 @@
   </div>
 </div>
 
+<!-- ================= PREMIUM REQUEST RESULT (approved / rejected) ================= -->
+<div class="sm-overlay" id="premiumResultOverlay" style="z-index:130;">
+  <div class="sm-box" style="position:relative;max-width:380px;">
+    <button class="sm-close-x" id="premiumResultCloseX" aria-label="ပိတ်မည်">✕</button>
+    <div id="premiumResultIcon" style="font-size:46px;margin-bottom:8px;line-height:1.1;"></div>
+    <h3 id="premiumResultTitle"></h3>
+    <p id="premiumResultDesc" style="font-size:13px;color:var(--ink-dim);line-height:1.7;"></p>
+    <div class="pay-info" id="premiumResultInfo" style="display:none;"></div>
+    <button class="btn btn-accent btn-block" id="premiumResultBtn"></button>
+  </div>
+</div>
+
 <!-- ================= SETTINGS MODAL ================= -->
 <div class="sm-overlay" id="settingsOverlay">
   <div class="sm-box" style="position:relative;max-width:420px;">
@@ -1642,7 +1654,7 @@ function isPremiumActive(){
   return ms > Date.now();
 }
 
-let userDocUnsub = null, pendingReqUnsub = null, continueUnsub = null;
+let userDocUnsub = null, pendingReqUnsub = null, reviewedReqUnsub = null, continueUnsub = null;
 function subscribeContinueWatching(){
   if(continueUnsub){ continueUnsub(); continueUnsub = null; }
   if(!currentUser){ continueList = []; render(); return; }
@@ -1695,11 +1707,77 @@ function setRating(movieId, vote){ // vote: 'like' | 'dislike'
   }
   db.collection('movies').doc(movieId).update(updates).catch(err => console.error('rating write failed:', err));
 }
+/* ---------- Premium request အဖြေ (approved / rejected) ကို user ဆီ real-time အသိပေးတာ ----------
+   Admin က Approve/Reject နှိပ်လိုက်တာနဲ့ premiumRequests/{id}.status ပြောင်းတယ်၊ user ရဲ့ app က
+   ကိုယ့် request တွေကို onSnapshot နဲ့ နားထောင်ထားလို့ ချက်ချင်း popup တက်မယ် (Firestore rules ပြင်စရာမလို —
+   ကိုယ့် request ကိုယ်ဖတ်ခွင့်က ရှိပြီးသား)။ App ပိတ်ထားတုန်း approve လုပ်ခဲ့ရင် နောက်တစ်ခါဖွင့်တဲ့အခါ တက်မယ်။
+   "မြင်ပြီးပြီ" ဆိုတာကို ဒီ browser ရဲ့ localStorage ထဲမှာ မှတ်ထားလို့ တစ်ကြိမ်ပဲ တက်မယ်။ */
+const REQ_RESULT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;   // ဒီ ၇ ရက်ထက်ပိုဟောင်းတဲ့ အဖြေကို မတက်စေဘူး
+function seenReqKey(uid){ return 'maxflix_seen_req_' + uid; }
+function getSeenReqs(uid){
+  try{ return new Set(JSON.parse(localStorage.getItem(seenReqKey(uid)) || '[]')); }catch(e){ return new Set(); }
+}
+function markReqsSeen(uid, ids){
+  try{
+    const s = getSeenReqs(uid); ids.forEach(id => s.add(id));
+    localStorage.setItem(seenReqKey(uid), JSON.stringify([...s].slice(-50)));
+  }catch(e){}
+}
+function processReviewedRequests(uid, docs){
+  const seen = getSeenReqs(uid), now = Date.now();
+  const fresh = [];
+  docs.forEach(d => {
+    const r = d.data();
+    if(r.status !== 'approved' && r.status !== 'rejected') return;
+    if(seen.has(d.id)) return;
+    const ms = r.reviewedAt && r.reviewedAt.toMillis ? r.reviewedAt.toMillis() : 0;
+    if(!ms || now - ms > REQ_RESULT_WINDOW_MS) return;
+    fresh.push({ id: d.id, ms, r });
+  });
+  if(!fresh.length) return;
+  fresh.sort((a, b) => b.ms - a.ms);
+  markReqsSeen(uid, fresh.map(x => x.id));
+  showPremiumResult(fresh[0].r);   // အသစ်ဆုံး အဖြေကိုပဲ ပြ
+}
+function showPremiumResult(r){
+  const approved = r.status === 'approved';
+  const info = document.getElementById('premiumResultInfo');
+  const btn = document.getElementById('premiumResultBtn');
+  document.getElementById('premiumResultIcon').textContent = approved ? '🎉' : '⚠️';
+  document.getElementById('premiumResultTitle').textContent = approved ? 'Premium အတည်ပြုပြီးပါပြီ' : 'Premium request ကို လက်မခံနိုင်ပါ';
+  if(approved){
+    document.getElementById('premiumResultDesc').textContent = 'ကျေးဇူးတင်ပါတယ်! အခုကစပြီး Premium ဇာတ်ကား/Series အားလုံးကို ကြည့်ရှုနိုင်ပါပြီ။';
+    const rows = [];
+    if(r.planLabel) rows.push(`<div class="row"><span>Plan</span><b>${esc(r.planLabel)}</b></div>`);
+    const exp = currentUserDoc && currentUserDoc.premiumExpiresAt
+      ? (currentUserDoc.premiumExpiresAt.toMillis ? currentUserDoc.premiumExpiresAt.toMillis() : currentUserDoc.premiumExpiresAt) : 0;
+    if(exp){
+      const expText = new Date(exp).getFullYear() >= 2090 ? 'Lifetime'
+        : new Date(exp).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      rows.push(`<div class="row"><span>ကုန်ဆုံးမည့်ရက်</span><b>${esc(expText)}</b></div>`);
+    }
+    info.innerHTML = rows.join(''); info.style.display = rows.length ? 'block' : 'none';
+    btn.textContent = '▶ ကြည့်ရှုမည်';
+    btn.onclick = () => document.getElementById('premiumResultOverlay').classList.remove('open');
+  } else {
+    document.getElementById('premiumResultDesc').textContent = 'ပေးချေမှု သို့မဟုတ် Transaction ID ကို စစ်ဆေးလို့ မတွေ့ပါဘူး။ Transaction ID မှန်မမှန် ပြန်စစ်ပြီး ထပ်တင်ပါ၊ မရရင် Support ကို ဆက်သွယ်ပါ။';
+    info.style.display = 'none';
+    btn.textContent = 'ပြန်တင်မည်';
+    btn.onclick = () => { document.getElementById('premiumResultOverlay').classList.remove('open'); openPremiumGate(null); };
+  }
+  document.getElementById('premiumResultOverlay').classList.add('open');
+}
+document.getElementById('premiumResultCloseX').addEventListener('click', () => document.getElementById('premiumResultOverlay').classList.remove('open'));
+document.getElementById('premiumResultOverlay').addEventListener('click', e => {
+  if(e.target.id === 'premiumResultOverlay') e.currentTarget.classList.remove('open');
+});
+
 auth.onAuthStateChanged(user => {
   currentUser = user;
   adultUnlocked = false;
   if(userDocUnsub) userDocUnsub();
   if(pendingReqUnsub) pendingReqUnsub();
+  if(reviewedReqUnsub){ reviewedReqUnsub(); reviewedReqUnsub = null; }
   if(user){
     userDocUnsub = db.collection('users').doc(user.uid).onSnapshot(doc => {
       currentUserDoc = doc.exists ? doc.data() : null;
@@ -1709,6 +1787,10 @@ auth.onAuthStateChanged(user => {
     pendingReqUnsub = db.collection('premiumRequests')
       .where('uid', '==', user.uid).where('status', '==', 'pending')
       .onSnapshot(snap => { currentPendingRequest = snap.empty ? null : snap.docs[0].data(); });
+    // Admin က approve/reject လုပ်ရင် ချက်ချင်း popup တက်ဖို့ — ကိုယ့် request အားလုံးကို နားထောင် (uid တစ်ခုတည်း filter မို့ index မလို)
+    reviewedReqUnsub = db.collection('premiumRequests').where('uid', '==', user.uid)
+      .onSnapshot(snap => processReviewedRequests(user.uid, snap.docs),
+                  err => console.warn('premium result listener:', err));
   } else {
     currentUserDoc = null; currentPendingRequest = null;
   }
