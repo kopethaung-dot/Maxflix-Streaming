@@ -407,16 +407,21 @@
   .series-info p{color:var(--ink-dim);font-size:14px;max-width:520px;}
   .back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-faint);margin-bottom:18px;}
   .back-link:hover{color:var(--ink);}
-  .ep-list{display:flex;flex-direction:column;gap:10px;}
-  .ep-item{display:flex;gap:14px;align-items:center;padding:10px;border:1px solid var(--line);
-    border-radius:6px;cursor:pointer;background:var(--bg-elev);transition:border-color .15s;position:relative;}
-  .ep-item:hover{border-color:var(--accent-dim);}
-  .ep-num{font-family:var(--font-display);font-size:22px;color:var(--ink-faint);width:34px;text-align:center;flex-shrink:0;}
-  .ep-thumb{width:64px;height:96px;object-fit:cover;border-radius:4px;background:#222;flex-shrink:0;}
-  .ep-info{flex:1;min-width:0;}
-  .ep-info .t{font-size:14px;font-weight:600;}
-  .ep-info .m{font-size:11px;color:var(--ink-faint);margin-top:2px;}
-  .ep-play{font-size:18px;color:var(--ink-faint);padding:8px;}
+  /* Episode တွေကို အရှည်တန်းစီမပြဘဲ Square tile တစ်ကွက်ချင်းစီ grid နဲ့ ပြတယ် (Series စာမျက်နှာ + Player ထဲက list နှစ်ခုလုံး) */
+  .ep-list,.modal-ep-list-stack{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;}
+  .ep-item{position:relative;aspect-ratio:1/1;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;
+    cursor:pointer;background:var(--bg-card);transition:border-color .15s,transform .15s;}
+  .ep-item:hover{border-color:var(--accent-dim);transform:translateY(-2px);}
+  .ep-thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#222;opacity:.5;}
+  .ep-shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.2) 55%,rgba(0,0,0,.35) 100%);}
+  .ep-num{position:absolute;left:0;right:0;top:50%;transform:translateY(-54%);text-align:center;line-height:1;
+    font-family:var(--font-display);font-size:34px;letter-spacing:.5px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);}
+  .ep-num small{display:block;font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:4px;}
+  .ep-dur{position:absolute;left:8px;bottom:6px;font-size:11px;font-weight:600;color:#e6e6ea;text-shadow:0 1px 4px rgba(0,0,0,.8);}
+  .ep-prem{position:absolute;top:6px;right:6px;background:var(--gold);color:#0a0a0d;font-size:10px;font-weight:800;
+    line-height:1;padding:3px 6px;border-radius:10px;}
+  .ep-now{position:absolute;top:6px;left:6px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;
+    line-height:1;padding:3px 7px;border-radius:10px;}
 
   /* ---------- Player modal ---------- */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
@@ -432,11 +437,15 @@
   .modal-ep-list-title{font-family:var(--font-display);font-size:16px;letter-spacing:.5px;margin-bottom:12px;}
   .modal-related{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
   .modal-related-title{font-family:var(--font-display);font-size:16px;letter-spacing:.5px;margin-bottom:12px;}
-  .modal-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;}
-  .modal-ep-list-stack{display:flex;flex-direction:column;gap:10px;}
-  .modal-ep-list-stack .ep-item.current{border-color:var(--accent);background:rgba(229,9,20,.1);cursor:default;}
+  /* 18+ ဆက်စပ်ဗီဒီယို grid — .card ရဲ့ fixed width (210/150/118px) က grid column နဲ့ မကိုက်လို့ မညီတာကို ပြင်ထား:
+     card တိုင်း column အကျယ်အတိုင်း (width:100%) ယူပြီး ဖုန်းမှာ ၂ ကွက်စီ တစ်တန်းပေါ်အောင် */
+  .modal-related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;align-items:start;}
+  .modal-related-grid .card{width:100%;min-width:0;}
+  .modal-related-grid .card-thumb{aspect-ratio:16/9;}
+  .modal-ep-list-stack .ep-item.current{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);cursor:default;}
+  .modal-ep-list-stack .ep-item.current:hover{transform:none;}
+  .modal-ep-list-stack .ep-item.current .ep-thumb{opacity:.7;}
   .modal-ep-list-stack .ep-item:not(.current):hover{border-color:var(--ink-dim);}
-  .modal-ep-list-stack .ep-play{color:var(--accent);}
   .modal-close{position:absolute;top:12px;right:12px;z-index:5;width:34px;height:34px;border-radius:50%;
     background:rgba(0,0,0,.6);color:#fff;border:none;font-size:18px;cursor:pointer;}
   .autonext-overlay{position:absolute;inset:0;background:rgba(0,0,0,.82);z-index:6;
@@ -569,9 +578,12 @@
     .series-poster{width:110px;}
     .series-info h2{font-size:22px;}
     .series-info p{font-size:13px;}
-    .ep-thumb{width:48px;height:72px;}
-    .ep-num{font-size:18px;width:26px;}
-    .ep-info .t{font-size:13px;}
+    .ep-list,.modal-ep-list-stack{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+    .ep-num{font-size:28px;}
+    .ep-dur{font-size:10px;left:6px;bottom:5px;}
+    .modal-related-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+    .modal-related-grid .card-body{padding:7px 8px;}
+    .modal-related-grid .card-title{font-size:12px;}
 
     .modal-overlay{padding:0;}
     .modal-box{border-radius:0;height:100%;max-height:none;overflow-y:auto;}
@@ -2378,14 +2390,12 @@ function render(){
 function renderEpList(episodes){
   const epList = document.getElementById('epList');
   epList.innerHTML = episodes.map((ep, i) => `
-    <div class="ep-item" data-id="${ep.id}">
-      <div class="ep-num">${ep.episodeNumber || (i+1)}</div>
-      <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'">
-      <div class="ep-info">
-        <div class="t">${esc(ep.title)} ${ep.isPremium ? '<span class="premium-pill">★</span>' : ''}</div>
-        <div class="m">${ep.duration ? esc(ep.duration) : ''}</div>
-      </div>
-      <div class="ep-play">▶</div>
+    <div class="ep-item" data-id="${ep.id}" title="${esc(ep.title)}" role="button" aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}">
+      <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'" alt="">
+      <div class="ep-shade"></div>
+      ${ep.isPremium ? '<span class="ep-prem">★</span>' : ''}
+      <div class="ep-num"><small>EP</small>${esc(String(ep.episodeNumber || (i+1)))}</div>
+      ${ep.duration ? `<div class="ep-dur">${esc(ep.duration)}</div>` : ''}
     </div>`).join('');
   epList.querySelectorAll('.ep-item').forEach(el => el.addEventListener('click', () => openPlayer(el.dataset.id)));
 }
@@ -2637,14 +2647,13 @@ function paintModalEpList(wrap, seriesName, episodes, currentId){
     <div class="modal-ep-list-title">${esc(seriesName)} — ${episodes.length} Episodes</div>
     <div class="modal-ep-list-stack">
       ${episodes.map((ep, i) => `
-        <div class="ep-item${ep.id === currentId ? ' current' : ''}" data-id="${ep.id}">
-          <div class="ep-num">${ep.episodeNumber || (i+1)}</div>
-          <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'">
-          <div class="ep-info">
-            <div class="t">${esc(ep.title)} ${ep.isPremium ? '<span class="premium-pill">★</span>' : ''}</div>
-            <div class="m">${ep.duration ? esc(ep.duration) : ''}${ep.id === currentId ? ' • ယခုကြည့်နေသည်' : ''}</div>
-          </div>
-          <div class="ep-play">${ep.id === currentId ? '▮▮' : '▶'}</div>
+        <div class="ep-item${ep.id === currentId ? ' current' : ''}" data-id="${ep.id}" title="${esc(ep.title)}" role="button" aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}"${ep.id === currentId ? ' aria-current="true"' : ''}>
+          <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'" alt="">
+          <div class="ep-shade"></div>
+          ${ep.isPremium ? '<span class="ep-prem">★</span>' : ''}
+          ${ep.id === currentId ? '<span class="ep-now">▮▮ ကြည့်နေ</span>' : ''}
+          <div class="ep-num"><small>EP</small>${esc(String(ep.episodeNumber || (i+1)))}</div>
+          ${ep.duration ? `<div class="ep-dur">${esc(ep.duration)}</div>` : ''}
         </div>`).join('')}
     </div>`;
   wrap.querySelectorAll('.ep-item:not(.current)').forEach(el => {
