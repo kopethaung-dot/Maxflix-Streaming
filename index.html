@@ -230,6 +230,36 @@
   .vpn-notice .close-btn:hover{opacity:1;}
   @media(max-width:700px){ .vpn-notice{padding:8px 14px;font-size:12.5px;} }
 
+  /* ---------- UX extras: expiry/install bars · player speed · report · push ---------- */
+  .sys-bar{display:flex;align-items:center;gap:10px;padding:9px clamp(16px,4vw,56px);font-size:13px;color:var(--ink);
+    border-bottom:1px solid var(--line);}
+  .sys-bar .icon{flex-shrink:0;font-size:16px;}
+  .sys-bar .msg{flex:1;line-height:1.4;}
+  .sys-bar .bar-btn{flex-shrink:0;border:none;border-radius:16px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .sys-bar .close-btn{flex-shrink:0;background:none;border:none;color:inherit;font-size:18px;line-height:1;cursor:pointer;opacity:.6;padding:2px 4px;}
+  .sys-bar .close-btn:hover{opacity:1;}
+  .premium-bar{background:linear-gradient(90deg,rgba(212,166,42,.22),rgba(229,9,20,.18));}
+  .premium-bar .bar-btn{background:var(--gold);color:#0a0a0d;}
+  .install-bar{background:rgba(255,255,255,.07);}
+  .install-bar .bar-btn{background:var(--accent);color:#fff;}
+  @media(max-width:700px){ .sys-bar{padding:8px 14px;font-size:12.5px;} }
+  .player-tools{position:absolute;top:10px;left:10px;z-index:5;}
+  .speed-btn{background:rgba(0,0,0,.6);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:16px;
+    padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;min-width:42px;}
+  .speed-menu{display:none;position:absolute;top:34px;left:0;background:rgba(18,12,14,.96);border:1px solid var(--line);
+    border-radius:8px;padding:4px;flex-direction:column;min-width:64px;}
+  .speed-menu.open{display:flex;}
+  .speed-menu button{background:none;border:none;color:#ddd;font-size:13px;padding:7px 12px;text-align:left;cursor:pointer;
+    border-radius:5px;font-family:inherit;}
+  .speed-menu button:hover{background:rgba(255,255,255,.12);}
+  .speed-menu button.sel{color:var(--gold);font-weight:700;}
+  .report-reason{display:block;width:100%;text-align:left;padding:11px 14px;margin-bottom:8px;border-radius:8px;
+    background:var(--bg-card);border:1px solid var(--line);color:var(--ink);font-size:13.5px;cursor:pointer;font-family:inherit;}
+  .report-reason.sel{border-color:var(--accent);background:rgba(229,9,20,.14);}
+  #reportNote{width:100%;min-height:60px;resize:vertical;margin:4px 0 12px;font-family:inherit;}
+  .push-box{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .push-box span{font-size:12.5px;line-height:1.5;text-align:left;color:var(--ink-dim);}
+
   /* ---------- Continue Watching (top strip) ---------- */
   .row-continue-top{padding:14px clamp(16px,4vw,56px) 4px;}
   .row-continue-top .row-track{gap:12px;}
@@ -638,6 +668,19 @@
   <button class="close-btn" id="vpnNoticeClose" aria-label="Close">✕</button>
 </div>
 
+<div class="sys-bar premium-bar" id="premiumExpiryBar" style="display:none;">
+  <span class="icon">⭐</span>
+  <span class="msg" id="premiumExpiryMsg"></span>
+  <button class="bar-btn" id="premiumExpiryRenew">သက်တမ်းတိုးမည်</button>
+  <button class="close-btn" id="premiumExpiryClose" aria-label="ပိတ်မည်">✕</button>
+</div>
+<div class="sys-bar install-bar" id="installBar" style="display:none;">
+  <span class="icon">📲</span>
+  <span class="msg">Maxflix ကို App အနေနဲ့ ထည့်သွင်းပါ — ပိုမြန်၊ Home Screen ကနေ တန်းဖွင့်လို့ရ</span>
+  <button class="bar-btn" id="installBarBtn">ထည့်သွင်းမည်</button>
+  <button class="close-btn" id="installBarClose" aria-label="ပိတ်မည်">✕</button>
+</div>
+
 <!-- ================= BOTTOM TAB BAR (mobile primary nav) ================= -->
 <nav class="bottom-tab-bar" id="bottomTabBar">
   <button class="tab-item nav-tab active" data-view="home">
@@ -915,6 +958,8 @@
         <button class="rating-btn" id="modalLikeBtn">👍 <span id="modalLikeCount">0</span></button>
         <button class="rating-btn" id="modalDislikeBtn">👎 <span id="modalDislikeCount">0</span></button>
         <button class="rating-btn" id="modalMyListBtn">🏷️ My List</button>
+        <button class="rating-btn" id="modalShareBtn">🔗 Share</button>
+        <button class="rating-btn" id="modalReportBtn">⚠️ Report</button>
       </div>
       <div class="modal-desc" id="modalDesc"></div>
       <div class="modal-ep-list" id="modalEpList" style="display:none;"></div>
@@ -1071,6 +1116,7 @@
       <div style="font-size:28px;margin-bottom:8px;">⏳</div>
       <h3>စစ်ဆေးနေဆဲ</h3>
       <p>သင့်ရဲ့ Premium request ကို admin မှ စစ်ဆေးနေပါတယ်။ အတည်ပြုပြီးရင် ဒီဇာတ်ကားကို ချက်ချင်း ကြည့်လို့ရပါမယ်။</p>
+      <button class="btn btn-accent btn-block" id="pendingPushBtn" style="display:none;margin-bottom:8px;">🔔 Approve ဖြစ်ရင် အသိပေးပါ</button>
       <button class="btn btn-ghost btn-block" id="premiumPendingCloseBtn">ပိတ်မည်</button>
     </div>
   </div>
@@ -1085,6 +1131,21 @@
     <p id="premiumResultDesc" style="font-size:13px;color:var(--ink-dim);line-height:1.7;"></p>
     <div class="pay-info" id="premiumResultInfo" style="display:none;"></div>
     <button class="btn btn-accent btn-block" id="premiumResultBtn"></button>
+    <button class="btn btn-ghost btn-block" id="premiumResultBtn2" style="display:none;margin-top:8px;"></button>
+  </div>
+</div>
+
+<!-- ================= REPORT BROKEN VIDEO ================= -->
+<div class="sm-overlay" id="reportOverlay" style="z-index:125;">
+  <div class="sm-box" style="position:relative;max-width:400px;text-align:left;">
+    <button class="sm-close-x" id="reportCloseX" aria-label="ပိတ်မည်">✕</button>
+    <div style="font-size:30px;margin-bottom:6px;text-align:center;">⚠️</div>
+    <h3 style="text-align:center;">ပြဿနာ တင်ပြမည်</h3>
+    <p id="reportTitleLine" style="text-align:center;font-size:13px;color:var(--gold);margin-bottom:14px;"></p>
+    <div id="reportReasons"></div>
+    <textarea id="reportNote" maxlength="200" placeholder="ထပ်ပြောချင်တာရှိရင် ရေးပါ (မရေးလည်းရ)"></textarea>
+    <div class="sm-err" id="reportErr"></div>
+    <button class="btn btn-accent btn-block" id="reportSubmitBtn" disabled>တင်ပြမည်</button>
   </div>
 </div>
 
@@ -1099,6 +1160,16 @@
     </div>
     <div class="field"><label>Premium အခြေအနေ</label>
       <div class="pay-info" id="settingsPremiumBox"></div>
+    </div>
+    <div class="field" id="settingsPushField" style="display:none;"><label>Notification</label>
+      <div class="pay-info push-box"><span id="settingsPushText"></span>
+        <button class="btn btn-ghost" id="settingsPushBtn" style="padding:8px 14px;font-size:12px;white-space:nowrap;">ဖွင့်မည်</button>
+      </div>
+    </div>
+    <div class="field" id="settingsInstallField" style="display:none;"><label>App</label>
+      <div class="pay-info push-box"><span>Maxflix ကို Home Screen ထဲ App အနေနဲ့ ထည့်သွင်းပါ</span>
+        <button class="btn btn-ghost" id="settingsInstallBtn" style="padding:8px 14px;font-size:12px;white-space:nowrap;">📲 ထည့်သွင်းမည်</button>
+      </div>
     </div>
     <button class="btn btn-accent btn-block" id="settingsBuyPremiumBtn">⭐ Premium ဝယ်ယူရန်</button>
   </div>
@@ -1154,7 +1225,9 @@ const PREMIUM_PLANS = [
 ];
 
 const PLACEHOLDER_THUMB = "data:image/svg+xml;utf8," + encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='210' height='315'><rect width='210' height='315' fill='%231a1a21'/><text x='50%' y='50%' fill='%236b6970' font-size='13' font-family='sans-serif' text-anchor='middle'>No Poster</text></svg>`);
+  `<svg xmlns='http://www.w3.org/2000/svg' width='210' height='315'><rect width='210' height='315' fill='%231a1a21'/><text x='50%' y='50%' fill='%236b6970' font-size='13' font-family='sans-serif' text-anchor='middle'>No Poster</text></svg>`).replace(/'/g, '%27');
+// ↑ encodeURIComponent က ' ကို မ encode လုပ်လို့ onerror="this.src='${PLACEHOLDER_THUMB}'" လို inline handler တွေမှာ JS string ကျိုးပြီး
+//   (SyntaxError) ပုံမတက်ရင် "No Poster" fallback မပေါ်ဘဲ ဖြစ်နေတာကို ပြင်ထားတယ်
 
 function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 const CATEGORY_LABEL = { original: 'Movies', drama: 'Short Drama', adult: '18+' };
@@ -1604,7 +1677,7 @@ function renderAccountArea(){
     });
     document.getElementById('logoutBtn').addEventListener('click', () => {
       document.getElementById('accountDropdown').classList.remove('open');
-      auth.signOut();
+      detachPushForLogout().finally(() => auth.signOut());
     });
   } else {
     area.innerHTML = `<button class="account-btn" id="loginNavBtn">Login / Sign up</button>`;
@@ -1633,9 +1706,13 @@ function openSettingsModal(){
       (isLifetime ? '' : `<div class="row"><span>သက်တမ်းကုန်ဆုံးရက်</span><b>${new Date(expMs).toLocaleDateString('en-GB')}</b></div>`);
   } else if(currentPendingRequest){
     box.innerHTML = `<div class="row"><span>အခြေအနေ</span><b>⏳ Review လုပ်နေဆဲ</b></div>`;
+  } else if(premiumExpiryMs() && !isLifetimePremium()){
+    box.innerHTML = `<div class="row"><span>အခြေအနေ</span><b style="color:var(--danger);">⌛ သက်တမ်း ကုန်ဆုံးပြီး</b></div>` +
+      `<div class="row"><span>ကုန်ဆုံးခဲ့သည့်ရက်</span><b>${new Date(premiumExpiryMs()).toLocaleDateString('en-GB')}</b></div>`;
   } else {
     box.innerHTML = `<div class="row"><span>အခြေအနေ</span><b style="color:var(--ink-dim);">Premium မဟုတ်ပါ</b></div>`;
   }
+  refreshSettingsExtras();
   document.getElementById('settingsOverlay').classList.add('open');
 }
 document.getElementById('settingsCloseBtn').addEventListener('click', () => document.getElementById('settingsOverlay').classList.remove('open'));
@@ -1740,6 +1817,7 @@ function processReviewedRequests(uid, docs){
   showPremiumResult(fresh[0].r);   // အသစ်ဆုံး အဖြေကိုပဲ ပြ
 }
 function showPremiumResult(r){
+  document.getElementById('premiumResultBtn2').style.display = 'none';
   const approved = r.status === 'approved';
   const info = document.getElementById('premiumResultInfo');
   const btn = document.getElementById('premiumResultBtn');
@@ -1783,22 +1861,25 @@ auth.onAuthStateChanged(user => {
       currentUserDoc = doc.exists ? doc.data() : null;
       renderAccountArea();
       render();
+      checkPremiumExpiry();
     });
     pendingReqUnsub = db.collection('premiumRequests')
       .where('uid', '==', user.uid).where('status', '==', 'pending')
-      .onSnapshot(snap => { currentPendingRequest = snap.empty ? null : snap.docs[0].data(); });
+      .onSnapshot(snap => { currentPendingRequest = snap.empty ? null : snap.docs[0].data(); checkPremiumExpiry(); });
     // Admin က approve/reject လုပ်ရင် ချက်ချင်း popup တက်ဖို့ — ကိုယ့် request အားလုံးကို နားထောင် (uid တစ်ခုတည်း filter မို့ index မလို)
     reviewedReqUnsub = db.collection('premiumRequests').where('uid', '==', user.uid)
       .onSnapshot(snap => processReviewedRequests(user.uid, snap.docs),
                   err => console.warn('premium result listener:', err));
   } else {
     currentUserDoc = null; currentPendingRequest = null;
+    checkPremiumExpiry();
   }
   subscribeContinueWatching();
   subscribeMyList();
   renderAccountArea();
   render();
-  if(!didInitialViewRestore){ didInitialViewRestore = true; restoreLastView(); }
+  if(!didInitialViewRestore){ didInitialViewRestore = true; restoreLastView(); handleDeepLink(); }
+  if(user) ensurePushOnLogin();
 });
 
 /* =========================================================
@@ -1826,6 +1907,7 @@ function openPremiumGate(movieId){
     document.getElementById('premiumStateAuth').style.display = 'block';
   } else if(currentPendingRequest){
     document.getElementById('premiumStatePending').style.display = 'block';
+    updatePendingPushBtn();
   } else {
     document.getElementById('premiumPayDesc').textContent = movieId
       ? 'ဒီဇာတ်ကားကို ကြည့်ဖို့ Premium subscription လိုအပ်ပါတယ်'
@@ -1953,6 +2035,7 @@ document.getElementById('premiumSubmitBtn').addEventListener('click', async () =
     clearSlipPick();
     document.getElementById('premiumOverlay').classList.remove('open');
     showToast('Premium request တင်သွင်းပြီးပါပြီ — admin မှ စစ်ဆေးနေပါမည်', 'ok');
+    maybePromptPushAfterRequest();
   }catch(err){
     errEl.textContent = err.message; errEl.classList.add('show');
   }finally{
@@ -2394,12 +2477,14 @@ function showPlayerError(wrap, onRetry){
       <div class="icon">⚠️</div>
       <div class="msg">ဗီဒီယို ဖွင့်ရာတွင် ပြဿနာ ဖြစ်နေပါသည်။<br>Internet connection စစ်ဆေးပြီး ထပ်ကြိုးစားကြည့်ပါ။</div>
       <button class="btn btn-accent" id="playerRetryBtn">🔄 ထပ်ကြိုးစားမည်</button>
+      <div style="margin-top:12px;"><button class="link-btn" id="playerReportBtn" type="button">⚠️ ပြဿနာကို Admin ဆီ report တင်မည်</button></div>
     </div>`;
   wrap.appendChild(overlay);
   overlay.querySelector('#playerRetryBtn').addEventListener('click', () => {
     overlay.remove();
     onRetry();
   });
+  overlay.querySelector('#playerReportBtn').addEventListener('click', (e) => quickReportBroken(e.currentTarget));
 }
 function playVideoSrc(videoEl, url, m, wrap){
   let usedMobileFallback = false;
@@ -2483,6 +2568,7 @@ function openPlayer(id){
   videoEl.setAttribute('playsinline', '');
   videoEl.setAttribute('webkit-playsinline', '');
   wrap.appendChild(videoEl);
+  setupPlayerExtras(videoEl, m, wrap);
 
   const srcUrl = pickVideoUrl(m);
   playVideoSrc(videoEl, srcUrl, m, wrap);
@@ -2603,6 +2689,8 @@ function wireModalRatingButtons(m){
   likeBtn.onclick = () => { setRating(m.id, 'like'); wireModalRatingButtons(m); };
   dislikeBtn.onclick = () => { setRating(m.id, 'dislike'); wireModalRatingButtons(m); };
   myListBtn.onclick = () => { toggleMyList(m.id); wireModalRatingButtons(m); };
+  document.getElementById('modalShareBtn').onclick = () => shareMovie(m);
+  document.getElementById('modalReportBtn').onclick = () => openReportDialog(m);
 }
 function closePlayer(){
   document.getElementById('modalOverlay').classList.remove('open');
@@ -2612,6 +2700,8 @@ function closePlayer(){
                                    // so the last few seconds of watch time aren't silently dropped
   if(currentHls){ currentHls.destroy(); currentHls = null; }
   if(autoNextTimer){ clearInterval(autoNextTimer); autoNextTimer = null; }
+  teardownMediaSession();
+  currentPlayerMovie = null;
   document.getElementById('modalVideoWrap').innerHTML = '';
 }
 
@@ -2941,6 +3031,534 @@ subscribeVideoAds();
     try{ localStorage.setItem(NOTICE_KEY, '1'); }catch(e){}
   });
 })();
+
+/* =========================================================
+   13) UX EXTRAS
+   (၁) Premium သက်တမ်းကုန်ခါနီး/ကုန်သွားရင် သတိပေး  (၂) Player ထဲက "Report broken video"
+   (၃) App Install ခလုတ်  (၄) Playback speed + Lock-screen media controls
+   (၅) Share ခလုတ် + ?m=<movieId> deep link  (၇) Background push notification (Web Push)
+   ========================================================= */
+const $id = (id) => document.getElementById(id);
+const DAY_MS = 24 * 60 * 60 * 1000;
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+function todayKey(){ return new Date().toISOString().slice(0, 10); }
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+/* ---------- Premium popup (premiumResultOverlay ကို ပြန်သုံး — ခလုတ် ၂ ခုအထိ) ---------- */
+function showPremiumNotice(o){
+  $id('premiumResultIcon').textContent = o.icon || '';
+  $id('premiumResultTitle').textContent = o.title || '';
+  $id('premiumResultDesc').textContent = o.desc || '';
+  const info = $id('premiumResultInfo');
+  info.innerHTML = o.rowsHtml || ''; info.style.display = o.rowsHtml ? 'block' : 'none';
+  const close = () => $id('premiumResultOverlay').classList.remove('open');
+  const b1 = $id('premiumResultBtn'), b2 = $id('premiumResultBtn2');
+  b1.textContent = o.btn1;
+  b1.onclick = () => { close(); if(o.on1) o.on1(); };
+  if(o.btn2){
+    b2.style.display = ''; b2.textContent = o.btn2;
+    b2.onclick = () => { close(); if(o.on2) o.on2(); };
+  } else { b2.style.display = 'none'; }
+  $id('premiumResultOverlay').classList.add('open');
+}
+
+/* =========================================================
+   (၁) PREMIUM EXPIRY REMINDER
+   ========================================================= */
+const PREMIUM_REMIND_DAYS = 3;   // ကုန်ဆုံးမယ့်ရက်ရဲ့ ဘယ်နှရက်အလိုကစပြီး သတိပေးမလဲ
+function premiumExpiryMs(){
+  const t = currentUserDoc && currentUserDoc.premiumExpiresAt;
+  return t ? (t.toMillis ? t.toMillis() : Number(t)) : 0;
+}
+function isLifetimePremium(){
+  const ms = premiumExpiryMs();
+  return (ms > 0 && new Date(ms).getFullYear() >= 2090)
+    || !!(currentUserDoc && currentUserDoc.premiumPlanLabel && currentUserDoc.premiumPlanLabel.indexOf('Lifetime') !== -1);
+}
+function checkPremiumExpiry(){
+  const bar = $id('premiumExpiryBar');
+  bar.style.display = 'none';
+  if(!currentUser || !currentUserDoc || !currentUserDoc.isPremium) return;
+  const exp = premiumExpiryMs();
+  if(!exp || isLifetimePremium()) return;
+  const left = exp - Date.now();
+  if(left > PREMIUM_REMIND_DAYS * DAY_MS) return;
+  if(currentPendingRequest) return;            // သက်တမ်းတိုး request တင်ပြီးသားဆို ထပ်မသတိပေးဘူး
+  const expired = left <= 0;
+
+  if(expired){                                 // ကုန်သွားပြီ — သက်တမ်းတစ်ခုကို popup တစ်ကြိမ်ပဲ
+    const pk = 'maxflix_exp_popup_' + currentUser.uid + '_' + exp;
+    if(!lsGet(pk)){
+      setTimeout(() => {
+        if(!currentUserDoc || isPremiumActive() || currentPendingRequest) return;
+        if($id('premiumResultOverlay').classList.contains('open') || $id('premiumOverlay').classList.contains('open')) return;
+        lsSet(pk, '1');
+        showPremiumNotice({
+          icon: '⌛', title: 'Premium သက်တမ်း ကုန်ဆုံးသွားပါပြီ',
+          desc: 'Premium ဇာတ်ကား/Series တွေကို ဆက်ကြည့်ချင်ရင် သက်တမ်းပြန်တိုးပါ။ ကြည့်လက်စ ဇာတ်ကားတွေ ကြည့်ရှုမှတ်တမ်းတွေက မပျက်ပါဘူး။',
+          btn1: '⭐ သက်တမ်းတိုးမည်', on1: () => openPremiumGate(null), btn2: 'နောက်မှ'
+        });
+      }, 1500);
+    }
+  }
+  // Banner — တစ်နေ့ကို တစ်ကြိမ် ပိတ်လို့ရ၊ နောက်နေ့ ပြန်ပေါ်
+  if(lsGet('maxflix_exp_bar_' + currentUser.uid + '_' + exp) === todayKey()) return;
+  let msg;
+  if(expired) msg = 'Premium သက်တမ်း ကုန်ဆုံးသွားပါပြီ — ဆက်ကြည့်ချင်ရင် သက်တမ်းတိုးပါ';
+  else if(left < DAY_MS) msg = `Premium သက်တမ်း ${Math.max(1, Math.ceil(left / 3600000))} နာရီအတွင်း ကုန်ဆုံးပါမယ်`;
+  else msg = `Premium သက်တမ်း ${Math.ceil(left / DAY_MS)} ရက်အတွင်း ကုန်ဆုံးပါမယ်`;
+  $id('premiumExpiryMsg').textContent = msg;
+  bar.style.display = 'flex';
+}
+$id('premiumExpiryRenew').addEventListener('click', () => openPremiumGate(null));
+$id('premiumExpiryClose').addEventListener('click', () => {
+  if(currentUser) lsSet('maxflix_exp_bar_' + currentUser.uid + '_' + premiumExpiryMs(), todayKey());
+  $id('premiumExpiryBar').style.display = 'none';
+});
+setInterval(checkPremiumExpiry, 10 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden) checkPremiumExpiry(); });
+
+/* =========================================================
+   (၂) REPORT BROKEN VIDEO  → Firestore `reports` collection (admin Reports tab မှာ မြင်ရ)
+   ========================================================= */
+let currentPlayerMovie = null;
+const REPORT_REASONS = [
+  'ဗီဒီယို မပွင့်ဘူး / ဘာမှ မပြဘူး',
+  'အသံ မကြားရဘူး / အသံ မကိုက်ဘူး',
+  'စာတန်းထိုး မှားနေတယ် / မပါဘူး',
+  'ကြည့်နေရင်း ရပ်သွားတယ် / buffer ကြာတယ်',
+  'အခြား ပြဿနာ'
+];
+const REPORT_COOLDOWN_MS = 6 * 60 * 60 * 1000;   // ဗီဒီယိုတစ်ခုကို ဒီ browser ကနေ ၆ နာရီမှာ တစ်ကြိမ်ပဲ
+let reportTarget = null, reportReasonIdx = -1;
+function reportedRecently(m){ return Date.now() - (Number(lsGet('maxflix_reported_' + m.id)) || 0) < REPORT_COOLDOWN_MS; }
+async function sendReport(m, reason){
+  await db.collection('reports').add({
+    movieId: m.id, movieTitle: m.title || '', reason: String(reason).slice(0, 300),
+    videoUrl: String(pickVideoUrl(m) || '').slice(0, 500),
+    email: currentUser ? currentUser.email : null, uid: currentUser ? currentUser.uid : null,
+    device: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+    status: 'open', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  lsSet('maxflix_reported_' + m.id, String(Date.now()));
+}
+function openReportDialog(m){
+  if(!m) return;
+  if(reportedRecently(m)){ showToast('ဒီဗီဒီယိုကို report တင်ပြီးသားပါ — admin က စစ်ဆေးပေးပါလိမ့်မယ်', 'ok'); return; }
+  reportTarget = m; reportReasonIdx = -1;
+  $id('reportTitleLine').textContent = m.title || '';
+  $id('reportReasons').innerHTML = REPORT_REASONS.map((r, i) => `<button type="button" class="report-reason" data-i="${i}">${esc(r)}</button>`).join('');
+  $id('reportReasons').querySelectorAll('.report-reason').forEach(b => b.addEventListener('click', () => {
+    reportReasonIdx = Number(b.dataset.i);
+    $id('reportReasons').querySelectorAll('.report-reason').forEach(x => x.classList.toggle('sel', x === b));
+    $id('reportSubmitBtn').disabled = false;
+  }));
+  $id('reportNote').value = '';
+  $id('reportErr').classList.remove('show');
+  $id('reportSubmitBtn').disabled = true;
+  $id('reportOverlay').classList.add('open');
+}
+$id('reportCloseX').addEventListener('click', () => $id('reportOverlay').classList.remove('open'));
+$id('reportOverlay').addEventListener('click', e => { if(e.target.id === 'reportOverlay') e.currentTarget.classList.remove('open'); });
+$id('reportSubmitBtn').addEventListener('click', async () => {
+  if(!reportTarget || reportReasonIdx < 0) return;
+  const btn = $id('reportSubmitBtn'), err = $id('reportErr');
+  const note = $id('reportNote').value.trim();
+  btn.disabled = true; err.classList.remove('show');
+  try{
+    await sendReport(reportTarget, REPORT_REASONS[reportReasonIdx] + (note ? ' — ' + note : ''));
+    $id('reportOverlay').classList.remove('open');
+    showToast('Report တင်ပြီးပါပြီ — ကျေးဇူးတင်ပါတယ်၊ ဖြစ်နိုင်သမျှ မြန်မြန်ပြင်ပေးပါမယ်', 'ok');
+  }catch(e){
+    err.textContent = 'တင်၍မရပါ — ' + (e && e.message ? e.message : 'နောက်မှ ထပ်ကြိုးစားပါ'); err.classList.add('show');
+    btn.disabled = false;
+  }
+});
+// Player error screen ပေါ်က ခလုတ်တစ်ချက်နှိပ်ရုံ report (reason ကို auto ထည့်)
+async function quickReportBroken(btn){
+  const m = currentPlayerMovie;
+  if(!m) return;
+  if(reportedRecently(m)){ showToast('Report တင်ပြီးသားပါ — admin က စစ်ဆေးပေးပါလိမ့်မယ်', 'ok'); return; }
+  btn.disabled = true;
+  try{
+    await sendReport(m, REPORT_REASONS[0] + ' (player error ပေါ်လို့ တစ်ချက်နှိပ် report)');
+    btn.textContent = '✓ Report တင်ပြီး';
+    showToast('Report တင်ပြီးပါပြီ — ကျေးဇူးတင်ပါတယ်', 'ok');
+  }catch(e){ btn.disabled = false; showToast('Report တင်၍မရပါ'); }
+}
+
+/* =========================================================
+   (၅) SHARE + DEEP LINK  (?m=<movieId>)
+   ========================================================= */
+function movieShareUrl(id){ return location.origin + location.pathname + '?m=' + encodeURIComponent(id); }
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); return true; }catch(e){}
+  try{
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:-100px;opacity:0;';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy'); ta.remove();
+    return !!ok;
+  }catch(e){ return false; }
+}
+async function shareMovie(m){
+  const url = movieShareUrl(m.id);
+  if(navigator.share){
+    try{ await navigator.share({ title: m.title, text: `${m.title} — Maxflix မှာ ကြည့်ရှုပါ`, url }); return; }
+    catch(e){ if(e && e.name === 'AbortError') return; /* တခြား error ဆိုရင် link copy နဲ့ ဆက် */ }
+  }
+  if(await copyText(url)){ showToast('Link ကူးယူပြီးပါပြီ — ကြိုက်တဲ့နေရာ paste လုပ်ပါ', 'ok'); }
+  else { window.prompt('Link ကို ကူးယူပါ', url); }
+}
+let deepLinkHandled = false;
+async function waitForUserDoc(maxMs){
+  const t0 = Date.now();
+  while(currentUser && !currentUserDoc && Date.now() - t0 < maxMs) await sleep(120);
+}
+async function handleDeepLink(){
+  if(deepLinkHandled) return;
+  let id = null;
+  try{ id = new URLSearchParams(location.search).get('m'); }catch(e){}
+  if(!id || !/^[A-Za-z0-9_-]{6,60}$/.test(id)) return;
+  deepLinkHandled = true;
+  try{ history.replaceState(history.state, '', location.pathname + location.hash); }catch(e){}   // refresh လုပ်ရင် ထပ်မပွင့်စေဖို့ ?m= ကို ဖယ်
+  let m = movies.find(x => x.id === id);
+  if(!m){
+    try{
+      const snap = await db.collection('movies').doc(id).get();
+      if(snap.exists){ moviesById[id] = docToMovie(snap); movies = Object.values(moviesById); m = moviesById[id]; render(); }
+    }catch(e){}
+  }
+  if(!m){ showToast('ဒီဗီဒီယို မတွေ့တော့ပါ (ဖျက်ထားနိုင်ပါတယ်)'); return; }
+  await waitForUserDoc(2500);                  // Premium ဝင်ထားသူကို gate မပြမိစေဖို့ user doc ပြည့်စုံတဲ့အထိ စောင့်
+  lastOpenPlayerCallAt = 0;
+  openPlayer(id);
+}
+
+/* =========================================================
+   (၃) INSTALL APP  (Android/Chrome = beforeinstallprompt · iPhone = Add to Home Screen လမ်းညွှန်)
+   ========================================================= */
+const INSTALL_SNOOZE_MS = 14 * DAY_MS;
+const IS_IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let deferredInstallPrompt = null, installEngaged = false;
+(function countVisit(){
+  try{
+    if(!sessionStorage.getItem('maxflix_visit_counted')){
+      sessionStorage.setItem('maxflix_visit_counted', '1');
+      lsSet('maxflix_visits', String((Number(lsGet('maxflix_visits')) || 0) + 1));
+    }
+  }catch(e){}
+  installEngaged = (Number(lsGet('maxflix_visits')) || 0) >= 2;   // ဒုတိယအကြိမ်ဝင်ရင် ချက်ချင်းပြ၊ ပထမအကြိမ်ဆိုရင် ၂၅ စက္ကန့်နေမှ
+  if(!installEngaged) setTimeout(() => { installEngaged = true; updateInstallUi(); }, 25000);
+})();
+function canOfferInstall(){ return !isStandaloneApp && (!!deferredInstallPrompt || IS_IOS); }
+function updateInstallUi(){
+  const snoozed = Date.now() - (Number(lsGet('maxflix_install_dismissed')) || 0) < INSTALL_SNOOZE_MS;
+  $id('installBar').style.display = (canOfferInstall() && installEngaged && !snoozed) ? 'flex' : 'none';
+  const row = $id('settingsInstallField');
+  if(row) row.style.display = canOfferInstall() ? '' : 'none';
+}
+async function doInstall(){
+  if(deferredInstallPrompt){
+    const p = deferredInstallPrompt; deferredInstallPrompt = null;
+    try{
+      p.prompt();
+      const choice = await p.userChoice;
+      if(choice && choice.outcome !== 'accepted') lsSet('maxflix_install_dismissed', String(Date.now()));
+    }catch(e){}
+    updateInstallUi();
+  } else if(IS_IOS){
+    showPremiumNotice({
+      icon: '📲', title: 'Home Screen ထဲ ထည့်မယ်',
+      desc: 'Safari ရဲ့ အောက်ခြေ (သို့မဟုတ် အပေါ်ညာဘက်) က Share ခလုတ် ⬆️ ကိုနှိပ် → "Add to Home Screen" ကို ရွေးပါ။ ပြီးရင် Maxflix က App တစ်ခုလို Home Screen မှာ ပေါ်လာပါမယ်။',
+      btn1: 'နားလည်ပါပြီ'
+    });
+  }
+}
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstallPrompt = e; updateInstallUi(); });
+window.addEventListener('appinstalled', () => { deferredInstallPrompt = null; lsSet('maxflix_install_dismissed', String(Date.now())); updateInstallUi(); showToast('Maxflix ကို ထည့်သွင်းပြီးပါပြီ 🎉', 'ok'); });
+$id('installBarBtn').addEventListener('click', doInstall);
+$id('installBarClose').addEventListener('click', () => { lsSet('maxflix_install_dismissed', String(Date.now())); updateInstallUi(); });
+$id('settingsInstallBtn').addEventListener('click', () => { $id('settingsOverlay').classList.remove('open'); doInstall(); });
+updateInstallUi();
+
+/* =========================================================
+   (၄) PLAYBACK SPEED + MEDIA SESSION (lock-screen / notification controls)
+   ========================================================= */
+const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+function getSavedSpeed(){
+  const v = parseFloat(lsGet('maxflix_speed'));
+  return PLAYBACK_SPEEDS.indexOf(v) !== -1 ? v : 1;
+}
+function speedLabel(v){ return (v === 1 ? '1' : String(v)) + 'x'; }
+function setupSpeedControl(videoEl, wrap){
+  const saved = getSavedSpeed();
+  videoEl.defaultPlaybackRate = saved;      // src ပြောင်းလည်း speed မပြန်ပျောက်အောင်
+  videoEl.playbackRate = saved;
+  const tools = document.createElement('div');
+  tools.className = 'player-tools';
+  tools.innerHTML = `<button type="button" class="speed-btn" id="speedBtn" aria-label="Playback speed">${speedLabel(saved)}</button>
+    <div class="speed-menu" id="speedMenu">${PLAYBACK_SPEEDS.map(s => `<button type="button" data-s="${s}" class="${s === saved ? 'sel' : ''}">${speedLabel(s)}</button>`).join('')}</div>`;
+  wrap.appendChild(tools);
+  const btn = tools.querySelector('#speedBtn'), menu = tools.querySelector('#speedMenu');
+  btn.addEventListener('click', (e) => { e.stopPropagation(); menu.classList.toggle('open'); });
+  menu.querySelectorAll('button').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const s = Number(b.dataset.s);
+    videoEl.defaultPlaybackRate = s; videoEl.playbackRate = s;
+    lsSet('maxflix_speed', String(s));
+    menu.classList.remove('open');
+  }));
+  const sync = () => {
+    const r = videoEl.playbackRate;
+    btn.textContent = speedLabel(r);
+    menu.querySelectorAll('button').forEach(b => b.classList.toggle('sel', Number(b.dataset.s) === r));
+  };
+  videoEl.addEventListener('ratechange', sync);
+  videoEl.addEventListener('loadedmetadata', () => { if(videoEl.playbackRate !== getSavedSpeed()){ videoEl.playbackRate = getSavedSpeed(); } });
+  wrap.addEventListener('click', (e) => { if(!tools.contains(e.target)) menu.classList.remove('open'); });
+}
+function getAdjacentEpisodes(m){
+  if(m.category !== 'drama' || !m.seriesName) return {};
+  const series = getDramaSeries().find(s => s.name === (m.seriesName.trim() || m.title));
+  if(!series) return {};
+  const i = series.episodes.findIndex(e => e.id === m.id);
+  if(i < 0) return {};
+  return { prev: series.episodes[i - 1] || null, next: series.episodes[i + 1] || null };
+}
+function setupMediaSession(videoEl, m){
+  if(!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined') return;
+  const ms = navigator.mediaSession;
+  const isAdult = m.category === 'adult';
+  try{
+    // 18+ ဆိုရင် lock screen မှာ ခေါင်းစဉ်/ပုံ မပေါ်စေဖို့ ယေဘုယျ စာသားပဲ ပြ
+    ms.metadata = new MediaMetadata({
+      title: isAdult ? 'Maxflix' : (m.title || 'Maxflix'),
+      artist: isAdult ? '' : (m.category === 'drama' && m.seriesName ? m.seriesName : 'Maxflix'),
+      album: 'Maxflix',
+      artwork: (!isAdult && m.thumbUrl) ? [{ src: m.thumbUrl, sizes: '512x512' }] : []
+    });
+  }catch(e){}
+  const set = (action, fn) => { try{ ms.setActionHandler(action, fn); }catch(e){} };
+  const adj = getAdjacentEpisodes(m);
+  set('play', () => videoEl.play().catch(() => {}));
+  set('pause', () => videoEl.pause());
+  set('seekbackward', (d) => { videoEl.currentTime = Math.max(0, videoEl.currentTime - ((d && d.seekOffset) || 10)); });
+  set('seekforward', (d) => { videoEl.currentTime = Math.min(videoEl.duration || Infinity, videoEl.currentTime + ((d && d.seekOffset) || 10)); });
+  set('seekto', (d) => { if(d && typeof d.seekTime === 'number') videoEl.currentTime = d.seekTime; });
+  set('previoustrack', adj.prev ? () => openPlayer(adj.prev.id) : null);
+  set('nexttrack', adj.next ? () => openPlayer(adj.next.id) : null);
+  let lastPos = 0;
+  const pushPos = () => {
+    const now = Date.now();
+    if(now - lastPos < 1000) return;
+    lastPos = now;
+    const d = videoEl.duration;
+    if(!isFinite(d) || d <= 0) return;
+    try{ ms.setPositionState({ duration: d, playbackRate: videoEl.playbackRate || 1, position: Math.min(videoEl.currentTime || 0, d) }); }catch(e){}
+  };
+  videoEl.addEventListener('timeupdate', pushPos);
+  videoEl.addEventListener('ratechange', () => { lastPos = 0; pushPos(); });
+  videoEl.addEventListener('play', () => { try{ ms.playbackState = 'playing'; }catch(e){} });
+  videoEl.addEventListener('pause', () => { try{ ms.playbackState = 'paused'; }catch(e){} });
+}
+function teardownMediaSession(){
+  if(!('mediaSession' in navigator)) return;
+  const ms = navigator.mediaSession;
+  ['play', 'pause', 'seekbackward', 'seekforward', 'seekto', 'previoustrack', 'nexttrack'].forEach(a => { try{ ms.setActionHandler(a, null); }catch(e){} });
+  try{ ms.metadata = null; ms.playbackState = 'none'; }catch(e){}
+}
+function setupPlayerExtras(videoEl, m, wrap){
+  currentPlayerMovie = m;
+  setupSpeedControl(videoEl, wrap);
+  setupMediaSession(videoEl, m);
+}
+
+/* =========================================================
+   (၇) WEB PUSH  — App/Browser ပိတ်ထားတုန်းပဲ Premium Approve/Reject အသိပေးချက် ရောက်စေဖို့
+   Browser standard Web Push (VAPID) သုံးထားလို့ Firebase service-account မလို၊ အခကြေးငွေ မရှိပါ။
+   Public key သာ ဒီမှာ — Private key က Cloudflare Worker ထဲမှာပဲ (index.html ထဲ ဘယ်တော့မှ မထည့်ပါနဲ့)။
+   ========================================================= */
+const VAPID_PUBLIC_KEY = "BMAdC-60r0LqWvq6THKBjawlEqomkg9jF1Z5wMEM1qMUNZjm_RH8WjJ08lLrVeXQXVvgRe9EXb_UkcaYR3GYm5s";
+const PUSH_SW_URL = 'push-sw.js';
+const PUSH_SW_SCOPE = './push-scope/';
+const PUSH_OFF_KEY = 'maxflix_push_off';
+const MAX_PUSH_DEVICES = 5;
+const pushSupported = !!VAPID_PUBLIC_KEY && ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+function urlB64ToUint8Array(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  const out = new Uint8Array(raw.length);
+  for(let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+async function getPushReg(){
+  const scopeUrl = new URL(PUSH_SW_SCOPE, location.href).href;
+  let reg = await navigator.serviceWorker.getRegistration(scopeUrl);
+  if(!reg || new URL(reg.scope).href !== scopeUrl) reg = await navigator.serviceWorker.register(PUSH_SW_URL, { scope: PUSH_SW_SCOPE });
+  const sw = reg.installing || reg.waiting || reg.active;
+  if(sw && sw.state !== 'activated'){
+    await new Promise(res => {
+      const t = setTimeout(res, 8000);
+      sw.addEventListener('statechange', () => { if(sw.state === 'activated'){ clearTimeout(t); res(); } });
+    });
+  }
+  return reg;
+}
+async function getExistingPushSub(){
+  if(!pushSupported) return null;
+  try{
+    const reg = await navigator.serviceWorker.getRegistration(new URL(PUSH_SW_SCOPE, location.href).href);
+    return reg ? await reg.pushManager.getSubscription() : null;
+  }catch(e){ return null; }
+}
+async function savePushSub(sub, skipIfPresent){
+  if(!currentUser) return;
+  const j = sub.toJSON();
+  if(!j.endpoint || !j.keys) return;
+  const ref = db.collection('users').doc(currentUser.uid);
+  const snap = await ref.get();
+  const list = (snap.exists && Array.isArray(snap.data().pushSubs)) ? snap.data().pushSubs : [];
+  if(skipIfPresent && list.some(s => s.endpoint === j.endpoint)) return;
+  const next = list.filter(s => s.endpoint !== j.endpoint);
+  next.push({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, at: Date.now() });
+  await ref.set({ pushSubs: next.slice(-MAX_PUSH_DEVICES) }, { merge: true });
+}
+async function removePushSubFromDoc(endpoint){
+  if(!currentUser) return;
+  const ref = db.collection('users').doc(currentUser.uid);
+  const snap = await ref.get();
+  const list = (snap.exists && Array.isArray(snap.data().pushSubs)) ? snap.data().pushSubs : [];
+  if(!list.some(s => s.endpoint === endpoint)) return;
+  await ref.set({ pushSubs: list.filter(s => s.endpoint !== endpoint) }, { merge: true });
+}
+async function subscribeThisDevice(){
+  const reg = await getPushReg();
+  let sub = await reg.pushManager.getSubscription();
+  if(!sub){
+    try{ sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY) }); }
+    catch(e){
+      if(e && e.name === 'InvalidStateError'){ const old = await reg.pushManager.getSubscription(); if(old) await old.unsubscribe(); sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(VAPID_PUBLIC_KEY) }); }
+      else throw e;
+    }
+  }
+  return sub;
+}
+// Permission တောင်းတာကို user ရဲ့ ခလုတ်နှိပ်ချက်ထဲကနေ တိုက်ရိုက်ခေါ်ရမယ် (iPhone က အဲဒီလိုမှ ခွင့်ပြုတယ်)
+async function enablePush(){
+  if(!pushSupported) return { ok: false, reason: 'unsupported' };
+  if(!currentUser) return { ok: false, reason: 'login' };
+  const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+  if(perm !== 'granted') return { ok: false, reason: perm };
+  try{
+    const sub = await subscribeThisDevice();
+    await savePushSub(sub, false);
+    lsDel(PUSH_OFF_KEY);
+    return { ok: true };
+  }catch(e){ console.warn('enablePush failed:', e); return { ok: false, reason: 'error', error: e }; }
+}
+async function disablePush(){
+  lsSet(PUSH_OFF_KEY, '1');
+  const sub = await getExistingPushSub();
+  if(sub){
+    try{ await removePushSubFromDoc(sub.endpoint); }catch(e){}
+    try{ await sub.unsubscribe(); }catch(e){}
+  }
+}
+// Login ဝင်တိုင်း — ခွင့်ပြုထားပြီးသားဆို ဒီ device ကို ဒီ account နဲ့ အသံတိတ် ချိတ်ပေး
+async function ensurePushOnLogin(){
+  if(!pushSupported || !currentUser) return;
+  if(Notification.permission !== 'granted' || lsGet(PUSH_OFF_KEY)) return;
+  try{ const sub = await subscribeThisDevice(); await savePushSub(sub, true); }
+  catch(e){ console.warn('ensurePushOnLogin:', e); }
+}
+// Logout လုပ်ရင် ဒီ device က ထွက်သွားတဲ့ account ရဲ့ notification ဆက်မရအောင် ဖြုတ်ပေး (အတူသုံးဖုန်းမှာ အရေးကြီး)
+async function detachPushForLogout(){
+  if(!pushSupported || !currentUser) return;
+  try{
+    const sub = await getExistingPushSub();
+    if(sub) await Promise.race([removePushSubFromDoc(sub.endpoint), sleep(2500)]);
+  }catch(e){}
+}
+async function refreshPushUi(){
+  const field = $id('settingsPushField'), text = $id('settingsPushText'), btn = $id('settingsPushBtn');
+  if(!field) return;
+  btn.style.display = '';
+  if(!pushSupported){
+    // iPhone က Home Screen ထဲ ထည့်ပြီးမှ push ရတယ် — အဲဒီအခြေအနေမှာပဲ လမ်းညွှန်ပြ
+    if(IS_IOS && !isStandaloneApp){
+      field.style.display = '';
+      text.textContent = 'iPhone မှာ Notification ရဖို့ App ကို Home Screen ထဲ ထည့်ပြီး (Share → Add to Home Screen) အဲဒီ icon ကနေ ဖွင့်ရပါမယ်။';
+      btn.style.display = 'none';
+    } else { field.style.display = 'none'; }
+    return;
+  }
+  field.style.display = '';
+  if(Notification.permission === 'denied'){
+    text.textContent = '🔕 Browser setting မှာ Notification ကို ပိတ်ထားပါတယ် — Site settings ကနေ ပြန်ခွင့်ပြုပေးပါ။';
+    btn.style.display = 'none'; return;
+  }
+  const sub = await getExistingPushSub();
+  const on = Notification.permission === 'granted' && !!sub && !lsGet(PUSH_OFF_KEY);
+  text.textContent = on ? '🔔 ဖွင့်ထားပါတယ် — Premium approve/reject ကို App ပိတ်ထားလည်း အသိပေးပါမယ်' : '🔔 ပိတ်ထားပါတယ် — ဖွင့်ရင် Premium approve ဖြစ်တာနဲ့ ဖုန်းမှာ အသိပေးပါမယ်';
+  btn.textContent = on ? 'ပိတ်မည်' : 'ဖွင့်မည်';
+  btn.dataset.on = on ? '1' : '';
+}
+$id('settingsPushBtn').addEventListener('click', async () => {
+  const btn = $id('settingsPushBtn');
+  btn.disabled = true;
+  try{
+    if(btn.dataset.on){ await disablePush(); showToast('Notification ပိတ်လိုက်ပါပြီ', 'ok'); }
+    else {
+      const r = await enablePush();
+      if(r.ok) showToast('🔔 Notification ဖွင့်ပြီးပါပြီ', 'ok');
+      else if(r.reason === 'denied') showToast('Browser က ခွင့်မပြုထားပါ — Site settings ကနေ ဖွင့်ပေးပါ');
+      else if(r.reason !== 'default') showToast('Notification ဖွင့်၍မရပါ — နောက်မှ ထပ်ကြိုးစားပါ');
+    }
+  }finally{ btn.disabled = false; refreshPushUi(); }
+});
+// Premium request တင်ပြီးတာနဲ့ — "Approve ဖြစ်ရင် အသိပေးမလား" မေးတယ် (ခလုတ်နှိပ်ချက်အသစ်ထဲကနေမို့ iPhone မှာလည်း ရ)
+function maybePromptPushAfterRequest(){
+  if(!pushSupported || !currentUser || lsGet(PUSH_OFF_KEY) || lsGet('maxflix_push_asked')) return;
+  if(Notification.permission === 'granted'){ ensurePushOnLogin(); return; }
+  if(Notification.permission !== 'default') return;
+  setTimeout(() => {
+    lsSet('maxflix_push_asked', '1');
+    showPremiumNotice({
+      icon: '🔔', title: 'Approve ဖြစ်တာနဲ့ အသိပေးရမလား?',
+      desc: 'Admin က သင့် Premium request ကို အတည်ပြုတာနဲ့ ဖုန်းမှာ notification ပို့ပေးပါမယ် — App ပိတ်ထားလည်း ရပါတယ်။ ဘယ်အချိန်မဆို Settings ကနေ ပြန်ပိတ်လို့ရပါတယ်။',
+      btn1: '🔔 ဖွင့်မည်',
+      on1: () => { enablePush().then(r => { if(r.ok) showToast('🔔 Notification ဖွင့်ပြီးပါပြီ', 'ok'); }); },
+      btn2: 'မလိုပါ'
+    });
+  }, 500);
+}
+// "စစ်ဆေးနေဆဲ" ပြတဲ့ အခြေအနေထဲက ခလုတ် — Notification မဖွင့်ရသေးသူအတွက်
+function updatePendingPushBtn(){
+  const b = $id('pendingPushBtn');
+  if(!b) return;
+  b.style.display = (pushSupported && Notification.permission === 'default' && !lsGet(PUSH_OFF_KEY)) ? '' : 'none';
+}
+$id('pendingPushBtn').addEventListener('click', async () => {
+  const r = await enablePush();
+  if(r.ok){ showToast('🔔 Notification ဖွင့်ပြီးပါပြီ', 'ok'); }
+  updatePendingPushBtn();
+});
+
+/* Settings modal ထဲက အပိုအပိုင်းတွေ (ဝယ်ယူ/သက်တမ်းတိုး ခလုတ်၊ Notification၊ Install) */
+function refreshSettingsExtras(){
+  const buyBtn = $id('settingsBuyPremiumBtn');
+  const prem = isPremiumActive();
+  if(prem && isLifetimePremium()){ buyBtn.style.display = 'none'; }
+  else {
+    buyBtn.style.display = '';
+    buyBtn.textContent = prem ? '🔄 သက်တမ်းတိုးမည်' : (premiumExpiryMs() ? '🔄 Premium ပြန်ဝယ်မည်' : '⭐ Premium ဝယ်ယူရန်');
+  }
+  refreshPushUi();
+  updateInstallUi();
+}
 
 /* ---------- PWA: service worker registration ---------- */
 if('serviceWorker' in navigator){
