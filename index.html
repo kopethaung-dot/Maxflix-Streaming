@@ -1497,7 +1497,7 @@ document.getElementById('pinCancelBtn').addEventListener('click', () => {
 });
 document.getElementById('pinSubmitBtn').addEventListener('click', async () => {
   const errEl = document.getElementById('pinErr');
-  const pin = document.getElementById('pinInput').value;
+  const pin = document.getElementById('pinInput').value.trim();
   const unlockOk = () => {
     adultUnlocked = true;
     document.getElementById('pinOverlay').classList.remove('open');
@@ -1514,16 +1514,21 @@ document.getElementById('pinSubmitBtn').addEventListener('click', async () => {
       const fn = firebase.functions().httpsCallable('verifyAdultPin');
       const res = await fn({ pin });
       if(res && res.data && res.data.ok){ unlockOk(); return; }
-      errEl.textContent = (res && res.data && res.data.reason === 'expired')
+      const reason = res && res.data && res.data.reason;
+      errEl.textContent = reason === 'expired'
         ? 'PIN သက်တမ်းကုန်သွားပါပြီ — Admin ကို ဆက်သွယ်ပါ'
-        : 'PIN မှားနေပါတယ်';
+        : reason === 'no-pin'
+          ? 'PIN မရှိသေးပါ — Admin ကို ဆက်သွယ်ပါ'
+          : 'PIN မှားနေပါတယ်';
       errEl.classList.add('show');
       return;
     }catch(e){
-      if(e && e.code !== 'functions/not-found' && e.code !== 'functions/unavailable'){
-        errEl.textContent = 'PIN မှားနေပါတယ်'; errEl.classList.add('show'); return;
-      }
-      // function not deployed yet — fall through to the local check below.
+      // Function မရှိသေးရင်ဖြစ်ဖြစ်၊ deploy ထားပြီး error တက်ရင်ဖြစ်ဖြစ် —
+      // local check (browser ထဲက PIN စစ်တာ) ကို ပြန်ကျသွားမယ်။ အရင်က
+      // not-found/unavailable မဟုတ်တဲ့ error တိုင်းကို 'မှားနေပါတယ်' လို့
+      // တန်းဆုံးဖြတ်ပြီး local ကို လုံးဝ မရောက်တော့ဘူး — PIN အသစ်ထုတ်လည်း
+      // ထာဝရ မှားနေတဲ့ အကြောင်းရင်းတစ်ခု ဖြစ်နိုင်တယ်။
+      try{ console.warn('verifyAdultPin call failed, falling back to local check:', e && e.code); }catch(_){}
     }
   }
   // (2) Local fallback (pre-deploy behaviour) — compares against the PIN in
@@ -1547,7 +1552,7 @@ document.getElementById('pinSubmitBtn').addEventListener('click', async () => {
   if(Date.now() > expiresMs){
     errEl.textContent = 'PIN သက်တမ်းကုန်သွားပါပြီ — Admin ကို ဆက်သွယ်ပါ'; errEl.classList.add('show'); return;
   }
-  if(pin === myPin){ unlockOk(); }
+  if(pin === String(myPin).trim()){ unlockOk(); }
   else { errEl.textContent = 'PIN မှားနေပါတယ်'; errEl.classList.add('show'); }
 });
 document.getElementById('pinInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('pinSubmitBtn').click(); });
