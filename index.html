@@ -412,6 +412,8 @@
   .ep-item{position:relative;aspect-ratio:1/1;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;
     cursor:pointer;background:var(--bg-card);transition:border-color .15s,transform .15s;}
   .ep-item:hover{border-color:var(--accent-dim);transform:translateY(-2px);}
+  /* Keyboard (Tab) နဲ့ သွားတဲ့အခါ ဘယ် tile ပေါ်ရောက်နေလဲ မြင်ရအောင် */
+  .ep-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-color:var(--accent);}
   .ep-thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#222;opacity:.5;}
   .ep-shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.2) 55%,rgba(0,0,0,.35) 100%);}
   .ep-num{position:absolute;left:0;right:0;top:50%;transform:translateY(-54%);text-align:center;line-height:1;
@@ -2387,17 +2389,30 @@ function render(){
 /* =========================================================
    9) SERIES DETAIL VIEW
    ========================================================= */
+/* Episode tile တွေကို mouse/touch (click) အပြင် keyboard (Tab ရွေး → Enter / Space နှိပ်) နဲ့ပါ
+   ဖွင့်လို့ရအောင် — tile က <div role="button"> ဖြစ်လို့ ကိုယ်တိုင် ချိတ်ပေးရတယ်။ */
+function wireEpTiles(nodes){
+  nodes.forEach(el => {
+    el.addEventListener('click', () => openPlayer(el.dataset.id));
+    el.addEventListener('keydown', ev => {
+      if(ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar'){
+        ev.preventDefault();               // Space နဲ့ page scroll မဆင်းအောင်
+        openPlayer(el.dataset.id);
+      }
+    });
+  });
+}
 function renderEpList(episodes){
   const epList = document.getElementById('epList');
   epList.innerHTML = episodes.map((ep, i) => `
-    <div class="ep-item" data-id="${ep.id}" title="${esc(ep.title)}" role="button" aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}">
+    <div class="ep-item" data-id="${ep.id}" title="${esc(ep.title)}" role="button" tabindex="0" aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}">
       <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'" alt="">
       <div class="ep-shade"></div>
       ${ep.isPremium ? '<span class="ep-prem">★</span>' : ''}
       <div class="ep-num"><small>EP</small>${esc(String(ep.episodeNumber || (i+1)))}</div>
       ${ep.duration ? `<div class="ep-dur">${esc(ep.duration)}</div>` : ''}
     </div>`).join('');
-  epList.querySelectorAll('.ep-item').forEach(el => el.addEventListener('click', () => openPlayer(el.dataset.id)));
+  wireEpTiles(epList.querySelectorAll('.ep-item'));
 }
 async function openSeries(name, silentRefresh){
   const series = getDramaSeries().find(s => s.name === name);
@@ -2416,6 +2431,7 @@ async function openSeries(name, silentRefresh){
   // "missing" episodes even though every episode still exists in
   // Firestore. Fetch this series' episodes directly (no site-wide limit)
   // and merge them in once loaded, so the list is always complete.
+  if(catalogMode) return;   // catalog ထဲမှာ episode အကုန်ပါပြီးသား — ထပ်ဖတ်စရာမလို (read ချွေတာ)
   try{
     const snap = await db.collection('movies')
       .where('category', '==', 'drama')
@@ -2552,6 +2568,33 @@ let playerReturnView = 'home';
 let currentPlayerToken = 0; // bumped on every openPlayer() call — lets async callbacks detect they're stale
 let lastOpenPlayerCallAt = 0;
 
+// ---- View counter ------------------------------------------------------
+// viewCount တိုးတာကို "ဖွင့်လိုက်တာနဲ့" မဟုတ်ဘဲ video က တကယ် play စတာမှ (ပထမဆုံး
+// `playing` event) တစ်ခါပဲ ရေတွက်တယ်။ တူညီတဲ့ ဖုန်း/browser က ဒီ video ကို ၆ နာရီအတွင်း
+// ထပ်ကြည့်ရင် ထပ်မတိုးပါ (refresh/ပြန်ဖွင့်ပြီး count မဖောင်းအောင်)။ Firestore rules က
+// viewCount ကို +1 ပဲ ခွင့်ပြုထားတာမို့ login မဝင်ထားတဲ့သူလည်း ရေတွက်နိုင်တယ်။
+const VIEW_THROTTLE_MS = 6 * 60 * 60 * 1000;
+function viewThrottleKey(id){ return 'viewCounted_v1_' + id; }
+function wasViewedRecently(id){
+  try {
+    const t = parseInt(localStorage.getItem(viewThrottleKey(id)) || '0', 10);
+    return t > 0 && (Date.now() - t) < VIEW_THROTTLE_MS;
+  } catch (e) { return false; }
+}
+function countViewOnPlay(videoEl, m){
+  if(!videoEl || !m || !m.id) return;
+  let done = false;
+  const fire = () => {
+    if(done) return;
+    done = true;
+    videoEl.removeEventListener('playing', fire);
+    if(wasViewedRecently(m.id)) return;
+    try { localStorage.setItem(viewThrottleKey(m.id), String(Date.now())); } catch (e) {}
+    db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
+  };
+  videoEl.addEventListener('playing', fire);
+}
+
 function openPlayer(id){
   const now = Date.now();
   if(now - lastOpenPlayerCallAt < 500) return; // guards against double-tap/double-click firing this twice
@@ -2583,7 +2626,7 @@ function openPlayer(id){
   const srcUrl = pickVideoUrl(m);
   playVideoSrc(videoEl, srcUrl, m, wrap);
   attachProgressTracking(videoEl, m);
-  db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
+  countViewOnPlay(videoEl, m);
   wireAutoPlayNext(videoEl, m, wrap);
 
   document.getElementById('modalTitle').textContent = m.title;
@@ -2610,6 +2653,7 @@ function renderModalEpList(m, token){
   const series = getDramaSeries().find(s => s.name === seriesName);
   if(!series || series.episodes.length < 2){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
   paintModalEpList(wrap, series.name, series.episodes, m.id);
+  if(catalogMode) return;   // catalog ထဲမှာ episode အကုန်ပါပြီးသား — ထပ်ဖတ်စရာမလို (read ချွေတာ)
 
   // Same site-wide pagination caveat as openSeries() — fetch this
   // series' full episode list directly so a currently-playing episode
@@ -2647,7 +2691,7 @@ function paintModalEpList(wrap, seriesName, episodes, currentId){
     <div class="modal-ep-list-title">${esc(seriesName)} — ${episodes.length} Episodes</div>
     <div class="modal-ep-list-stack">
       ${episodes.map((ep, i) => `
-        <div class="ep-item${ep.id === currentId ? ' current' : ''}" data-id="${ep.id}" title="${esc(ep.title)}" role="button" aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}"${ep.id === currentId ? ' aria-current="true"' : ''}>
+        <div class="ep-item${ep.id === currentId ? ' current' : ''}" data-id="${ep.id}" title="${esc(ep.title)}" role="button" ${ep.id === currentId ? 'aria-current="true"' : 'tabindex="0"'} aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}">
           <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'" alt="">
           <div class="ep-shade"></div>
           ${ep.isPremium ? '<span class="ep-prem">★</span>' : ''}
@@ -2656,9 +2700,7 @@ function paintModalEpList(wrap, seriesName, episodes, currentId){
           ${ep.duration ? `<div class="ep-dur">${esc(ep.duration)}</div>` : ''}
         </div>`).join('')}
     </div>`;
-  wrap.querySelectorAll('.ep-item:not(.current)').forEach(el => {
-    el.addEventListener('click', () => openPlayer(el.dataset.id));
-  });
+  wireEpTiles(wrap.querySelectorAll('.ep-item:not(.current)'));
 }
 /* "Relate content" grid shown below the player for 18+ videos — a card
    grid (same visual language as the homepage rows), not the linear
@@ -2822,6 +2864,43 @@ const MOVIES_PAGE_SIZE = 30;
 let moviesLimit = MOVIES_PAGE_SIZE;
 let moviesUnsub = null;
 let moviesById = {};
+
+/* ---- CATALOG MODE (Firestore read ချွေတာ) -------------------------------
+   Admin panel က `movies` ရဲ့ copy ကို `catalog/meta` + `catalog/s0..sN` (document တစ်ခုထဲမှာ
+   ဇာတ်ကားအများကြီး ထုပ်ထား) အဖြစ် ထိန်းထားတယ်။ Site ဖွင့်တိုင်း movies ကို တစ်ကားချင်းစီ
+   (category listener ၃ ခု + series ဖွင့်တိုင်း ထပ်ဖတ်) မဖတ်တော့ဘဲ catalog (shard ၁ ခု + meta ၁ ခု — ဇာတ်ကား ရာချီရှိရင်တောင် read ၂-၃ ခုပဲ) နဲ့ အကုန်ရတယ်။
+   • Catalog ကို တစ်ခါပဲ ဖတ် (live listener မဟုတ်) — အသစ်ထည့်တာကို live "newest N" listener က ချက်ချင်းပြတယ်။
+   • Catalog ဖတ်မရရင် (Rules မ publish သေး / catalog မတည်ဆောက်သေး / offline) → အရင်လို
+     category listener ၃ ခုနဲ့ အလိုအလျောက် ပြန်သွားတယ် — ဘယ်ကိစ္စမှ မပျက်ပါ။
+   • Live listener က ပို fresh ဖြစ်တဲ့ entry (view/like count စသည်) ကို catalog နဲ့ မထပ်ရေးပါ။ */
+const CATALOG_LIVE_SIZE = 20;                        // catalog mode မှာ live နဲ့ ကြည့်မယ့် newest N
+const CATALOG_REFRESH_MS = 45 * 60 * 1000;           // App ကို ကြာကြာဖွင့်ထားပြီး ပြန်ကြည့်ရင် catalog ပြန်ဖတ်
+let catalogMode = false;                             // catalog ကို အောင်မြင်စွာ load ပြီးပြီလား
+let catalogLoadedAt = 0;
+let catalogIds = new Set();                          // moviesById ထဲက catalog ကနေလာတဲ့ id တွေ (live ကပြန်ရေးရင် ဖယ်)
+async function loadCatalogSnapshot(){                // → movie entry array | null (သုံးမရ)
+  const snap = await db.collection('catalog').get();
+  let meta = null; const raw = {};
+  snap.forEach(d => { if(d.id === 'meta') meta = d.data(); else raw[d.id] = d.data(); });
+  if(!meta || !(meta.shards >= 1) || meta.shards > 64) return null;
+  const out = [];
+  for(let i = 0; i < meta.shards; i++){
+    const sd = raw['s' + i];
+    if(!sd || typeof sd.data !== 'string') return null;       // shard ပျောက်/ပျက် → မသုံးဘူး
+    let arr; try{ arr = JSON.parse(sd.data); }catch(e){ return null; }
+    if(!Array.isArray(arr)) return null;
+    arr.forEach(e => { if(e && typeof e.id === 'string' && e.id) out.push(e); });
+  }
+  return out.length ? out : null;                    // ဗလာ catalog ကို မယုံ — အရင်နည်းနဲ့ပဲ သွား
+}
+function applyCatalog(items){
+  const keep = {};                                   // live/deep-link ကနေ ရထားတဲ့ entry တွေ (catalog ထက် fresh) ကို ထား
+  Object.keys(moviesById).forEach(id => { if(!catalogIds.has(id)) keep[id] = moviesById[id]; });
+  const ids = new Set();
+  items.forEach(e => { if(!keep[e.id]){ keep[e.id] = e; ids.add(e.id); } });
+  moviesById = keep; catalogIds = ids;
+  movies = Object.values(moviesById);
+}
 function docToMovie(d){
   const data = d.data();
   return { id: d.id, ...data, createdAtMs: data.createdAt ? data.createdAt.toMillis() : 0 };
@@ -2829,12 +2908,13 @@ function docToMovie(d){
 function subscribeMovies(){
   if(moviesUnsub) moviesUnsub();
   moviesUnsub = db.collection('movies').orderBy('createdAt', 'desc').limit(moviesLimit).onSnapshot(snap => {
-    snap.docs.forEach(d => { moviesById[d.id] = docToMovie(d); });
+    snap.docs.forEach(d => { moviesById[d.id] = docToMovie(d); catalogIds.delete(d.id); });
     movies = Object.values(moviesById);
-    hasMoreMovies = snap.docs.length === moviesLimit; // heuristic: a full page suggests more may exist
+    hasMoreMovies = !catalogMode && snap.docs.length === moviesLimit; // heuristic: a full page suggests more may exist (catalog mode မှာ အကုန်ရှိပြီးသား)
     render();
     updateLoadMoreVisibility();
   }, err => {
+    if(catalogMode){ console.error('[maxflix] live listener error:', err); return; }   // catalog နဲ့ ပြနေပြီးသားဆိုရင် error နဲ့ မဖုံးဘူး
     document.getElementById('rowsWrap').innerHTML =
       `<div class="loading">ချိတ်ဆက်မှု အမှား — firebaseConfig ကို စစ်ကြည့်ပါ (${esc(err.message)})</div>`;
   });
@@ -2844,6 +2924,7 @@ function subscribeCategory(category){
     snap.docChanges().forEach(change => {
       if(change.type === 'removed'){ delete moviesById[change.doc.id]; }
       else { moviesById[change.doc.id] = docToMovie(change.doc); }
+      catalogIds.delete(change.doc.id);
     });
     movies = Object.values(moviesById);
     render();
@@ -2854,10 +2935,38 @@ document.getElementById('loadMoreBtn').addEventListener('click', () => {
   moviesLimit += MOVIES_PAGE_SIZE;
   subscribeMovies();
 });
-subscribeMovies();
-subscribeCategory('original');
-subscribeCategory('drama');
-subscribeCategory('adult');
+function startLegacyListeners(){                     // catalog မရရင် အရင်ပုံစံ (category listener ၃ ခု)
+  if(!moviesUnsub) subscribeMovies();
+  subscribeCategory('original');
+  subscribeCategory('drama');
+  subscribeCategory('adult');
+}
+(async function bootMovies(){
+  // Catalog နှေးနေရင် (၃.၅ စက္ကန့်) newest-N listener ကို အရင်စပြီး စာမျက်နှာ ဗလာမဖြစ်စေ
+  const slowTimer = setTimeout(() => { if(!moviesUnsub) subscribeMovies(); }, 3500);
+  let items = null;
+  try{ items = await loadCatalogSnapshot(); }
+  catch(err){ console.warn('[maxflix] catalog unavailable, using live listeners:', err && err.message); }
+  clearTimeout(slowTimer);
+  if(!items){ startLegacyListeners(); return; }
+  catalogMode = true; catalogLoadedAt = Date.now();
+  applyCatalog(items);
+  hasMoreMovies = false;
+  render();
+  updateLoadMoreVisibility();
+  tryRestoreSeries();
+  if(!moviesUnsub){ moviesLimit = CATALOG_LIVE_SIZE; subscribeMovies(); }
+})();
+// App ကို ကြာကြာဖွင့်ထားပြီး ပြန်ဝင်လာရင် catalog ကို ပြန်ဖတ် (admin ပြင်/ဖျက်ထားတာတွေ ပါလာအောင်) — read အနည်းငယ်ပဲကုန်
+document.addEventListener('visibilitychange', async () => {
+  if(document.visibilityState !== 'visible' || !catalogMode) return;
+  if(Date.now() - catalogLoadedAt < CATALOG_REFRESH_MS) return;
+  catalogLoadedAt = Date.now();
+  try{
+    const items = await loadCatalogSnapshot();
+    if(items){ applyCatalog(items); render(); tryRestoreSeries(); }
+  }catch(e){ /* မအောင်ရင် ရှိပြီးသား cache နဲ့ဆက် */ }
+});
 
 /* =========================================================
    12) PROMO BANNER — settings/banner doc, managed from admin panel
