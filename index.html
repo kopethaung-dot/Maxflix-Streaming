@@ -2669,8 +2669,12 @@ let lastOpenPlayerCallAt = 0;
    movies/{id}/private/stream (Firestore rules: verified adults only) — fetch
    it here instead of trusting the videoUrl on the public movie doc.
    Before migration the private doc doesn't exist yet, so this falls back to
-   the movie doc's own videoUrl. A permission-denied read means the rules
-   refused (not verified) — that refuses playback, it does NOT fall back. */
+   the movie doc's own videoUrl. A permission-denied read ALSO falls back:
+   it usually means the rules were published but verifyAdultPin isn't
+   deployed yet, so adultVerifiedUntil was never stamped — refusing here
+   would block every adult video even when its URL is still public.
+   After a real migration the legacy videoUrl is gone anyway, so the
+   fallback returns null then and the gate still holds. */
 async function getAdultVideoUrl(m){
   try{
     const snap = await db.collection('movies').doc(m.id).collection('private').doc('stream').get();
@@ -2678,8 +2682,9 @@ async function getAdultVideoUrl(m){
       return { videoUrl: snap.data().videoUrl, videoUrlMobile: snap.data().videoUrlMobile || null };
     }
   }catch(e){
-    if(e && e.code === 'permission-denied') return { videoUrl: null, videoUrlMobile: null };
-    // missing doc / network blip — fall through to the legacy field below
+    // permission-denied / missing doc / network blip — fall through to the
+    // legacy field below (see comment above: after migration legacy is empty
+    // anyway, so this cannot bypass a completed migration).
   }
   return { videoUrl: m.videoUrl || null, videoUrlMobile: m.videoUrlMobile || null };
 }
