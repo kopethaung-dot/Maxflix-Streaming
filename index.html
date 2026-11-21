@@ -36,7 +36,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
 
 <style>
   :root{
@@ -231,6 +230,31 @@
   .vpn-notice .close-btn:hover{opacity:1;}
   @media(max-width:700px){ .vpn-notice{padding:8px 14px;font-size:12.5px;} }
 
+
+  /* ---------- Announcement marquee (settings/announcement — Admin ကနေ စာရေးထည့်) ---------- */
+  .announce-bar{display:flex;align-items:center;gap:10px;padding:7px clamp(16px,4vw,56px);color:var(--ink);font-size:13.5px;
+    background:linear-gradient(90deg,rgba(229,9,20,.24),rgba(212,166,42,.22));border-bottom:1px solid var(--line);}
+  .announce-icon{flex-shrink:0;font-size:16px;line-height:1;}
+  .announce-viewport{flex:1;min-width:0;overflow:hidden;white-space:nowrap;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent);}
+  .announce-track{display:inline-flex;width:max-content;will-change:transform;
+    animation:announce-scroll var(--announce-dur,30s) linear infinite;}
+  .announce-track:hover,.announce-track.paused{animation-play-state:paused;}   /* ထောက်ထားရင်/hover လုပ်ရင် ရပ်ပေး (ဖတ်လို့ရအောင်) */
+  .announce-msg{flex-shrink:0;font-weight:500;}
+  .announce-sep{flex-shrink:0;margin:0 22px;color:var(--gold);}
+  @keyframes announce-scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  .announce-bar .close-btn{flex-shrink:0;background:none;border:none;color:inherit;font-size:18px;line-height:1;cursor:pointer;opacity:.6;padding:2px 4px;}
+  .announce-bar .close-btn:hover{opacity:1;}
+  @media(max-width:700px){ .announce-bar{padding:6px 14px;font-size:12.5px;} }
+  /* Motion လျှော့ထားတဲ့ device (Accessibility setting) မှာ မပြေးဘဲ စာကို ရိုးရိုး ပြ */
+  @media (prefers-reduced-motion: reduce){
+    .announce-viewport{white-space:normal;-webkit-mask-image:none;mask-image:none;}
+    .announce-track{animation:none;width:auto;display:block;}
+    .announce-msg{display:block;}
+    .announce-sep,.announce-dup{display:none;}
+  }
+
   /* ---------- UX extras: expiry/install bars · player speed · report · push ---------- */
   .sys-bar{display:flex;align-items:center;gap:10px;padding:9px clamp(16px,4vw,56px);font-size:13px;color:var(--ink);
     border-bottom:1px solid var(--line);}
@@ -244,30 +268,7 @@
   .install-bar{background:rgba(255,255,255,.07);}
   .install-bar .bar-btn{background:var(--accent);color:#fff;}
   @media(max-width:700px){ .sys-bar{padding:8px 14px;font-size:12.5px;} }
-
-  /* ---------- Announcement ticker (header အောက် sticky) ---------- */
-  /* header က sticky top:0 ဖြစ်နေလို့ ticker ကို header အမြင့်အောက်မှာ ကပ်ထားတယ် —
-     အမြင့်ကို JS က တိုင်းပြီး --ticker-top မှာ ထည့်ပေးတယ် (fallback 64px) */
-  .announce-bar{position:sticky;top:var(--ticker-top,64px);z-index:59;display:none;
-    align-items:center;gap:10px;padding:0 clamp(16px,4vw,56px);height:38px;
-    background:#E50914;color:#fff;font-size:13.5px;font-weight:600;overflow:hidden;
-    border-bottom:1px solid rgba(0,0,0,.25);}
-  .announce-bar.show{display:flex;}
-  .announce-label{flex-shrink:0;font-size:15px;line-height:1;}
-  .announce-viewport{flex:1;min-width:0;overflow:hidden;white-space:nowrap;}
-  .announce-track{display:inline-flex;width:max-content;will-change:transform;
-    animation:announce-scroll var(--ticker-dur,20s) linear infinite;}
-  .announce-bar.static .announce-track{animation:none;}
-  .announce-bar.static .announce-viewport{text-align:center;}
-  .announce-track span{padding-right:80px;}
-  .announce-bar:hover .announce-track{animation-play-state:paused;}
-  @keyframes announce-scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-  .announce-close{flex-shrink:0;background:none;border:none;color:#fff;font-size:16px;
-    line-height:1;cursor:pointer;opacity:.75;padding:2px 4px;}
-  .announce-close:hover{opacity:1;}
-  @media(max-width:700px){ .announce-bar{padding:0 14px;font-size:12.5px;height:34px;} }
-  .player-tools{position:absolute;top:10px;left:10px;z-index:5;display:flex;gap:6px;flex-wrap:wrap;}
-  .seek-flash{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.65);color:#fff;padding:8px 14px;border-radius:20px;font-size:14px;font-weight:700;z-index:6;pointer-events:none;}
+  .player-tools{position:absolute;top:10px;left:10px;z-index:5;}
   .speed-btn{background:rgba(0,0,0,.6);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:16px;
     padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;min-width:42px;}
   .speed-menu{display:none;position:absolute;top:34px;left:0;background:rgba(18,12,14,.96);border:1px solid var(--line);
@@ -436,6 +437,8 @@
   .ep-item{position:relative;aspect-ratio:1/1;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;
     cursor:pointer;background:var(--bg-card);transition:border-color .15s,transform .15s;}
   .ep-item:hover{border-color:var(--accent-dim);transform:translateY(-2px);}
+  /* Keyboard (Tab) နဲ့ သွားတဲ့အခါ ဘယ် tile ပေါ်ရောက်နေလဲ မြင်ရအောင် */
+  .ep-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-color:var(--accent);}
   .ep-thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#222;opacity:.5;}
   .ep-shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.2) 55%,rgba(0,0,0,.35) 100%);}
   .ep-num{position:absolute;left:0;right:0;top:50%;transform:translateY(-54%);text-align:center;line-height:1;
@@ -443,8 +446,6 @@
   .ep-num small{display:block;font-family:var(--font-body);font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:4px;}
   .ep-dur{position:absolute;left:8px;bottom:6px;font-size:11px;font-weight:600;color:#e6e6ea;text-shadow:0 1px 4px rgba(0,0,0,.8);}
   .ep-prem{position:absolute;top:6px;right:6px;background:var(--gold);color:#0a0a0d;font-size:10px;font-weight:800;
-    line-height:1;padding:3px 6px;border-radius:10px;}
-  .ep-watched{position:absolute;right:6px;bottom:6px;background:#22c55e;color:#fff;font-size:11px;font-weight:800;
     line-height:1;padding:3px 6px;border-radius:10px;}
   .ep-now{position:absolute;top:6px;left:6px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;
     line-height:1;padding:3px 7px;border-radius:10px;}
@@ -700,11 +701,10 @@
   </div>
 </header>
 
-<!-- Announcement ticker: admin က settings/announcement မှာ စာရေးရင် ဒီမှာ အလိုလျောက်ပေါ်မယ် -->
-<div class="announce-bar" id="announceBar" style="display:none;" role="status">
-  <span class="announce-label" aria-hidden="true">📢</span>
-  <div class="announce-viewport"><div class="announce-track" id="announceTrack"></div></div>
-  <button class="announce-close" id="announceClose" aria-label="ပိတ်မည်">✕</button>
+<div class="announce-bar" id="announceBar" style="display:none;" role="region" aria-label="ကြေညာချက်">
+  <span class="announce-icon" aria-hidden="true">📢</span>
+  <div class="announce-viewport" id="announceViewport"><div class="announce-track" id="announceTrack"></div></div>
+  <button class="close-btn" id="announceClose" aria-label="ပိတ်မည်">✕</button>
 </div>
 
 <div class="vpn-notice" id="vpnNotice" style="display:none;">
@@ -1087,7 +1087,6 @@
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.9 5.1 29.7 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.8-.4-4.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.9 5.1 29.7 3 24 3c-7.6 0-14.1 4.3-17.4 10.6z"/><path fill="#4CAF50" d="M24 45c5.6 0 10.7-1.9 14.6-5.2l-6.7-5.7C29.8 35.7 27 36.8 24 36.8c-5.3 0-9.7-3.4-11.3-8l-6.6 5.1C9.8 40.6 16.3 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.2 5.7l6.7 5.7C41.9 36.6 45 30.9 45 24c0-1.4-.1-2.8-.4-3.5z"/></svg>
       Google နဲ့ ဆက်လက်လုပ်ဆောင်မည်
     </button>
-    <div id="authIosHint" style="display:none;text-align:center;color:var(--ink-dim);font-size:12px;margin:-6px 0 12px;">📲 iPhone App icon ကနေ Google login ဝင်မရရင် — Safari မှာ site ကို ဖွင့်ပြီး တစ်ခါ login ဝင်ပါ၊ ပြီးမှ icon က ပြန်ဖွင့်ပါ။</div>
     <div id="authOrDivider" style="text-align:center;color:var(--ink-dim);font-size:12.5px;margin:0 0 14px;position:relative;">
       <div style="position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line);z-index:0;"></div>
       <span style="background:var(--bg-elev);padding:0 10px;position:relative;z-index:1;">သို့မဟုတ်</span>
@@ -1495,45 +1494,8 @@ document.getElementById('ageGateOverlay').addEventListener('click', e => {
 document.getElementById('pinCancelBtn').addEventListener('click', () => {
   document.getElementById('pinOverlay').classList.remove('open'); pendingUnlockCallback = null;
 });
-document.getElementById('pinSubmitBtn').addEventListener('click', async () => {
+document.getElementById('pinSubmitBtn').addEventListener('click', () => {
   const errEl = document.getElementById('pinErr');
-  const pin = document.getElementById('pinInput').value.trim();
-  const unlockOk = () => {
-    adultUnlocked = true;
-    document.getElementById('pinOverlay').classList.remove('open');
-    renderAdultSection();
-    if(pendingUnlockCallback) pendingUnlockCallback();
-    pendingUnlockCallback = null;
-  };
-  // (1) Server-side check first — Cloud Function verifyAdultPin compares the
-  // PIN + expiry on the server and stamps adultVerifiedUntil on the user doc.
-  // Needs the function deployed (see maxflix-adult-pin-server/) + Blaze plan.
-  // Until then the call fails with not-found/unavailable and we fall back to (2).
-  if(window.firebase && firebase.functions){
-    try{
-      const fn = firebase.functions().httpsCallable('verifyAdultPin');
-      const res = await fn({ pin });
-      if(res && res.data && res.data.ok){ unlockOk(); return; }
-      const reason = res && res.data && res.data.reason;
-      errEl.textContent = reason === 'expired'
-        ? 'PIN သက်တမ်းကုန်သွားပါပြီ — Admin ကို ဆက်သွယ်ပါ'
-        : reason === 'no-pin'
-          ? 'PIN မရှိသေးပါ — Admin ကို ဆက်သွယ်ပါ'
-          : 'PIN မှားနေပါတယ်';
-      errEl.classList.add('show');
-      return;
-    }catch(e){
-      // Function မရှိသေးရင်ဖြစ်ဖြစ်၊ deploy ထားပြီး error တက်ရင်ဖြစ်ဖြစ် —
-      // local check (browser ထဲက PIN စစ်တာ) ကို ပြန်ကျသွားမယ်။ အရင်က
-      // not-found/unavailable မဟုတ်တဲ့ error တိုင်းကို 'မှားနေပါတယ်' လို့
-      // တန်းဆုံးဖြတ်ပြီး local ကို လုံးဝ မရောက်တော့ဘူး — PIN အသစ်ထုတ်လည်း
-      // ထာဝရ မှားနေတဲ့ အကြောင်းရင်းတစ်ခု ဖြစ်နိုင်တယ်။
-      try{ console.warn('verifyAdultPin call failed, falling back to local check:', e && e.code); }catch(_){}
-    }
-  }
-  // (2) Local fallback (pre-deploy behaviour) — compares against the PIN in
-  // the user doc. Works, but anyone who can open DevTools can read the PIN
-  // and the adult video URLs from the movies cache, so it is a soft gate.
   const myPin = currentUserDoc && currentUserDoc.adultPin;
   // Premium subscriber ဖြစ်ရင် premium သက်တမ်းနဲ့ auto-sync (+1 ရက် grace) ဖြစ်ပြီး၊
   // free user ဖြစ်ရင် admin ထုတ်ပေးထားတဲ့ 5-ရက် fixed window ကိုပဲ သုံးမယ် (admin.html ရဲ့
@@ -1552,8 +1514,13 @@ document.getElementById('pinSubmitBtn').addEventListener('click', async () => {
   if(Date.now() > expiresMs){
     errEl.textContent = 'PIN သက်တမ်းကုန်သွားပါပြီ — Admin ကို ဆက်သွယ်ပါ'; errEl.classList.add('show'); return;
   }
-  if(pin === String(myPin).trim()){ unlockOk(); }
-  else { errEl.textContent = 'PIN မှားနေပါတယ်'; errEl.classList.add('show'); }
+  if(document.getElementById('pinInput').value === myPin){
+    adultUnlocked = true;
+    document.getElementById('pinOverlay').classList.remove('open');
+    renderAdultSection();
+    if(pendingUnlockCallback) pendingUnlockCallback();
+    pendingUnlockCallback = null;
+  } else { errEl.textContent = 'PIN မှားနေပါတယ်'; errEl.classList.add('show'); }
 });
 document.getElementById('pinInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('pinSubmitBtn').click(); });
 
@@ -1592,12 +1559,6 @@ function setAuthMode(mode){
   const isReset = mode === 'reset';
   document.getElementById('authTabs').style.display = isReset ? 'none' : 'flex';
   document.getElementById('authGoogleBtn').style.display = isReset ? 'none' : 'flex';
-  const iosHint = document.getElementById('authIosHint');
-  if(iosHint){
-    let showIosHint = false;
-    try{ showIosHint = !isReset && IS_IOS && isStandaloneApp; }catch(e){}
-    iosHint.style.display = showIosHint ? 'block' : 'none';
-  }
   document.getElementById('authOrDivider').style.display = isReset ? 'none' : 'block';
   document.getElementById('authPassField').style.display = isReset ? 'none' : 'block';
   document.getElementById('forgotPassBtn').style.display = mode === 'login' ? 'block' : 'none';
@@ -1695,13 +1656,6 @@ function showGoogleAuthError(err){
   errEl.textContent = err.code === 'auth/account-exists-with-different-credential'
     ? `${err.email || 'ဒီ email'} ဟာ Password နဲ့ Sign up ဝင်ထားပြီးသားပါ — Password နဲ့ Login ဝင်ပါ`
     : err.message;
-  // iPhone home-screen app: Google login is flaky in standalone mode (Apple
-  // limitation, not fixable in this file) — point at the Safari workaround.
-  try{
-    if(typeof IS_IOS !== 'undefined' && IS_IOS && isStandaloneApp){
-      errEl.textContent += ' — iPhone App icon ကနေ ဝင်မရရင် Safari မှာ site ကို ဖွင့်ပြီး တစ်ခါ login ဝင်ပါ၊ ပြီးမှ icon က ပြန်ဖွင့်ပါ။';
-    }
-  }catch(e){}
   errEl.classList.add('show');
 }
 document.getElementById('authGoogleBtn').addEventListener('click', async () => {
@@ -1823,33 +1777,6 @@ function isPremiumActive(){
 }
 
 let userDocUnsub = null, pendingReqUnsub = null, reviewedReqUnsub = null, continueUnsub = null;
-/* Watched markers — a movie/episode watched past 95% gets a ✓ badge in the
-   episode lists (series view + player modal). Stored separately from
-   continueWatching so finishing a video doesn't keep it in that row. */
-let watchedIds = new Set();
-let watchedUnsub = null;
-function subscribeWatched(){
-  if(watchedUnsub){ watchedUnsub(); watchedUnsub = null; }
-  if(!currentUser){ watchedIds = new Set(); return; }
-  watchedUnsub = db.collection('users').doc(currentUser.uid).collection('watched')
-    .onSnapshot(snap => {
-      watchedIds = new Set(snap.docs.map(d => d.id));
-      refreshWatchedMarks();
-    }, () => {});
-}
-function refreshWatchedMarks(){
-  if(currentSeries){
-    const s = getDramaSeries().find(x => x.name === currentSeries);
-    if(s) renderEpList(s.episodes);
-  }
-  if(currentPlayerMovie && currentPlayerMovie.category === 'drama' && currentPlayerMovie.seriesName){
-    const s = getDramaSeries().find(x => x.name === (currentPlayerMovie.seriesName.trim() || currentPlayerMovie.title));
-    if(s){
-      const wrap = document.getElementById('modalEpList');
-      if(wrap && wrap.style.display !== 'none') paintModalEpList(wrap, s.name, s.episodes, currentPlayerMovie.id);
-    }
-  }
-}
 function subscribeContinueWatching(){
   if(continueUnsub){ continueUnsub(); continueUnsub = null; }
   if(!currentUser){ continueList = []; render(); return; }
@@ -1993,7 +1920,6 @@ auth.onAuthStateChanged(user => {
     checkPremiumExpiry();
   }
   subscribeContinueWatching();
-  subscribeWatched();
   subscribeMyList();
   renderAccountArea();
   render();
@@ -2319,8 +2245,7 @@ let hasMoreMovies = false;
 function updateLoadMoreVisibility(){
   const wrap = document.getElementById('loadMoreWrap');
   const applicable = ['own','drama','adult'].includes(currentView);
-  const cat = currentView === 'own' ? 'original' : currentView;
-  wrap.style.display = (applicable && !!categoryHasMore[cat]) ? 'flex' : 'none';
+  wrap.style.display = (applicable && hasMoreMovies) ? 'flex' : 'none';
 }
 
 const GENRE_LIST = ['Action','Romance','Comedy','Thriller','Fantasy','Horror','Drama','Crime','Family'];
@@ -2376,10 +2301,7 @@ window.addEventListener('pageshow', clearSearchInputs);
 
 /* 18+ content: titles/thumbnails are only written into the DOM after the PIN
    has been entered successfully this session. Locked-out visitors get an
-   empty grid with a lock message. NOTE: that hides the grid, not the data —
-   until adult video URLs are migrated to movies/{id}/private/stream (see
-   getAdultVideoUrl + maxflix-adult-pin-server/), the URLs still sit on the
-   public movie docs in the client cache and can be read from DevTools. */
+   empty grid with a lock message — nothing to inspect via dev tools either. */
 function renderAdultSection(){
   const countEl = document.getElementById('adultCount');
   const grid = document.getElementById('adultGrid');
@@ -2498,18 +2420,30 @@ function render(){
 /* =========================================================
    9) SERIES DETAIL VIEW
    ========================================================= */
+/* Episode tile တွေကို mouse/touch (click) အပြင် keyboard (Tab ရွေး → Enter / Space နှိပ်) နဲ့ပါ
+   ဖွင့်လို့ရအောင် — tile က <div role="button"> ဖြစ်လို့ ကိုယ်တိုင် ချိတ်ပေးရတယ်။ */
+function wireEpTiles(nodes){
+  nodes.forEach(el => {
+    el.addEventListener('click', () => openPlayer(el.dataset.id));
+    el.addEventListener('keydown', ev => {
+      if(ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar'){
+        ev.preventDefault();               // Space နဲ့ page scroll မဆင်းအောင်
+        openPlayer(el.dataset.id);
+      }
+    });
+  });
+}
 function renderEpList(episodes){
   const epList = document.getElementById('epList');
   epList.innerHTML = episodes.map((ep, i) => `
-    <div class="ep-item" data-id="${ep.id}" title="${esc(ep.title)}" role="button" aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}">
+    <div class="ep-item" data-id="${ep.id}" title="${esc(ep.title)}" role="button" tabindex="0" aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}">
       <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'" alt="">
       <div class="ep-shade"></div>
       ${ep.isPremium ? '<span class="ep-prem">★</span>' : ''}
-      ${watchedIds.has(ep.id) ? '<span class="ep-watched">✓</span>' : ''}
       <div class="ep-num"><small>EP</small>${esc(String(ep.episodeNumber || (i+1)))}</div>
       ${ep.duration ? `<div class="ep-dur">${esc(ep.duration)}</div>` : ''}
     </div>`).join('');
-  epList.querySelectorAll('.ep-item').forEach(el => el.addEventListener('click', () => openPlayer(el.dataset.id)));
+  wireEpTiles(epList.querySelectorAll('.ep-item'));
 }
 async function openSeries(name, silentRefresh){
   const series = getDramaSeries().find(s => s.name === name);
@@ -2528,6 +2462,7 @@ async function openSeries(name, silentRefresh){
   // "missing" episodes even though every episode still exists in
   // Firestore. Fetch this series' episodes directly (no site-wide limit)
   // and merge them in once loaded, so the list is always complete.
+  if(catalogMode) return;   // catalog ထဲမှာ episode အကုန်ပါပြီးသား — ထပ်ဖတ်စရာမလို (read ချွေတာ)
   try{
     const snap = await db.collection('movies')
       .where('category', '==', 'drama')
@@ -2648,7 +2583,6 @@ function playVideoSrc(videoEl, url, m, wrap){
           });
           currentHls.loadSource(srcUrl);
           currentHls.attachMedia(videoEl);
-          currentHls.on(Hls.Events.MANIFEST_PARSED, () => { if(currentQualityRefresh) currentQualityRefresh(); });
         } else {
           videoEl.src = srcUrl; // Safari has native HLS support
         }
@@ -2665,31 +2599,34 @@ let playerReturnView = 'home';
 let currentPlayerToken = 0; // bumped on every openPlayer() call — lets async callbacks detect they're stale
 let lastOpenPlayerCallAt = 0;
 
-/* Adult streams: after migration the real URL lives in
-   movies/{id}/private/stream (Firestore rules: verified adults only) — fetch
-   it here instead of trusting the videoUrl on the public movie doc.
-   Before migration the private doc doesn't exist yet, so this falls back to
-   the movie doc's own videoUrl. A permission-denied read ALSO falls back:
-   it usually means the rules were published but verifyAdultPin isn't
-   deployed yet, so adultVerifiedUntil was never stamped — refusing here
-   would block every adult video even when its URL is still public.
-   After a real migration the legacy videoUrl is gone anyway, so the
-   fallback returns null then and the gate still holds. */
-async function getAdultVideoUrl(m){
-  try{
-    const snap = await db.collection('movies').doc(m.id).collection('private').doc('stream').get();
-    if(snap.exists && snap.data() && snap.data().videoUrl){
-      return { videoUrl: snap.data().videoUrl, videoUrlMobile: snap.data().videoUrlMobile || null };
-    }
-  }catch(e){
-    // permission-denied / missing doc / network blip — fall through to the
-    // legacy field below (see comment above: after migration legacy is empty
-    // anyway, so this cannot bypass a completed migration).
-  }
-  return { videoUrl: m.videoUrl || null, videoUrlMobile: m.videoUrlMobile || null };
+// ---- View counter ------------------------------------------------------
+// viewCount တိုးတာကို "ဖွင့်လိုက်တာနဲ့" မဟုတ်ဘဲ video က တကယ် play စတာမှ (ပထမဆုံး
+// `playing` event) တစ်ခါပဲ ရေတွက်တယ်။ တူညီတဲ့ ဖုန်း/browser က ဒီ video ကို ၆ နာရီအတွင်း
+// ထပ်ကြည့်ရင် ထပ်မတိုးပါ (refresh/ပြန်ဖွင့်ပြီး count မဖောင်းအောင်)။ Firestore rules က
+// viewCount ကို +1 ပဲ ခွင့်ပြုထားတာမို့ login မဝင်ထားတဲ့သူလည်း ရေတွက်နိုင်တယ်။
+const VIEW_THROTTLE_MS = 6 * 60 * 60 * 1000;
+function viewThrottleKey(id){ return 'viewCounted_v1_' + id; }
+function wasViewedRecently(id){
+  try {
+    const t = parseInt(localStorage.getItem(viewThrottleKey(id)) || '0', 10);
+    return t > 0 && (Date.now() - t) < VIEW_THROTTLE_MS;
+  } catch (e) { return false; }
+}
+function countViewOnPlay(videoEl, m){
+  if(!videoEl || !m || !m.id) return;
+  let done = false;
+  const fire = () => {
+    if(done) return;
+    done = true;
+    videoEl.removeEventListener('playing', fire);
+    if(wasViewedRecently(m.id)) return;
+    try { localStorage.setItem(viewThrottleKey(m.id), String(Date.now())); } catch (e) {}
+    db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
+  };
+  videoEl.addEventListener('playing', fire);
 }
 
-async function openPlayer(id){
+function openPlayer(id){
   const now = Date.now();
   if(now - lastOpenPlayerCallAt < 500) return; // guards against double-tap/double-click firing this twice
   lastOpenPlayerCallAt = now;
@@ -2697,12 +2634,6 @@ async function openPlayer(id){
   if(!m) return;
   if(m.category === 'adult' && !adultUnlocked){ requestAdultUnlock(() => openPlayer(id)); return; }
   if(m.isPremium && !isPremiumActive()){ openPremiumGate(id); return; }
-  let playMovie = m;
-  if(m.category === 'adult'){
-    const urls = await getAdultVideoUrl(m);
-    if(!urls.videoUrl){ showToast('ဗီဒီယို ဖွင့်လို့မရပါ — PIN ပြန်ရိုက်ကြည့်ပါ'); return; }
-    playMovie = { ...m, videoUrl: urls.videoUrl, videoUrlMobile: urls.videoUrlMobile };
-  }
 
   const myToken = ++currentPlayerToken;
   const modalWasAlreadyOpen = document.getElementById('modalOverlay').classList.contains('open');
@@ -2723,10 +2654,10 @@ async function openPlayer(id){
   wrap.appendChild(videoEl);
   setupPlayerExtras(videoEl, m, wrap);
 
-  const srcUrl = pickVideoUrl(playMovie);
-  playVideoSrc(videoEl, srcUrl, playMovie, wrap);
+  const srcUrl = pickVideoUrl(m);
+  playVideoSrc(videoEl, srcUrl, m, wrap);
   attachProgressTracking(videoEl, m);
-  db.collection('movies').doc(m.id).update({ viewCount: firebase.firestore.FieldValue.increment(1) }).catch(()=>{});
+  countViewOnPlay(videoEl, m);
   wireAutoPlayNext(videoEl, m, wrap);
 
   document.getElementById('modalTitle').textContent = m.title;
@@ -2753,6 +2684,7 @@ function renderModalEpList(m, token){
   const series = getDramaSeries().find(s => s.name === seriesName);
   if(!series || series.episodes.length < 2){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
   paintModalEpList(wrap, series.name, series.episodes, m.id);
+  if(catalogMode) return;   // catalog ထဲမှာ episode အကုန်ပါပြီးသား — ထပ်ဖတ်စရာမလို (read ချွေတာ)
 
   // Same site-wide pagination caveat as openSeries() — fetch this
   // series' full episode list directly so a currently-playing episode
@@ -2790,19 +2722,16 @@ function paintModalEpList(wrap, seriesName, episodes, currentId){
     <div class="modal-ep-list-title">${esc(seriesName)} — ${episodes.length} Episodes</div>
     <div class="modal-ep-list-stack">
       ${episodes.map((ep, i) => `
-        <div class="ep-item${ep.id === currentId ? ' current' : ''}" data-id="${ep.id}" title="${esc(ep.title)}" role="button" aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}"${ep.id === currentId ? ' aria-current="true"' : ''}>
+        <div class="ep-item${ep.id === currentId ? ' current' : ''}" data-id="${ep.id}" title="${esc(ep.title)}" role="button" ${ep.id === currentId ? 'aria-current="true"' : 'tabindex="0"'} aria-label="Episode ${esc(String(ep.episodeNumber || (i+1)))}">
           <img class="ep-thumb" loading="lazy" src="${ep.thumbUrl ? esc(ep.thumbUrl) : PLACEHOLDER_THUMB}" onerror="this.src='${PLACEHOLDER_THUMB}'" alt="">
           <div class="ep-shade"></div>
           ${ep.isPremium ? '<span class="ep-prem">★</span>' : ''}
-          ${watchedIds.has(ep.id) ? '<span class="ep-watched">✓</span>' : ''}
           ${ep.id === currentId ? '<span class="ep-now">▮▮ ကြည့်နေ</span>' : ''}
           <div class="ep-num"><small>EP</small>${esc(String(ep.episodeNumber || (i+1)))}</div>
           ${ep.duration ? `<div class="ep-dur">${esc(ep.duration)}</div>` : ''}
         </div>`).join('')}
     </div>`;
-  wrap.querySelectorAll('.ep-item:not(.current)').forEach(el => {
-    el.addEventListener('click', () => openPlayer(el.dataset.id));
-  });
+  wireEpTiles(wrap.querySelectorAll('.ep-item:not(.current)'));
 }
 /* "Relate content" grid shown below the player for 18+ videos — a card
    grid (same visual language as the homepage rows), not the linear
@@ -2853,7 +2782,6 @@ function closePlayer(){
                                    // so the last few seconds of watch time aren't silently dropped
   if(currentHls){ currentHls.destroy(); currentHls = null; }
   if(autoNextTimer){ clearInterval(autoNextTimer); autoNextTimer = null; }
-  clearSleepTimer();
   teardownMediaSession();
   currentPlayerMovie = null;
   document.getElementById('modalVideoWrap').innerHTML = '';
@@ -2911,12 +2839,7 @@ function attachProgressTracking(videoEl, m){
   let lastSaved = 0;
   const saveProgress = () => {
     if(!videoEl.duration) return;
-    if(videoEl.currentTime / videoEl.duration > 0.95){
-      // Mark the episode/movie watched (drives the ✓ badge in episode lists)
-      // and drop it from Continue Watching, as before.
-      if(currentUser){ db.collection('users').doc(currentUser.uid).collection('watched').doc(m.id).set({ completedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(()=>{}); }
-      ref.delete().catch(()=>{}); return;
-    }
+    if(videoEl.currentTime / videoEl.duration > 0.95){ ref.delete().catch(()=>{}); return; }
     if(videoEl.currentTime > 3){
       ref.set({
         movieId: m.id, progress: videoEl.currentTime, duration: videoEl.duration,
@@ -2961,23 +2884,54 @@ document.getElementById('premiumOverlay').addEventListener('click', e => {
       the same as it being deleted, so removing it here would just recreate
       the "hidden until Load More" bug for a different item.
 
-   2) subscribeCategory('original'|'drama'|'adult') — one PAGINATED listener
-      per tab (newest first, CATEGORY_PAGE_SIZE at a time, grown by the
-      "Load More" button on that tab). The first version used unlimited
-      listeners so tabs were always complete, but every fresh load then
-      re-read the whole catalog — the cost grows with the catalog. Deletion
-      handling stays safe: a doc removed inside the loaded window is removed
-      from the cache here, and the Short Drama series view fetches its
-      episodes directly (see openSeries), so a series list is always
-      complete regardless of the tab page. */
+   2) subscribeCategory('original'|'drama'|'adult') — one UNLIMITED listener
+      per tab. Because each of these queries the full category with no
+      limit, it is always complete, so a doc missing from its snapshot really
+      was deleted (or recategorized) — safe to remove from the cache here.
+      This is what actually fixes Movies/Short Drama/18+ items only showing
+      up after pressing "Load More": those tabs no longer depend on the
+      site-wide paginated window at all. */
 const MOVIES_PAGE_SIZE = 30;
-const CATEGORY_PAGE_SIZE = 30;
 let moviesLimit = MOVIES_PAGE_SIZE;
 let moviesUnsub = null;
 let moviesById = {};
-const categoryLimits = { original: CATEGORY_PAGE_SIZE, drama: CATEGORY_PAGE_SIZE, adult: CATEGORY_PAGE_SIZE };
-const categoryHasMore = { original: false, drama: false, adult: false };
-const categoryUnsubs = {};
+
+/* ---- CATALOG MODE (Firestore read ချွေတာ) -------------------------------
+   Admin panel က `movies` ရဲ့ copy ကို `catalog/meta` + `catalog/s0..sN` (document တစ်ခုထဲမှာ
+   ဇာတ်ကားအများကြီး ထုပ်ထား) အဖြစ် ထိန်းထားတယ်။ Site ဖွင့်တိုင်း movies ကို တစ်ကားချင်းစီ
+   (category listener ၃ ခု + series ဖွင့်တိုင်း ထပ်ဖတ်) မဖတ်တော့ဘဲ catalog (shard ၁ ခု + meta ၁ ခု — ဇာတ်ကား ရာချီရှိရင်တောင် read ၂-၃ ခုပဲ) နဲ့ အကုန်ရတယ်။
+   • Catalog ကို တစ်ခါပဲ ဖတ် (live listener မဟုတ်) — အသစ်ထည့်တာကို live "newest N" listener က ချက်ချင်းပြတယ်။
+   • Catalog ဖတ်မရရင် (Rules မ publish သေး / catalog မတည်ဆောက်သေး / offline) → အရင်လို
+     category listener ၃ ခုနဲ့ အလိုအလျောက် ပြန်သွားတယ် — ဘယ်ကိစ္စမှ မပျက်ပါ။
+   • Live listener က ပို fresh ဖြစ်တဲ့ entry (view/like count စသည်) ကို catalog နဲ့ မထပ်ရေးပါ။ */
+const CATALOG_LIVE_SIZE = 20;                        // catalog mode မှာ live နဲ့ ကြည့်မယ့် newest N
+const CATALOG_REFRESH_MS = 45 * 60 * 1000;           // App ကို ကြာကြာဖွင့်ထားပြီး ပြန်ကြည့်ရင် catalog ပြန်ဖတ်
+let catalogMode = false;                             // catalog ကို အောင်မြင်စွာ load ပြီးပြီလား
+let catalogLoadedAt = 0;
+let catalogIds = new Set();                          // moviesById ထဲက catalog ကနေလာတဲ့ id တွေ (live ကပြန်ရေးရင် ဖယ်)
+async function loadCatalogSnapshot(){                // → movie entry array | null (သုံးမရ)
+  const snap = await db.collection('catalog').get();
+  let meta = null; const raw = {};
+  snap.forEach(d => { if(d.id === 'meta') meta = d.data(); else raw[d.id] = d.data(); });
+  if(!meta || !(meta.shards >= 1) || meta.shards > 64) return null;
+  const out = [];
+  for(let i = 0; i < meta.shards; i++){
+    const sd = raw['s' + i];
+    if(!sd || typeof sd.data !== 'string') return null;       // shard ပျောက်/ပျက် → မသုံးဘူး
+    let arr; try{ arr = JSON.parse(sd.data); }catch(e){ return null; }
+    if(!Array.isArray(arr)) return null;
+    arr.forEach(e => { if(e && typeof e.id === 'string' && e.id) out.push(e); });
+  }
+  return out.length ? out : null;                    // ဗလာ catalog ကို မယုံ — အရင်နည်းနဲ့ပဲ သွား
+}
+function applyCatalog(items){
+  const keep = {};                                   // live/deep-link ကနေ ရထားတဲ့ entry တွေ (catalog ထက် fresh) ကို ထား
+  Object.keys(moviesById).forEach(id => { if(!catalogIds.has(id)) keep[id] = moviesById[id]; });
+  const ids = new Set();
+  items.forEach(e => { if(!keep[e.id]){ keep[e.id] = e; ids.add(e.id); } });
+  moviesById = keep; catalogIds = ids;
+  movies = Object.values(moviesById);
+}
 function docToMovie(d){
   const data = d.data();
   return { id: d.id, ...data, createdAtMs: data.createdAt ? data.createdAt.toMillis() : 0 };
@@ -2985,71 +2939,65 @@ function docToMovie(d){
 function subscribeMovies(){
   if(moviesUnsub) moviesUnsub();
   moviesUnsub = db.collection('movies').orderBy('createdAt', 'desc').limit(moviesLimit).onSnapshot(snap => {
-    snap.docs.forEach(d => { moviesById[d.id] = docToMovie(d); });
+    snap.docs.forEach(d => { moviesById[d.id] = docToMovie(d); catalogIds.delete(d.id); });
     movies = Object.values(moviesById);
-    hasMoreMovies = snap.docs.length === moviesLimit; // heuristic: a full page suggests more may exist
+    hasMoreMovies = !catalogMode && snap.docs.length === moviesLimit; // heuristic: a full page suggests more may exist (catalog mode မှာ အကုန်ရှိပြီးသား)
     render();
     updateLoadMoreVisibility();
   }, err => {
+    if(catalogMode){ console.error('[maxflix] live listener error:', err); return; }   // catalog နဲ့ ပြနေပြီးသားဆိုရင် error နဲ့ မဖုံးဘူး
     document.getElementById('rowsWrap').innerHTML =
       `<div class="loading">ချိတ်ဆက်မှု အမှား — firebaseConfig ကို စစ်ကြည့်ပါ (${esc(err.message)})</div>`;
   });
 }
 function subscribeCategory(category){
-  if(categoryUnsubs[category]) categoryUnsubs[category]();
-  if(categoryUnsubs[category + '_fb']){ categoryUnsubs[category + '_fb'](); categoryUnsubs[category + '_fb'] = null; }
-  // Paginated newest-first. NOTE: where('category','==',x) +
-  // orderBy('createdAt','desc') needs a one-time composite index in
-  // Firebase Console → Firestore → Indexes (category Ascending +
-  // createdAt Descending). Without it this fails with 'failed-precondition'
-  // and the fallback below keeps the tab working (unordered, full read)
-  // until the index is created.
-  categoryUnsubs[category] = db.collection('movies').where('category', '==', category)
-    .orderBy('createdAt', 'desc').limit(categoryLimits[category]).onSnapshot(snap => {
+  db.collection('movies').where('category', '==', category).onSnapshot(snap => {
     snap.docChanges().forEach(change => {
       if(change.type === 'removed'){ delete moviesById[change.doc.id]; }
       else { moviesById[change.doc.id] = docToMovie(change.doc); }
+      catalogIds.delete(change.doc.id);
     });
     movies = Object.values(moviesById);
-    categoryHasMore[category] = snap.docs.length === categoryLimits[category];
     render();
-    updateLoadMoreVisibility();
     tryRestoreSeries(); // completes a pending series-page restore once drama data is in
-  }, err => {
-    console.error(`[maxflix] ${category} listener error:`, err);
-    if(err && err.code === 'failed-precondition' && !categoryUnsubs[category + '_fb']){
-      console.error('[maxflix] Composite index missing — falling back to the unlimited query until the index is created (Firestore → Indexes → category ASC + createdAt DESC).');
-      categoryUnsubs[category + '_fb'] = db.collection('movies').where('category', '==', category).onSnapshot(snap => {
-        snap.docChanges().forEach(change => {
-          if(change.type === 'removed'){ delete moviesById[change.doc.id]; }
-          else { moviesById[change.doc.id] = docToMovie(change.doc); }
-        });
-        movies = Object.values(moviesById);
-        categoryHasMore[category] = false;
-        render();
-        updateLoadMoreVisibility();
-        tryRestoreSeries();
-      }, e2 => console.error(`[maxflix] ${category} fallback listener error:`, e2));
-    }
-  });
+  }, err => console.error(`[maxflix] ${category} listener error:`, err));
 }
 document.getElementById('loadMoreBtn').addEventListener('click', () => {
-  // On a category tab this grows that tab's page (the old code grew only the
-  // home feed, so pressing it on Movies/Drama/18+ did nothing visible).
-  if(['own', 'drama', 'adult'].includes(currentView)){
-    const cat = currentView === 'own' ? 'original' : currentView;
-    categoryLimits[cat] += CATEGORY_PAGE_SIZE;
-    subscribeCategory(cat);
-  } else {
-    moviesLimit += MOVIES_PAGE_SIZE;
-    subscribeMovies();
-  }
-  updateLoadMoreVisibility();
+  moviesLimit += MOVIES_PAGE_SIZE;
+  subscribeMovies();
 });
-subscribeMovies();
-subscribeCategory('original');
-subscribeCategory('drama');
-subscribeCategory('adult');
+function startLegacyListeners(){                     // catalog မရရင် အရင်ပုံစံ (category listener ၃ ခု)
+  if(!moviesUnsub) subscribeMovies();
+  subscribeCategory('original');
+  subscribeCategory('drama');
+  subscribeCategory('adult');
+}
+(async function bootMovies(){
+  // Catalog နှေးနေရင် (၃.၅ စက္ကန့်) newest-N listener ကို အရင်စပြီး စာမျက်နှာ ဗလာမဖြစ်စေ
+  const slowTimer = setTimeout(() => { if(!moviesUnsub) subscribeMovies(); }, 3500);
+  let items = null;
+  try{ items = await loadCatalogSnapshot(); }
+  catch(err){ console.warn('[maxflix] catalog unavailable, using live listeners:', err && err.message); }
+  clearTimeout(slowTimer);
+  if(!items){ startLegacyListeners(); return; }
+  catalogMode = true; catalogLoadedAt = Date.now();
+  applyCatalog(items);
+  hasMoreMovies = false;
+  render();
+  updateLoadMoreVisibility();
+  tryRestoreSeries();
+  if(!moviesUnsub){ moviesLimit = CATALOG_LIVE_SIZE; subscribeMovies(); }
+})();
+// App ကို ကြာကြာဖွင့်ထားပြီး ပြန်ဝင်လာရင် catalog ကို ပြန်ဖတ် (admin ပြင်/ဖျက်ထားတာတွေ ပါလာအောင်) — read အနည်းငယ်ပဲကုန်
+document.addEventListener('visibilitychange', async () => {
+  if(document.visibilityState !== 'visible' || !catalogMode) return;
+  if(Date.now() - catalogLoadedAt < CATALOG_REFRESH_MS) return;
+  catalogLoadedAt = Date.now();
+  try{
+    const items = await loadCatalogSnapshot();
+    if(items){ applyCatalog(items); render(); tryRestoreSeries(); }
+  }catch(e){ /* မအောင်ရင် ရှိပြီးသား cache နဲ့ဆက် */ }
+});
 
 /* =========================================================
    12) PROMO BANNER — settings/banner doc, managed from admin panel
@@ -3079,59 +3027,77 @@ function updatePromoBannerVisibility(){
 }
 subscribeBanner();
 
+
 /* =========================================================
-   12c) ANNOUNCEMENT TICKER — settings/announcement doc, admin-only write
-   (Firestore rules: settings/{id} ကို လူတိုင်း read, admin ပဲ write —
-   ဒါကြောင့် rules အသစ် ပြင်စရာ မလို)
-   Fields: { text: string, enabled: boolean }
-   Admin က စာပြောင်းတာနဲ့ onSnapshot ကြောင့် refresh မလုပ်ဘဲ ပေါ်မယ်။
-   စာတိုရင် ငြိမ်ငြိမ်ပေါ်မယ်၊ စာရှည်ရင် ဘေးတိုက်ပြေးမယ်။
-   ✕ နှိပ်ရင် ဒီ session မှာ ဒီစာပဲ ဖျောက်ထားမယ် — စာအသစ်ပြောင်းရင် ပြန်ပေါ်မယ်။
-   ========================================================= */
-function setTickerTop(){
-  try{
-    const h = document.querySelector('header');
-    if(h) document.documentElement.style.setProperty('--ticker-top', h.offsetHeight + 'px');
-  }catch(e){}
+   12c) ANNOUNCEMENT MARQUEE — settings/announcement doc, managed from admin panel
+   Header အောက်မှာ စာတန်း ဘယ်ကနေညာ ပြေးပြတယ်။ စာကြောင်းတစ်ကြောင်း = သတင်းတစ်ခု။
+   • textContent နဲ့ပဲ ထည့်တယ် (admin ရေးတဲ့စာထဲ HTML ပါလည်း အလုပ်မလုပ်ဘူး)
+   • ✕ နှိပ်ရင် ဒီ device မှာ ဖျောက်ထားမယ် — စာအသစ်ပြောင်းမှ ပြန်ပေါ်မယ်
+   • Hover/ထောက်ထားရင် ရပ်ပေးတယ်၊ "Reduce motion" ဖွင့်ထားရင် မပြေးဘဲ စာရိုးရိုးပြ */
+const ANNOUNCE_SPEEDS = { slow: 35, normal: 55, fast: 90 };   // pixels per second
+const ANNOUNCE_DISMISS_KEY = 'announceDismissed_v1';
+let announceData = null;
+function announceHash(s){ let h = 5381; for(let i = 0; i < s.length; i++){ h = (((h << 5) + h) + s.charCodeAt(i)) | 0; } return String(h >>> 0); }
+function announceMessages(d){
+  if(!d || !d.enabled || typeof d.text !== 'string') return [];
+  return d.text.split(/\r?\n/).map(t => t.trim()).filter(Boolean).slice(0, 20).map(t => t.slice(0, 400));
 }
-let lastAnnouncementText = '';
-function renderAnnouncement(text){
+function announceBuildUnit(msgs, isDup){
+  const frag = document.createDocumentFragment();
+  msgs.forEach(t => {
+    const m = document.createElement('span'); m.className = 'announce-msg' + (isDup ? ' announce-dup' : ''); m.textContent = t;
+    if(isDup) m.setAttribute('aria-hidden', 'true'); frag.appendChild(m);
+    const s = document.createElement('span'); s.className = 'announce-sep'; s.setAttribute('aria-hidden', 'true'); s.textContent = '✦'; frag.appendChild(s);
+  });
+  return frag;
+}
+function renderAnnounce(){
   const bar = document.getElementById('announceBar');
+  const viewport = document.getElementById('announceViewport');
   const track = document.getElementById('announceTrack');
-  const t = (text || '').trim();
-  lastAnnouncementText = t;
-  let dismissed = '';
-  try{ dismissed = sessionStorage.getItem('announceDismissed') || ''; }catch(e){}
-  if(!t || dismissed === t){ bar.classList.remove('show'); bar.style.display = 'none'; return; }
-  // textContent/innerHTML + esc() သုံးလို့ admin စာထဲက HTML/script ဘယ်တော့မှ run မဖြစ်
-  track.innerHTML = '<span>' + esc(t) + '</span><span>' + esc(t) + '</span>';
-  bar.classList.remove('static');
-  bar.classList.add('show');
+  if(!bar || !track) return;
+  const msgs = announceMessages(announceData);
+  if(!msgs.length){ bar.style.display = 'none'; track.textContent = ''; return; }
+  const hash = announceHash(msgs.join('\n'));
+  let dismissed = ''; try{ dismissed = localStorage.getItem(ANNOUNCE_DISMISS_KEY) || ''; }catch(e){}
+  if(dismissed === hash){ bar.style.display = 'none'; track.textContent = ''; return; }
+  bar.dataset.hash = hash;
   bar.style.display = 'flex';
-  requestAnimationFrame(() => {
-    const vp = bar.querySelector('.announce-viewport');
-    const w = track.scrollWidth / 2;
-    if(w <= vp.clientWidth){ bar.classList.add('static'); }
-    else {
-      const secs = Math.min(60, Math.max(12, w / 80)); // ~80px/sec
-      bar.style.setProperty('--ticker-dur', secs + 's');
-    }
-  });
+  track.style.animation = 'none';
+  track.textContent = '';
+  track.appendChild(announceBuildUnit(msgs, false));
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce) return;                                   // CSS က static အနေနဲ့ ပြမယ်
+  const unitW = track.scrollWidth || 1;                // စာတစ်စုံ (unit) ရဲ့ အကျယ်
+  const copies = Math.max(1, Math.ceil((viewport.clientWidth || 320) / unitW));
+  track.textContent = '';
+  for(let i = 0; i < copies * 2; i++) track.appendChild(announceBuildUnit(msgs, i >= 1));  // ထပ်ထားတာတွေက screen reader မဖတ်စေဘူး
+  const half = unitW * copies;                         // -50% လှန်တဲ့အခါ အစနဲ့ ချိတ်ပြီး ပြတ်တောက်မှုမရှိ
+  const speed = ANNOUNCE_SPEEDS[announceData.speed] || ANNOUNCE_SPEEDS.normal;
+  track.style.setProperty('--announce-dur', Math.max(8, half / speed).toFixed(1) + 's');
+  void track.offsetWidth;                              // animation ကို အစကပြန်စ
+  track.style.animation = '';
 }
-function subscribeAnnouncement(){
-  setTickerTop();
-  window.addEventListener('resize', setTickerTop);
-  document.getElementById('announceClose').addEventListener('click', () => {
-    try{ sessionStorage.setItem('announceDismissed', lastAnnouncementText.slice(0, 500)); }catch(e){}
-    const bar = document.getElementById('announceBar');
-    bar.classList.remove('show'); bar.style.display = 'none';
-  });
+function subscribeAnnounce(){
   db.collection('settings').doc('announcement').onSnapshot(doc => {
-    const d = doc.exists ? doc.data() : null;
-    renderAnnouncement(d && d.enabled !== false ? d.text : '');
-  }, () => { renderAnnouncement(''); });
+    announceData = doc.exists ? doc.data() : null;
+    renderAnnounce();
+  }, () => { announceData = null; renderAnnounce(); });
 }
-subscribeAnnouncement();
+document.getElementById('announceClose').addEventListener('click', () => {
+  const bar = document.getElementById('announceBar');
+  try{ localStorage.setItem(ANNOUNCE_DISMISS_KEY, bar.dataset.hash || ''); }catch(e){}
+  bar.style.display = 'none';
+});
+(function(){   // Hover မရှိတဲ့ ဖုန်းမှာ လက်ထောက်ထားရင် ရပ်၊ လွှတ်ရင် ပြန်ပြေး
+  const track = document.getElementById('announceTrack');
+  track.addEventListener('touchstart', () => track.classList.add('paused'), { passive: true });
+  ['touchend', 'touchcancel'].forEach(ev => track.addEventListener(ev, () => track.classList.remove('paused'), { passive: true }));
+})();
+let announceResizeT = null;
+window.addEventListener('resize', () => { clearTimeout(announceResizeT); announceResizeT = setTimeout(renderAnnounce, 250); });
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => renderAnnounce()).catch(() => {});   // Myanmar font ရောက်မှ အကျယ်ပြန်တိုင်း
+subscribeAnnounce();
 
 /* =========================================================
    12a) SHOP — "shopProducts" collection, managed from admin panel.
@@ -3548,26 +3514,17 @@ function getSavedSpeed(){
   return PLAYBACK_SPEEDS.indexOf(v) !== -1 ? v : 1;
 }
 function speedLabel(v){ return (v === 1 ? '1' : String(v)) + 'x'; }
-/* One shared tools row for every player button (speed / quality / subtitles /
-   PiP / sleep). Each setup fn appends to it; opening one menu closes the
-   others, so menus never stack on top of each other. */
-function playerTools(wrap){
-  let tools = wrap.querySelector('.player-tools');
-  if(!tools){ tools = document.createElement('div'); tools.className = 'player-tools'; wrap.appendChild(tools); }
-  return tools;
-}
-function closeOtherPlayerMenus(wrap, exceptMenu){
-  wrap.querySelectorAll('.speed-menu.open').forEach(x => { if(x !== exceptMenu) x.classList.remove('open'); });
-}
 function setupSpeedControl(videoEl, wrap){
   const saved = getSavedSpeed();
   videoEl.defaultPlaybackRate = saved;      // src ပြောင်းလည်း speed မပြန်ပျောက်အောင်
   videoEl.playbackRate = saved;
-  const tools = playerTools(wrap);
+  const tools = document.createElement('div');
+  tools.className = 'player-tools';
   tools.innerHTML = `<button type="button" class="speed-btn" id="speedBtn" aria-label="Playback speed">${speedLabel(saved)}</button>
     <div class="speed-menu" id="speedMenu">${PLAYBACK_SPEEDS.map(s => `<button type="button" data-s="${s}" class="${s === saved ? 'sel' : ''}">${speedLabel(s)}</button>`).join('')}</div>`;
+  wrap.appendChild(tools);
   const btn = tools.querySelector('#speedBtn'), menu = tools.querySelector('#speedMenu');
-  btn.addEventListener('click', (e) => { e.stopPropagation(); closeOtherPlayerMenus(wrap, menu); menu.classList.toggle('open'); });
+  btn.addEventListener('click', (e) => { e.stopPropagation(); menu.classList.toggle('open'); });
   menu.querySelectorAll('button').forEach(b => b.addEventListener('click', (e) => {
     e.stopPropagation();
     const s = Number(b.dataset.s);
@@ -3582,193 +3539,6 @@ function setupSpeedControl(videoEl, wrap){
   };
   videoEl.addEventListener('ratechange', sync);
   videoEl.addEventListener('loadedmetadata', () => { if(videoEl.playbackRate !== getSavedSpeed()){ videoEl.playbackRate = getSavedSpeed(); } });
-  wrap.addEventListener('click', (e) => { if(!tools.contains(e.target)) menu.classList.remove('open'); });
-}
-
-/* ---------- Player quality selector (HLS levels + MP4 variant) ---------- */
-let currentQualityRefresh = null;
-function setupQualityControl(videoEl, m, wrap){
-  const tools = playerTools(wrap);
-  const btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'speed-btn'; btn.id = 'qualityBtn';
-  btn.setAttribute('aria-label', 'Video quality');
-  btn.textContent = '🎞️ Auto';
-  const menu = document.createElement('div');
-  menu.className = 'speed-menu'; menu.id = 'qualityMenu';
-  tools.appendChild(btn); tools.appendChild(menu);
-  let currentChoice = 'auto';
-  function switchMp4Variant(variant){
-    const url = variant === 'mobile' ? m.videoUrlMobile : m.videoUrl;
-    if(!url || videoEl.src === url) return;
-    const t = videoEl.currentTime, wasPaused = videoEl.paused;
-    videoEl.src = url; videoEl.load();
-    videoEl.addEventListener('loadedmetadata', function once(){
-      videoEl.currentTime = Math.min(t, Math.max(0, (videoEl.duration || t) - 1));
-      if(!wasPaused) videoEl.play().catch(() => {});
-    }, { once: true });
-  }
-  function refresh(){
-    const hls = (typeof currentHls !== 'undefined') ? currentHls : null;
-    menu.innerHTML = '';
-    if(hls && hls.levels && hls.levels.length){
-      const opts = [{ label: 'Auto', value: -1 }];
-      const seen = new Set();
-      hls.levels.forEach((l, i) => {
-        const label = (l.height ? l.height + 'p' : (Math.round(l.bitrate / 1000) + 'k'));
-        if(seen.has(label)) return; seen.add(label);
-        opts.push({ label, value: i });
-      });
-      opts.forEach(o => {
-        const b = document.createElement('button');
-        b.type = 'button'; b.textContent = o.label; b.dataset.v = String(o.value);
-        if(String(currentChoice) === String(o.value)) b.classList.add('sel');
-        b.addEventListener('click', (e) => {
-          e.stopPropagation();
-          currentChoice = o.value;
-          hls.currentLevel = o.value; // -1 = auto
-          btn.textContent = '🎞️ ' + o.label;
-          menu.classList.remove('open');
-          refresh();
-        });
-        menu.appendChild(b);
-      });
-      btn.style.display = '';
-    } else if(m.videoUrlMobile && m.videoUrl){
-      [['main', 'မူရင်း'], ['mobile', 'မိုဘိုင်း']].forEach(([v, label]) => {
-        const b = document.createElement('button');
-        b.type = 'button'; b.textContent = label; b.dataset.v = v;
-        if(currentChoice === v) b.classList.add('sel');
-        b.addEventListener('click', (e) => {
-          e.stopPropagation();
-          currentChoice = v;
-          btn.textContent = '🎞️ ' + label;
-          switchMp4Variant(v);
-          menu.classList.remove('open');
-          refresh();
-        });
-        menu.appendChild(b);
-      });
-      btn.style.display = '';
-    } else {
-      btn.style.display = 'none';
-    }
-  }
-  btn.addEventListener('click', (e) => { e.stopPropagation(); closeOtherPlayerMenus(wrap, menu); menu.classList.toggle('open'); });
-  wrap.addEventListener('click', (e) => { if(!tools.contains(e.target)) menu.classList.remove('open'); });
-  currentQualityRefresh = refresh;
-  videoEl.addEventListener('loadedmetadata', refresh);
-  setTimeout(refresh, 2000); // HLS attaches async — refresh again once levels arrive
-  refresh();
-}
-
-/* ---------- Subtitles (VTT tracks from the movie doc) ---------- */
-/* Movie doc fields: subtitleUrlMy / subtitleUrlEn (a .vtt URL each).
-   Host the .vtt on the same origin as the site (GitHub Pages) so no CORS
-   setup is needed — a cross-origin .vtt without CORS headers will not load. */
-function setupSubtitleControl(videoEl, m, wrap){
-  const tracks = [];
-  if(m.subtitleUrlMy) tracks.push({ lang: 'my', label: 'မြန်မာ', src: m.subtitleUrlMy });
-  if(m.subtitleUrlEn) tracks.push({ lang: 'en', label: 'English', src: m.subtitleUrlEn });
-  if(!tracks.length) return;
-  const tools = playerTools(wrap);
-  const btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'speed-btn'; btn.id = 'subBtn';
-  btn.setAttribute('aria-label', 'Subtitles');
-  const menu = document.createElement('div');
-  menu.className = 'speed-menu'; menu.id = 'subMenu';
-  tools.appendChild(btn); tools.appendChild(menu);
-  let current = tracks.some(t => t.lang === 'my') ? 'my' : 'en'; // Burmese on by default when available
-  tracks.forEach(t => {
-    const el = document.createElement('track');
-    el.kind = 'subtitles'; el.label = t.label; el.srclang = t.lang; el.src = t.src;
-    videoEl.appendChild(el);
-  });
-  function apply(){
-    const list = videoEl.textTracks;
-    for(let i = 0; i < list.length; i++){
-      const tr = list[i];
-      tr.mode = (current !== 'off' && tr.language === current) ? 'showing' : 'disabled';
-    }
-    btn.textContent = current === 'off' ? '💬 Off' : ('💬 ' + (current === 'my' ? 'မြန်မာ' : 'English'));
-    menu.querySelectorAll('button').forEach(b => b.classList.toggle('sel', b.dataset.v === current));
-  }
-  [['off', 'Off']].concat(tracks.map(t => [t.lang, t.label])).forEach(([v, label]) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = label; b.dataset.v = v;
-    b.addEventListener('click', (e) => { e.stopPropagation(); current = v; apply(); menu.classList.remove('open'); });
-    menu.appendChild(b);
-  });
-  btn.addEventListener('click', (e) => { e.stopPropagation(); closeOtherPlayerMenus(wrap, menu); menu.classList.toggle('open'); });
-  wrap.addEventListener('click', (e) => { if(!tools.contains(e.target)) menu.classList.remove('open'); });
-  videoEl.addEventListener('loadedmetadata', apply);
-  apply();
-}
-
-/* ---------- Double-tap seek ±10s + Picture-in-Picture ---------- */
-function setupSeekGestures(videoEl, wrap){
-  let seekFlash = null;
-  videoEl.addEventListener('dblclick', (e) => {
-    const r = videoEl.getBoundingClientRect();
-    const delta = ((e.clientX || 0) - r.left) < r.width / 2 ? -10 : 10;
-    videoEl.currentTime = Math.max(0, Math.min((videoEl.duration || 0) - 1, videoEl.currentTime + delta));
-    if(seekFlash) seekFlash.remove();
-    seekFlash = document.createElement('div');
-    seekFlash.className = 'seek-flash';
-    seekFlash.textContent = delta > 0 ? '+10s ⏩' : '⏪ −10s';
-    wrap.appendChild(seekFlash);
-    setTimeout(() => { if(seekFlash){ seekFlash.remove(); seekFlash = null; } }, 700);
-  });
-  if(document.pictureInPictureEnabled){
-    const tools = playerTools(wrap);
-    const btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'speed-btn'; btn.id = 'pipBtn';
-    btn.textContent = '📺 PiP'; btn.setAttribute('aria-label', 'Picture in picture');
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      try{
-        if(document.pictureInPictureElement === videoEl) await document.exitPictureInPicture();
-        else await videoEl.requestPictureInPicture();
-      }catch(err){ showToast('PiP မရပါ — ဒီ browser/device က ထောက်မပံ့ပါ'); }
-    });
-    tools.appendChild(btn);
-  }
-}
-
-/* ---------- Sleep timer (pause after 15/30/60 min) ---------- */
-let sleepTimerId = null;
-function clearSleepTimer(){ if(sleepTimerId){ clearTimeout(sleepTimerId); sleepTimerId = null; } }
-function setupSleepTimer(videoEl, wrap){
-  const tools = playerTools(wrap);
-  const btn = document.createElement('button');
-  btn.type = 'button'; btn.className = 'speed-btn'; btn.id = 'sleepBtn';
-  btn.textContent = '😴 Off'; btn.setAttribute('aria-label', 'Sleep timer');
-  const menu = document.createElement('div');
-  menu.className = 'speed-menu'; menu.id = 'sleepMenu';
-  tools.appendChild(btn); tools.appendChild(menu);
-  [['off', 'Off'], ['15', '15 မိနစ်'], ['30', '30 မိနစ်'], ['60', '60 မိနစ်']].forEach(([v, label]) => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = label; b.dataset.v = v;
-    b.addEventListener('click', (e) => {
-      e.stopPropagation();
-      menu.classList.remove('open');
-      clearSleepTimer();
-      if(v === 'off'){ btn.textContent = '😴 Off'; }
-      else{
-        btn.textContent = '😴 ' + v + 'm';
-        sleepTimerId = setTimeout(() => {
-          sleepTimerId = null;
-          btn.textContent = '😴 Off';
-          if(document.getElementById('modalOverlay').classList.contains('open')){
-            videoEl.pause();
-            showToast('😴 Sleep timer — ဗီဒီယို ရပ်လိုက်ပြီ');
-          }
-        }, Number(v) * 60 * 1000);
-      }
-      menu.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x.dataset.v === v));
-    });
-    menu.appendChild(b);
-  });
-  btn.addEventListener('click', (e) => { e.stopPropagation(); closeOtherPlayerMenus(wrap, menu); menu.classList.toggle('open'); });
   wrap.addEventListener('click', (e) => { if(!tools.contains(e.target)) menu.classList.remove('open'); });
 }
 function getAdjacentEpisodes(m){
@@ -3823,12 +3593,7 @@ function teardownMediaSession(){
 }
 function setupPlayerExtras(videoEl, m, wrap){
   currentPlayerMovie = m;
-  clearSleepTimer(); // a new video cancels the previous sleep timer
   setupSpeedControl(videoEl, wrap);
-  setupQualityControl(videoEl, m, wrap);
-  setupSubtitleControl(videoEl, m, wrap);
-  setupSeekGestures(videoEl, wrap);
-  setupSleepTimer(videoEl, wrap);
   setupMediaSession(videoEl, m);
 }
 
